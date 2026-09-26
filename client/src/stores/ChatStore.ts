@@ -17,7 +17,7 @@ export const chatSlice = createSlice({
   initialState: {
     chatMessages: new Array<{ messageType: MessageType; chatMessage: ChatMessage }>(),
     focused: false,
-    showChat: true,
+    showChat: false,
   },
   reducers: {
     pushChatMessage: (state, action: PayloadAction<ChatMessage>) => {

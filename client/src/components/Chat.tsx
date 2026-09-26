@@ -1,7 +1,6 @@
 import React, { useRef, useState, useEffect } from 'react'
 import styled from 'styled-components'
 import Box from '@mui/material/Box'
-import Fab from '@mui/material/Fab'
 import Tooltip from '@mui/material/Tooltip'
 import IconButton from '@mui/material/IconButton'
 import InputBase from '@mui/material/InputBase'
@@ -10,6 +9,7 @@ import ChatBubbleOutlineIcon from '@mui/icons-material/ChatBubbleOutlineOutlined
 import CloseIcon from '@mui/icons-material/Close'
 
 import EmojiPicker from './EmojiPicker'
+import StyledFab from './StyledFab'
 import phaserGame from '../PhaserGame'
 import Game from '../scenes/Game'
 
@@ -17,12 +17,13 @@ import { getColorByString } from '../util'
 import { useAppDispatch, useAppSelector } from '../hooks'
 import { MessageType, setFocused, setShowChat } from '../stores/ChatStore'
 
-const Backdrop = styled.div`
+const Backdrop = styled.div<{ $open: boolean }>`
   position: fixed;
-  bottom: 60px;
+  bottom: 0;
   left: 0;
-  height: 400px;
-  width: 500px;
+  /* when closed only the button takes space, so the rest stays clickable */
+  height: ${(props) => (props.$open ? '400px' : 'auto')};
+  width: ${(props) => (props.$open ? '500px' : 'auto')};
   max-height: 50%;
   max-width: 100%;
 `
@@ -220,7 +221,7 @@ export default function Chat() {
   }, [chatMessages, showChat])
 
   return (
-    <Backdrop>
+    <Backdrop $open={showChat}>
       <Wrapper>
         {showChat ? (
           <>
@@ -279,16 +280,18 @@ export default function Chat() {
           </>
         ) : (
           <FabWrapper>
-            <Fab
-              color="secondary"
-              aria-label="showChat"
-              onClick={() => {
-                dispatch(setShowChat(true))
-                dispatch(setFocused(true))
-              }}
-            >
-              <ChatBubbleOutlineIcon />
-            </Fab>
+            <Tooltip title="Chat">
+              <StyledFab
+                size="small"
+                aria-label="show chat"
+                onClick={() => {
+                  dispatch(setShowChat(true))
+                  dispatch(setFocused(true))
+                }}
+              >
+                <ChatBubbleOutlineIcon />
+              </StyledFab>
+            </Tooltip>
           </FabWrapper>
         )}
       </Wrapper>
