@@ -16,7 +16,7 @@ SkyOffice works on all PC browsers (mobile browsers are currently not supported)
 - [Phaser3](https://github.com/photonstorm/phaser) - Game engine
 - [Colyseus](https://github.com/colyseus/colyseus) - WebSocket-based server framework
 - [React/Redux](https://github.com/facebook/react) - Front-end framework
-- [PeerJS](https://github.com/peers/peerjs) - WebRTC for video/screen sharing
+- [LiveKit](https://livekit.io) - WebRTC media server for video, audio and screen sharing
 - [TypeScript](https://github.com/microsoft/TypeScript) and [ES6](https://github.com/eslint/eslint) - for both client and server sides
 
 ## Features
@@ -62,7 +62,7 @@ Press `R` in front of a whiteboard to open it. Add sticky notes with the toolbar
 
 ## Prerequisites
 
-You'll need [Node.js](https://nodejs.org/en/) 22.12 or newer (npm is included).
+You'll need [Node.js](https://nodejs.org/en/) 22.12 or newer (npm is included) and the [LiveKit server](https://docs.livekit.io/home/self-hosting/local/) for video chat, e.g. `brew install livekit` on macOS.
 
 ## Getting Started
 
@@ -74,19 +74,19 @@ cd SkyOffice
 npm install
 ```
 
-Start server (`ws://localhost:2567`) and client (`http://localhost:3000`) together:
+Start server (`ws://localhost:2567`), client (`http://localhost:3000`) and a local LiveKit server (`ws://localhost:7880`) together:
 
 ```bash
 npm run dev
 ```
 
-or separately with `npm run dev:server` and `npm run dev:client`.
+or separately with `npm run dev:server`, `npm run dev:client` and `npm run dev:livekit`.
 
 ## Scripts
 
 | Command             | Description                                            |
 | ------------------- | ------------------------------------------------------ |
-| `npm run dev`       | Start server and client in watch mode                  |
+| `npm run dev`       | Start server, client and LiveKit in watch/dev mode     |
 | `npm run build`     | Build server (`server/lib`) and client (`client/dist`) |
 | `npm start`         | Run the built server                                   |
 | `npm run typecheck` | Type-check all workspaces                              |
@@ -94,6 +94,20 @@ or separately with `npm run dev:server` and `npm run dev:client`.
 | `npm run format`    | Format with Prettier                                   |
 
 For production builds of the client, set `VITE_SERVER_URL` to the WebSocket URL of your server (e.g. `wss://my-server.example.com`).
+
+## Video chat
+
+Video, audio and screen sharing run through [LiveKit](https://livekit.io). The office is split into media rooms by the `Zones` layer of the map: in the open space you hear the people close to you, in meeting rooms and focus booths everyone in the room (and nobody outside), in the auditorium only the people on the stage speak, and quiet zones have no video at all. The server hands out a LiveKit token only for the room at the player's position.
+
+For production, run a [LiveKit server](https://docs.livekit.io/home/self-hosting/deployment/) or use [LiveKit Cloud](https://livekit.io/cloud) and set these environment variables for the SkyOffice server:
+
+| Variable             | Description                                           |
+| -------------------- | ----------------------------------------------------- |
+| `LIVEKIT_URL`        | WebSocket URL of LiveKit, e.g. `wss://lk.example.com` |
+| `LIVEKIT_API_KEY`    | LiveKit API key                                       |
+| `LIVEKIT_API_SECRET` | LiveKit API secret                                    |
+
+Without them in development, the server uses the defaults of `livekit-server --dev`.
 
 The day/night background follows sunrise and sunset. It uses the center of Germany by default; set `VITE_OFFICE_LATITUDE` and `VITE_OFFICE_LONGITUDE` to use the location of your office instead.
 

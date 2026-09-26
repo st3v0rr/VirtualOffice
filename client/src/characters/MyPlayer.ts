@@ -69,7 +69,7 @@ export default class MyPlayer extends Player {
     if (Phaser.Input.Keyboard.JustDown(keyR)) {
       switch (item?.itemType) {
         case ItemType.COMPUTER:
-          ;(item as Computer).openDialog(this.playerId, network)
+          ;(item as Computer).openDialog(network)
           break
         case ItemType.WHITEBOARD:
           ;(item as Whiteboard).openDialog(network)

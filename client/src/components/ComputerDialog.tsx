@@ -1,4 +1,4 @@
-import React from 'react'
+import { useEffect, useState, useSyncExternalStore } from 'react'
 import styled from 'styled-components'
 import Button from '@mui/material/Button'
 import IconButton from '@mui/material/IconButton'
@@ -6,8 +6,12 @@ import CloseIcon from '@mui/icons-material/Close'
 
 import { useAppSelector, useAppDispatch } from '../hooks'
 import { closeComputerDialog } from '../stores/ComputerStore'
+import { sanitizeId } from '../util'
 
 import Video from './Video'
+import ScreenShareSession from '../web/ScreenShareSession'
+import phaserGame from '../PhaserGame'
+import Game from '../scenes/Game'
 
 const Backdrop = styled.div`
   position: fixed;
@@ -34,6 +38,16 @@ const Wrapper = styled.div`
     position: absolute;
     top: 0px;
     right: 0px;
+  }
+
+  .toolbar {
+    display: flex;
+    align-items: center;
+    gap: 16px;
+  }
+
+  .error {
+    color: #ffb4a9;
   }
 `
 
@@ -76,10 +90,18 @@ const VideoGrid = styled.div`
   }
 `
 
-function VideoContainer({ playerName, stream }) {
+function VideoContainer({
+  playerName,
+  stream,
+  muted = false,
+}: {
+  playerName?: string
+  stream: MediaStream
+  muted?: boolean
+}) {
   return (
     <div className="video-container">
-      <Video srcObject={stream} autoPlay></Video>
+      <Video srcObject={stream} autoPlay playsInline muted={muted}></Video>
       {playerName && <div className="player-name">{playerName}</div>}
     </div>
   )
@@ -88,9 +110,18 @@ function VideoContainer({ playerName, stream }) {
 export default function ComputerDialog() {
   const dispatch = useAppDispatch()
   const playerNameMap = useAppSelector((state) => state.user.playerNameMap)
-  const shareScreenManager = useAppSelector((state) => state.computer.shareScreenManager)
-  const myStream = useAppSelector((state) => state.computer.myStream)
-  const peerStreams = useAppSelector((state) => state.computer.peerStreams)
+  const computerId = useAppSelector((state) => state.computer.computerId)!
+
+  // one screen sharing session per opened dialog, closed when the dialog goes away
+  const [session] = useState(() => {
+    const game = phaserGame.scene.keys.game as Game
+    return new ScreenShareSession(game.network, computerId)
+  })
+  useEffect(() => {
+    session.open()
+    return () => session.close()
+  }, [session])
+  const { myStream, screens, error } = useSyncExternalStore(session.subscribe, session.getSnapshot)
 
   return (
     <Backdrop>
@@ -107,25 +138,24 @@ export default function ComputerDialog() {
           <Button
             variant="contained"
             color="secondary"
-            onClick={() => {
-              if (shareScreenManager?.myStream) {
-                shareScreenManager?.stopScreenShare()
-              } else {
-                shareScreenManager?.startScreenShare()
-              }
-            }}
+            disabled={!!error}
+            onClick={() => (myStream ? session.stopScreenShare() : session.startScreenShare())}
           >
-            {shareScreenManager?.myStream ? 'Stop sharing' : 'Share Screen'}
+            {myStream ? 'Stop sharing' : 'Share Screen'}
           </Button>
+          {error && <span className="error">{error}</span>}
         </div>
 
         <VideoGrid>
-          {myStream && <VideoContainer stream={myStream} playerName="You" />}
+          {myStream && <VideoContainer stream={myStream} playerName="You" muted />}
 
-          {[...peerStreams.entries()].map(([id, { stream }]) => {
-            const playerName = playerNameMap.get(id)
-            return <VideoContainer key={id} playerName={playerName} stream={stream} />
-          })}
+          {screens.map(({ id, stream }) => (
+            <VideoContainer
+              key={id}
+              playerName={playerNameMap.get(sanitizeId(id))}
+              stream={stream}
+            />
+          ))}
         </VideoGrid>
       </Wrapper>
     </Backdrop>

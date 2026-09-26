@@ -18,6 +18,7 @@ import { IPlayer } from '../../../types/IOfficeState'
 import { PlayerBehavior } from '../../../types/PlayerBehavior'
 import { ItemType } from '../../../types/Items'
 import { findZone, getProperty, parseOfficeMap, type OfficeMap } from '../../../types/OfficeMap'
+import { getMediaLocation } from '../../../types/Media'
 
 import store from '../stores'
 import { setFocused, setShowChat } from '../stores/ChatStore'
@@ -47,6 +48,9 @@ const SPECIAL_LAYERS = new Set([
 // decoration layers of the original map that block movement; new layers use a `collides` property
 const LEGACY_COLLIDING_LAYERS = new Set(['ObjectsOnCollide', 'GenericObjectsOnCollide', 'Basement'])
 
+// how often the video chat checks my zone and who is close by
+const MEDIA_UPDATE_INTERVAL = 250 // ms
+
 const PLAYER_ZOOM = 1.5
 const ZOOM_IN_DURATION = 1500 // ms
 // leave a small margin around the map in the overview
@@ -68,6 +72,7 @@ export default class Game extends Phaser.Scene {
   private whiteboardMap = new Map<string, Whiteboard>()
   officeMap!: OfficeMap
   private inOverview = false
+  private mediaUpdateTimer = 0
 
   constructor() {
     super('game')
@@ -203,19 +208,9 @@ export default class Game extends Phaser.Scene {
       this
     )
 
-    this.physics.add.overlap(
-      this.myPlayer,
-      this.otherPlayers,
-      this.handlePlayersOverlap,
-      undefined,
-      this
-    )
-
     // register network event listeners
     this.network.onPlayerJoined(this.handlePlayerJoined, this)
     this.network.onPlayerLeft(this.handlePlayerLeft, this)
-    this.network.onMyPlayerReady(this.handleMyPlayerReady, this)
-    this.network.onMyPlayerVideoConnected(this.handleMyVideoConnected, this)
     this.network.onPlayerUpdated(this.handlePlayerUpdated, this)
     this.network.onItemUserAdded(this.handleItemUserAdded, this)
     this.network.onItemUserRemoved(this.handleItemUserRemoved, this)
@@ -297,22 +292,10 @@ export default class Game extends Phaser.Scene {
     }
   }
 
-  private handleMyPlayerReady() {
-    this.myPlayer.readyToConnect = true
-  }
-
-  private handleMyVideoConnected() {
-    this.myPlayer.videoConnected = true
-  }
-
   // function to update target position upon receiving player updates
   private handlePlayerUpdated(field: string, value: number | string, id: string) {
     const otherPlayer = this.otherPlayerMap.get(id)
     otherPlayer?.updateOtherPlayer(field, value)
-  }
-
-  private handlePlayersOverlap(myPlayer, otherPlayer) {
-    otherPlayer.makeCall(myPlayer, this.network?.webRTC)
   }
 
   private handleItemUserAdded(playerId: string, itemId: string, itemType: ItemType) {
@@ -344,6 +327,21 @@ export default class Game extends Phaser.Scene {
     if (this.myPlayer && this.network) {
       this.playerSelector.update(this.myPlayer, this.cursors)
       this.myPlayer.update(this.playerSelector, this.cursors, this.keyE, this.keyR, this.network)
+      this.updateMediaLocation(dt)
     }
+  }
+
+  // tell the video chat where I am and who is close by
+  private updateMediaLocation(dt: number) {
+    this.mediaUpdateTimer -= dt
+    if (this.mediaUpdateTimer > 0 || !store.getState().user.loggedIn) return
+    this.mediaUpdateTimer = MEDIA_UPDATE_INTERVAL
+
+    const { x, y } = this.myPlayer
+    const distances = new Map<string, number>()
+    for (const [id, otherPlayer] of this.otherPlayerMap) {
+      distances.set(id, Phaser.Math.Distance.Between(x, y, otherPlayer.x, otherPlayer.y))
+    }
+    this.network.media?.updateLocation(getMediaLocation(this.officeMap.zones, x, y), distances)
   }
 }

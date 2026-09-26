@@ -3,7 +3,8 @@ import type { IOfficeState, IPlayer } from '../../../types/IOfficeState'
 import { Message } from '../../../types/Messages'
 import { type IRoomData, RoomType } from '../../../types/Rooms'
 import { ItemType } from '../../../types/Items'
-import WebRTC from '../web/WebRTC'
+import MediaManager from '../web/MediaManager'
+import type { MediaGrant, MediaTokenRequest } from '../../../types/Media'
 import { phaserEvents, Event } from '../events/EventCenter'
 import store from '../stores'
 import { setSessionId, setPlayerNameMap, removePlayerNameMap } from '../stores/UserStore'
@@ -36,13 +37,13 @@ const PLAYER_UPDATE_INTERVAL = 66 // ms
 type PlayerUpdate = { x: number; y: number; anim: string }
 
 // player fields which are forwarded to the game scene whenever they change
-const PLAYER_FIELDS = ['name', 'x', 'y', 'anim', 'readyToConnect', 'videoConnected'] as const
+const PLAYER_FIELDS = ['name', 'x', 'y', 'anim'] as const
 
 export default class Network {
   private client: Client
   private room?: Room<any, IOfficeState>
   private lobby!: Room
-  webRTC?: WebRTC
+  media?: MediaManager
 
   mySessionId!: string
 
@@ -63,7 +64,6 @@ export default class Network {
 
     phaserEvents.on(Event.MY_PLAYER_NAME_CHANGE, this.updatePlayerName, this)
     phaserEvents.on(Event.MY_PLAYER_TEXTURE_CHANGE, this.updatePlayer, this)
-    phaserEvents.on(Event.PLAYER_DISCONNECTED, this.playerStreamDisconnect, this)
   }
 
   /**
@@ -117,7 +117,7 @@ export default class Network {
     this.lobby.leave()
     this.mySessionId = this.room.sessionId
     store.dispatch(setSessionId(this.room.sessionId))
-    this.webRTC = new WebRTC(this.mySessionId, this)
+    this.media = new MediaManager(this, this.mySessionId)
 
     const $ = Callbacks.get(this.room)
 
@@ -145,8 +145,6 @@ export default class Network {
     // an instance removed from the players MapSchema
     $.onRemove('players', (player, key) => {
       phaserEvents.emit(Event.PLAYER_LEFT, key)
-      this.webRTC?.deleteVideoStream(key)
-      this.webRTC?.deleteOnCalledVideoStream(key)
       store.dispatch(pushPlayerLeftMessage(player.name))
       store.dispatch(removePlayerNameMap(key))
     })
@@ -229,17 +227,6 @@ export default class Network {
     this.room.onMessage(Message.ADD_CHAT_MESSAGE, ({ clientId, content }) => {
       phaserEvents.emit(Event.UPDATE_DIALOG_BUBBLE, clientId, content)
     })
-
-    // when a peer disconnects with myPeer
-    this.room.onMessage(Message.DISCONNECT_STREAM, (clientId: string) => {
-      this.webRTC?.deleteOnCalledVideoStream(clientId)
-    })
-
-    // when a computer user stops sharing screen
-    this.room.onMessage(Message.STOP_SCREEN_SHARE, (clientId: string) => {
-      const computerState = store.getState().computer
-      computerState.shareScreenManager?.onUserLeft(clientId)
-    })
   }
 
   // method to register event listener and call back function when a item user added
@@ -273,16 +260,6 @@ export default class Network {
     phaserEvents.on(Event.PLAYER_LEFT, callback, context)
   }
 
-  // method to register event listener and call back function when myPlayer is ready to connect
-  onMyPlayerReady(callback: (key: string) => void, context?: any) {
-    phaserEvents.on(Event.MY_PLAYER_READY, callback, context)
-  }
-
-  // method to register event listener and call back function when my video is connected
-  onMyPlayerVideoConnected(callback: (key: string) => void, context?: any) {
-    phaserEvents.on(Event.MY_PLAYER_VIDEO_CONNECTED, callback, context)
-  }
-
   // method to register event listener and call back function when a player updated
   onPlayerUpdated(
     callback: (field: string, value: number | string, key: string) => void,
@@ -314,27 +291,22 @@ export default class Network {
     this.lastPlayerUpdateTime = performance.now()
   }
 
+  // send my latest position right away, e.g. before asking for the media room at my position
+  sendPositionNow() {
+    this.flushPlayerUpdate()
+  }
+
+  // a LiveKit token for the media room at my position or at the computer I'm using
+  requestMediaGrant(request: MediaTokenRequest): Promise<MediaGrant | null> {
+    if (!this.room) return Promise.reject(new Error('Not in a room'))
+    // messages are processed in order, so the server knows my current position
+    this.sendPositionNow()
+    return this.room.request(Message.REQUEST_MEDIA_TOKEN, request)
+  }
+
   // method to send player name to Colyseus server
   updatePlayerName(currentName: string) {
     this.room?.send(Message.UPDATE_PLAYER_NAME, { name: currentName })
-  }
-
-  // method to send ready-to-connect signal to Colyseus server
-  readyToConnect() {
-    this.room?.send(Message.READY_TO_CONNECT)
-    phaserEvents.emit(Event.MY_PLAYER_READY)
-  }
-
-  // method to send ready-to-connect signal to Colyseus server
-  videoConnected() {
-    this.room?.send(Message.VIDEO_CONNECTED)
-    phaserEvents.emit(Event.MY_PLAYER_VIDEO_CONNECTED)
-  }
-
-  // method to send stream-disconnection signal to Colyseus server
-  playerStreamDisconnect(id: string) {
-    this.room?.send(Message.DISCONNECT_STREAM, { clientId: id })
-    this.webRTC?.deleteVideoStream(id)
   }
 
   connectToComputer(id: string) {
@@ -371,10 +343,6 @@ export default class Network {
 
   deleteWhiteboardArrow(message: DeleteArrowMessage) {
     this.room?.send(Message.WHITEBOARD_DELETE_ARROW, message)
-  }
-
-  onStopScreenShare(id: string) {
-    this.room?.send(Message.STOP_SCREEN_SHARE, { computerId: id })
   }
 
   addChatMessage(content: string) {

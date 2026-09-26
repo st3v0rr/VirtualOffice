@@ -17,7 +17,8 @@
     "bcryptjs": "^3.0.3",
     "colyseus": "^0.18.8",
     "cors": "^2.8.6",
-    "express": "^5.2.1"
+    "express": "^5.2.1",
+    "livekit-server-sdk": "^2.19.1"
   },
   "devDependencies": {
     "@types/cors": "^2.8.19",

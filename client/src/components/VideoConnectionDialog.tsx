@@ -44,7 +44,7 @@ export default function VideoConnectionDialog() {
           color="secondary"
           onClick={() => {
             const game = phaserGame.scene.keys.game as Game
-            game.network.webRTC?.getUserMedia()
+            game.network.media?.getUserMedia()
           }}
         >
           Connect Webcam

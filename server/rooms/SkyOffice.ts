@@ -5,6 +5,8 @@ import { Player, OfficeState, Computer, Whiteboard } from './schema/OfficeState.
 import { Message } from '../../types/Messages.ts'
 import type { IRoomData } from '../../types/Rooms.ts'
 import { officeMap } from '../officeMap.ts'
+import { createMediaGrant } from '../media.ts'
+import { getMediaLocation, type MediaTokenRequest } from '../../types/Media.ts'
 import PlayerUpdateCommand from './commands/PlayerUpdateCommand.ts'
 import PlayerUpdateNameCommand from './commands/PlayerUpdateNameCommand.ts'
 import {
@@ -76,18 +78,6 @@ export class SkyOffice extends Room<{ state: OfficeState }> {
       })
     })
 
-    // when a player stop sharing screen
-    this.onMessage(Message.STOP_SCREEN_SHARE, (client, message: { computerId: string }) => {
-      const computer = this.state.computers.get(message.computerId)
-      computer.connectedUser.forEach((id) => {
-        this.clients.forEach((cli) => {
-          if (cli.sessionId === id && cli.sessionId !== client.sessionId) {
-            cli.send(Message.STOP_SCREEN_SHARE, client.sessionId)
-          }
-        })
-      })
-    })
-
     // when a player connect to a whiteboard, add to the whiteboard connectedUser array
     this.onMessage(Message.CONNECT_TO_WHITEBOARD, (client, message: { whiteboardId: string }) => {
       this.dispatcher.dispatch(new WhiteboardAddUserCommand(), {
@@ -145,26 +135,11 @@ export class SkyOffice extends Room<{ state: OfficeState }> {
       })
     })
 
-    // when a player is ready to connect, call the PlayerReadyToConnectCommand
-    this.onMessage(Message.READY_TO_CONNECT, (client) => {
-      const player = this.state.players.get(client.sessionId)
-      if (player) player.readyToConnect = true
-    })
-
-    // when a player is ready to connect, call the PlayerReadyToConnectCommand
-    this.onMessage(Message.VIDEO_CONNECTED, (client) => {
-      const player = this.state.players.get(client.sessionId)
-      if (player) player.videoConnected = true
-    })
-
-    // when a player disconnect a stream, broadcast the signal to the other player connected to the stream
-    this.onMessage(Message.DISCONNECT_STREAM, (client, message: { clientId: string }) => {
-      this.clients.forEach((cli) => {
-        if (cli.sessionId === message.clientId) {
-          cli.send(Message.DISCONNECT_STREAM, client.sessionId)
-        }
-      })
-    })
+    // hand out a LiveKit token for the media room at the player's position or computer;
+    // the server decides the room, so private rooms can't be joined from outside
+    this.onMessage(Message.REQUEST_MEDIA_TOKEN, (client, request: MediaTokenRequest) =>
+      this.createMediaGrant(client, request)
+    )
 
     // when a player send a chat message, update the message array and broadcast to all connected clients except the sender
     this.onMessage(Message.ADD_CHAT_MESSAGE, (client, message: { content: string }) => {
@@ -181,6 +156,29 @@ export class SkyOffice extends Room<{ state: OfficeState }> {
         { except: client }
       )
     })
+  }
+
+  private async createMediaGrant(client: Client, request: MediaTokenRequest) {
+    const player = this.state.players.get(client.sessionId)
+    if (!player) throw new ServerError(404, 'Player not found')
+    const participant = { identity: client.sessionId, name: player.name }
+
+    if (request?.kind === 'computer') {
+      const computerId = String(request.computerId)
+      const computer = this.state.computers.get(computerId)
+      if (!computer?.connectedUser.has(client.sessionId)) {
+        throw new ServerError(403, 'Not connected to this computer')
+      }
+      const location = {
+        room: `computer-${computerId}`,
+        mode: 'everyone',
+        canPublish: true,
+      } as const
+      return createMediaGrant(this.roomId, location, participant)
+    }
+
+    const location = getMediaLocation(officeMap.zones, player.x, player.y)
+    return location ? createMediaGrant(this.roomId, location, participant) : null
   }
 
   async onAuth(client: Client, options: { password: string | null }) {

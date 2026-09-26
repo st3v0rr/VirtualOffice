@@ -12,6 +12,9 @@ import Chat from './components/Chat'
 import HelperButtonGroup from './components/HelperButtonGroup'
 import MobileVirtualJoystick from './components/MobileVirtualJoystick'
 import MediaControls from './components/MediaControls'
+import VideoGrid from './components/VideoGrid'
+import phaserGame from './PhaserGame'
+import Game from './scenes/Game'
 
 const Backdrop = styled.div`
   position: absolute;
@@ -35,6 +38,7 @@ function App() {
   const videoConnected = useAppSelector((state) => state.user.videoConnected)
   const roomJoined = useAppSelector((state) => state.room.roomJoined)
   useAutoBackgroundMode()
+  const media = loggedIn ? (phaserGame.scene.keys.game as Game).network.media : undefined
 
   let ui: React.JSX.Element
   if (loggedIn) {
@@ -72,6 +76,7 @@ function App() {
       {ui}
       {/* Render MediaControls once my webcam/mic is connected. */}
       {loggedIn && videoConnected && <MediaControls />}
+      {loggedIn && media && <VideoGrid media={media} />}
     </Backdrop>
   )
 }

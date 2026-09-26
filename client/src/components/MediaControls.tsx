@@ -32,7 +32,7 @@ const Wrapper = styled.div`
 export default function MediaControls() {
   const microphoneEnabled = useAppSelector((state) => state.user.microphoneEnabled)
   const cameraEnabled = useAppSelector((state) => state.user.cameraEnabled)
-  const webRTC = (phaserGame.scene.keys.game as Game).network.webRTC
+  const media = (phaserGame.scene.keys.game as Game).network.media
 
   return (
     <Wrapper>
@@ -43,7 +43,7 @@ export default function MediaControls() {
             aria-label="toggle microphone"
             className={microphoneEnabled === false ? 'off' : ''}
             disabled={microphoneEnabled === null}
-            onClick={() => webRTC?.setMicrophoneEnabled(!microphoneEnabled)}
+            onClick={() => media?.setMicrophoneEnabled(!microphoneEnabled)}
           >
             {microphoneEnabled === false ? <MicOffIcon /> : <MicIcon />}
           </StyledFab>
@@ -56,7 +56,7 @@ export default function MediaControls() {
             aria-label="toggle camera"
             className={cameraEnabled === false ? 'off' : ''}
             disabled={cameraEnabled === null}
-            onClick={() => webRTC?.setCameraEnabled(!cameraEnabled)}
+            onClick={() => media?.setCameraEnabled(!cameraEnabled)}
           >
             {cameraEnabled === false ? <VideocamOffIcon /> : <VideocamIcon />}
           </StyledFab>

@@ -36,26 +36,19 @@ export default class Computer extends Item {
   addCurrentUser(userId: string) {
     if (!this.currentUsers || this.currentUsers.has(userId)) return
     this.currentUsers.add(userId)
-    const computerState = store.getState().computer
-    if (computerState.computerId === this.id) {
-      computerState.shareScreenManager?.onUserJoined(userId)
-    }
     this.updateStatus()
   }
 
   removeCurrentUser(userId: string) {
     if (!this.currentUsers || !this.currentUsers.has(userId)) return
     this.currentUsers.delete(userId)
-    const computerState = store.getState().computer
-    if (computerState.computerId === this.id) {
-      computerState.shareScreenManager?.onUserLeft(userId)
-    }
     this.updateStatus()
   }
 
-  openDialog(playerId: string, network: Network) {
+  openDialog(network: Network) {
     if (!this.id) return
-    store.dispatch(openComputerDialog({ computerId: this.id, myUserId: playerId }))
+    // connect first: the server only hands out the screen sharing token to users at the computer
     network.connectToComputer(this.id)
+    store.dispatch(openComputerDialog({ computerId: this.id }))
   }
 }

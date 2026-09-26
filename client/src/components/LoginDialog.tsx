@@ -116,8 +116,7 @@ export default function LoginDialog() {
       dispatch(setAudioOutputId(media.settings.audioOutputId))
       // hand the preview stream over to the video chat instead of requesting a new one
       const stream = media.release()
-      if (stream) game.network.webRTC?.useMediaStream(stream, media.settings)
-      game.network.readyToConnect()
+      if (stream) game.network.media?.useMediaStream(stream, media.settings)
       game.zoomToPlayer()
       dispatch(setLoggedIn(true))
     }

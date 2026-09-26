@@ -73,12 +73,11 @@ function SettingsContent({ onClose }: { onClose: () => void }) {
     if (trimmedName !== game.myPlayer.playerName.text) game.myPlayer.setPlayerName(trimmedName)
     if (avatar !== game.myPlayer.playerTexture) game.myPlayer.setPlayerTexture(avatar)
 
-    const webRTC = game.network.webRTC
+    const mediaManager = game.network.media
     dispatch(setAudioOutputId(media.settings.audioOutputId))
-    webRTC?.setAudioOutput(media.settings.audioOutputId)
     // take over the preview stream, so device changes apply to running calls right away
     const stream = media.release()
-    if (stream) webRTC?.replaceMediaStream(stream, media.settings)
+    if (stream) mediaManager?.replaceMediaStream(stream, media.settings)
 
     onClose()
   }
