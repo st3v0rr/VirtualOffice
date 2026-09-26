@@ -30,6 +30,11 @@ import type {
   UpdateNoteMessage,
 } from '../../../types/Whiteboard'
 
+// how often my position is sent while moving (15 times per second)
+const PLAYER_UPDATE_INTERVAL = 66 // ms
+
+type PlayerUpdate = { x: number; y: number; anim: string }
+
 // player fields which are forwarded to the game scene whenever they change
 const PLAYER_FIELDS = ['name', 'x', 'y', 'anim', 'readyToConnect', 'videoConnected'] as const
 
@@ -40,6 +45,11 @@ export default class Network {
   webRTC?: WebRTC
 
   mySessionId!: string
+
+  private pendingPlayerUpdate?: PlayerUpdate
+  private lastSentPlayerUpdate?: PlayerUpdate
+  private lastPlayerUpdateTime = 0
+  private playerUpdateTimer?: number
 
   constructor() {
     const protocol = window.location.protocol.replace('http', 'ws')
@@ -281,9 +291,27 @@ export default class Network {
     phaserEvents.on(Event.PLAYER_UPDATED, callback, context)
   }
 
-  // method to send player updates to Colyseus server
+  // method to send player updates to Colyseus server, at most every PLAYER_UPDATE_INTERVAL
+  // (the other clients move players smoothly towards the received positions)
   updatePlayer(currentX: number, currentY: number, currentAnim: string) {
-    this.room?.send(Message.UPDATE_PLAYER, { x: currentX, y: currentY, anim: currentAnim })
+    this.pendingPlayerUpdate = { x: currentX, y: currentY, anim: currentAnim }
+    const wait = PLAYER_UPDATE_INTERVAL - (performance.now() - this.lastPlayerUpdateTime)
+    if (wait <= 0) this.flushPlayerUpdate()
+    else this.playerUpdateTimer ??= window.setTimeout(() => this.flushPlayerUpdate(), wait)
+  }
+
+  private flushPlayerUpdate() {
+    window.clearTimeout(this.playerUpdateTimer)
+    this.playerUpdateTimer = undefined
+    const update = this.pendingPlayerUpdate
+    this.pendingPlayerUpdate = undefined
+    if (!update) return
+
+    const last = this.lastSentPlayerUpdate
+    if (last && last.x === update.x && last.y === update.y && last.anim === update.anim) return
+    this.room?.send(Message.UPDATE_PLAYER, update)
+    this.lastSentPlayerUpdate = update
+    this.lastPlayerUpdateTime = performance.now()
   }
 
   // method to send player name to Colyseus server

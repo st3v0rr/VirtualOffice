@@ -3,6 +3,7 @@ import Player from './Player'
 import MyPlayer from './MyPlayer'
 import { sittingShiftData } from './Player'
 import WebRTC from '../web/WebRTC'
+import type Game from '../scenes/Game'
 import { Event, phaserEvents } from '../events/EventCenter'
 
 export default class OtherPlayer extends Player {
@@ -161,7 +162,11 @@ export default class OtherPlayer extends Player {
       this.body!.touching.none &&
       this.connectionBufferTime >= 750
     ) {
-      if (this.x < 610 && this.y > 515 && this.myPlayer!.x < 610 && this.myPlayer!.y > 515) return
+      // in the same meeting room everyone stays connected, regardless of distance
+      const game = this.scene as Game
+      const zone = game.zoneAt(this.x, this.y)
+      if (zone?.type === 'meeting' && zone === game.zoneAt(this.myPlayer!.x, this.myPlayer!.y))
+        return
       phaserEvents.emit(Event.PLAYER_DISCONNECTED, this.playerId)
       this.connectionBufferTime = 0
       this.connected = false

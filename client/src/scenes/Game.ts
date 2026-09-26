@@ -17,10 +17,35 @@ import Network from '../services/Network'
 import { IPlayer } from '../../../types/IOfficeState'
 import { PlayerBehavior } from '../../../types/PlayerBehavior'
 import { ItemType } from '../../../types/Items'
+import { findZone, getProperty, parseOfficeMap, type OfficeMap } from '../../../types/OfficeMap'
 
 import store from '../stores'
 import { setFocused, setShowChat } from '../stores/ChatStore'
 import { NavKeys, Keyboard } from '../../../types/KeyboardState'
+
+// spritesheet keys (see Bootstrap) of the tilesets used in the Tiled map
+const TILESET_TEXTURES: Record<string, string> = {
+  FloorAndGround: 'tiles_wall',
+  Modern_Office_Black_Shadow: 'office',
+  Generic: 'generic',
+  Basement: 'basement',
+  Classroom_and_library: 'library',
+  chair: 'chairs',
+  computer: 'computers',
+  whiteboard: 'whiteboards',
+  vendingmachine: 'vendingmachines',
+}
+// object layers with their own handling, all others are decoration
+const SPECIAL_LAYERS = new Set([
+  'Chair',
+  'Computer',
+  'Whiteboard',
+  'VendingMachine',
+  'Spawn',
+  'Zones',
+])
+// decoration layers of the original map that block movement; new layers use a `collides` property
+const LEGACY_COLLIDING_LAYERS = new Set(['ObjectsOnCollide', 'GenericObjectsOnCollide', 'Basement'])
 
 const PLAYER_ZOOM = 1.5
 const ZOOM_IN_DURATION = 1500 // ms
@@ -41,6 +66,7 @@ export default class Game extends Phaser.Scene {
   private otherPlayerMap = new Map<string, OtherPlayer>()
   computerMap = new Map<string, Computer>()
   private whiteboardMap = new Map<string, Whiteboard>()
+  officeMap!: OfficeMap
   private inOverview = false
 
   constructor() {
@@ -117,58 +143,47 @@ export default class Game extends Phaser.Scene {
 
     // debugDraw(groundLayer, this)
 
-    this.myPlayer = this.add.myPlayer(705, 500, 'adam', this.network.mySessionId)
+    this.officeMap = parseOfficeMap(this.cache.tilemap.get('tilemap').data)
+    const { spawn } = this.officeMap
+    this.myPlayer = this.add.myPlayer(spawn.x, spawn.y, 'adam', this.network.mySessionId)
     this.playerSelector = new PlayerSelector(this, 0, 0, 16, 16)
 
     // import chair objects from Tiled map to Phaser
     const chairs = this.physics.add.staticGroup({ classType: Chair })
-    const chairLayer = this.map.getObjectLayer('Chair')!
-    chairLayer.objects.forEach((chairObj) => {
-      const item = this.addObjectFromTiled(chairs, chairObj, 'chairs', 'chair') as Chair
-      // custom properties[0] is the object direction specified in Tiled
-      item.itemDirection = chairObj.properties[0].value
+    this.getObjectLayer('Chair').forEach((chairObj) => {
+      const item = this.addObjectFromTiled(chairs, chairObj) as Chair
+      // the direction the player faces when sitting, set as custom property in Tiled
+      item.itemDirection = getProperty<string>(chairObj, 'direction') ?? 'down'
     })
 
-    // import computers objects from Tiled map to Phaser
+    // items are identified by their Tiled object id, the server uses the same ids
     const computers = this.physics.add.staticGroup({ classType: Computer })
-    const computerLayer = this.map.getObjectLayer('Computer')!
-    computerLayer.objects.forEach((obj, i) => {
-      const item = this.addObjectFromTiled(computers, obj, 'computers', 'computer') as Computer
+    this.getObjectLayer('Computer').forEach((obj) => {
+      const item = this.addObjectFromTiled(computers, obj) as Computer
       item.setDepth(item.y + item.height * 0.27)
-      const id = `${i}`
-      item.id = id
-      this.computerMap.set(id, item)
+      item.id = String(obj.id)
+      this.computerMap.set(item.id, item)
     })
 
-    // import whiteboards objects from Tiled map to Phaser
     const whiteboards = this.physics.add.staticGroup({ classType: Whiteboard })
-    const whiteboardLayer = this.map.getObjectLayer('Whiteboard')!
-    whiteboardLayer.objects.forEach((obj, i) => {
-      const item = this.addObjectFromTiled(
-        whiteboards,
-        obj,
-        'whiteboards',
-        'whiteboard'
-      ) as Whiteboard
-      const id = `${i}`
-      item.id = id
-      this.whiteboardMap.set(id, item)
+    this.getObjectLayer('Whiteboard').forEach((obj) => {
+      const item = this.addObjectFromTiled(whiteboards, obj) as Whiteboard
+      item.id = String(obj.id)
+      this.whiteboardMap.set(item.id, item)
     })
 
-    // import vending machine objects from Tiled map to Phaser
     const vendingMachines = this.physics.add.staticGroup({ classType: VendingMachine })
-    const vendingMachineLayer = this.map.getObjectLayer('VendingMachine')!
-    vendingMachineLayer.objects.forEach((obj, i) => {
-      this.addObjectFromTiled(vendingMachines, obj, 'vendingmachines', 'vendingmachine')
+    this.getObjectLayer('VendingMachine').forEach((obj) => {
+      this.addObjectFromTiled(vendingMachines, obj)
     })
 
-    // import other objects from Tiled map to Phaser
-    this.addGroupFromTiled('Wall', 'tiles_wall', 'FloorAndGround', false)
-    this.addGroupFromTiled('Objects', 'office', 'Modern_Office_Black_Shadow', false)
-    this.addGroupFromTiled('ObjectsOnCollide', 'office', 'Modern_Office_Black_Shadow', true)
-    this.addGroupFromTiled('GenericObjects', 'generic', 'Generic', false)
-    this.addGroupFromTiled('GenericObjectsOnCollide', 'generic', 'Generic', true)
-    this.addGroupFromTiled('Basement', 'basement', 'Basement', true)
+    // every other object layer is decoration
+    for (const layer of this.map.objects) {
+      if (SPECIAL_LAYERS.has(layer.name)) continue
+      const collides =
+        getProperty<boolean>(layer, 'collides') ?? LEGACY_COLLIDING_LAYERS.has(layer.name)
+      this.addGroupFromTiled(layer, collides)
+    }
 
     this.otherPlayers = this.physics.add.group({ classType: OtherPlayer })
 
@@ -224,37 +239,45 @@ export default class Game extends Phaser.Scene {
     selectionItem.onOverlapDialog()
   }
 
-  private addObjectFromTiled(
-    group: Phaser.Physics.Arcade.StaticGroup,
-    object: Phaser.Types.Tilemaps.TiledObject,
-    key: string,
-    tilesetName: string
-  ) {
-    const actualX = object.x! + object.width! * 0.5
-    const actualY = object.y! - object.height! * 0.5
-    const obj = group
-      .get(actualX, actualY, key, object.gid! - this.map.getTileset(tilesetName)!.firstgid)
-      .setDepth(actualY)
-    return obj
+  private getObjectLayer(name: string) {
+    return this.map.getObjectLayer(name)?.objects ?? []
   }
 
-  private addGroupFromTiled(
-    objectLayerName: string,
-    key: string,
-    tilesetName: string,
-    collidable: boolean
+  // the spritesheet and frame for a Tiled object, derived from the tileset its gid belongs to
+  private getTextureFrame(object: Phaser.Types.Tilemaps.TiledObject) {
+    const gid = object.gid!
+    let tileset = this.map.tilesets[0]
+    for (const candidate of this.map.tilesets) {
+      if (candidate.firstgid <= gid && candidate.firstgid >= tileset.firstgid) tileset = candidate
+    }
+    const texture = TILESET_TEXTURES[tileset.name]
+    if (!texture) throw new Error(`No spritesheet loaded for tileset ${tileset.name}`)
+    return { texture, frame: gid - tileset.firstgid }
+  }
+
+  private addObjectFromTiled(
+    group: Phaser.Physics.Arcade.StaticGroup,
+    object: Phaser.Types.Tilemaps.TiledObject
   ) {
+    const { texture, frame } = this.getTextureFrame(object)
+    // Tiled anchors objects at their bottom left corner
+    const actualX = object.x! + object.width! * 0.5
+    const actualY = object.y! - object.height! * 0.5
+    return group.get(actualX, actualY, texture, frame).setDepth(actualY)
+  }
+
+  private addGroupFromTiled(layer: Phaser.Tilemaps.ObjectLayer, collidable: boolean) {
     const group = this.physics.add.staticGroup()
-    const objectLayer = this.map.getObjectLayer(objectLayerName)!
-    objectLayer.objects.forEach((object) => {
-      const actualX = object.x! + object.width! * 0.5
-      const actualY = object.y! - object.height! * 0.5
-      group
-        .get(actualX, actualY, key, object.gid! - this.map.getTileset(tilesetName)!.firstgid)
-        .setDepth(actualY)
+    layer.objects.forEach((object) => {
+      if (object.gid) this.addObjectFromTiled(group, object)
     })
     if (this.myPlayer && collidable)
       this.physics.add.collider([this.myPlayer, this.myPlayer.playerContainer], group)
+  }
+
+  // the zone (meeting room, focus booth, ...) at a position in the office
+  zoneAt(x: number, y: number) {
+    return findZone(this.officeMap.zones, x, y)
   }
 
   // function to add new player to the otherPlayer group

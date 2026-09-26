@@ -4,6 +4,7 @@ import { Dispatcher } from '@colyseus/command'
 import { Player, OfficeState, Computer, Whiteboard } from './schema/OfficeState.ts'
 import { Message } from '../../types/Messages.ts'
 import type { IRoomData } from '../../types/Rooms.ts'
+import { officeMap } from '../officeMap.ts'
 import PlayerUpdateCommand from './commands/PlayerUpdateCommand.ts'
 import PlayerUpdateNameCommand from './commands/PlayerUpdateNameCommand.ts'
 import {
@@ -51,14 +52,12 @@ export class SkyOffice extends Room<{ state: OfficeState }> {
     }
     this.setMetadata({ name, description, hasPassword })
 
-    // HARD-CODED: Add 5 computers in a room
-    for (let i = 0; i < 5; i++) {
-      this.state.computers.set(String(i), new Computer())
+    // one entry per computer and whiteboard placed in the map
+    for (const id of officeMap.computerIds) {
+      this.state.computers.set(id, new Computer())
     }
-
-    // HARD-CODED: Add 3 whiteboards in a room
-    for (let i = 0; i < 3; i++) {
-      this.state.whiteboards.set(String(i), new Whiteboard())
+    for (const id of officeMap.whiteboardIds) {
+      this.state.whiteboards.set(id, new Whiteboard())
     }
 
     // when a player connect to a computer, add to the computer connectedUser array
@@ -195,7 +194,10 @@ export class SkyOffice extends Room<{ state: OfficeState }> {
   }
 
   onJoin(client: Client) {
-    this.state.players.set(client.sessionId, new Player())
+    const player = new Player()
+    player.x = officeMap.spawn.x
+    player.y = officeMap.spawn.y
+    this.state.players.set(client.sessionId, player)
     client.send(Message.SEND_ROOM_DATA, {
       id: this.roomId,
       name: this.name,

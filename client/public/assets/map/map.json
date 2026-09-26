@@ -4229,9 +4229,54 @@
          "visible":true,
          "x":0,
          "y":0
+        }, 
+        {
+         "draworder":"topdown",
+         "id":15,
+         "name":"Spawn",
+         "objects":[
+                {
+                 "height":0,
+                 "id":1269,
+                 "name":"spawn",
+                 "point":true,
+                 "rotation":0,
+                 "type":"",
+                 "visible":true,
+                 "width":0,
+                 "x":705,
+                 "y":500
+                }],
+         "opacity":1,
+         "type":"objectgroup",
+         "visible":true,
+         "x":0,
+         "y":0
+        }, 
+        {
+         "draworder":"topdown",
+         "id":16,
+         "name":"Zones",
+         "objects":[
+                {
+                 "height":260,
+                 "id":1270,
+                 "name":"Meeting Room",
+                 "rotation":0,
+                 "type":"meeting",
+                 "visible":true,
+                 "width":430,
+                 "x":180,
+                 "y":515
+                }],
+         "opacity":1,
+         "type":"objectgroup",
+         "visible":false,
+         "x":0,
+         "y":0
         }],
- "nextlayerid":15,
- "nextobjectid":1269,
+ "nextlayerid":17,
+ "nextobjectid":1271,
  "orientation":"orthogonal",
  "renderorder":"right-down",
  "tiledversion":"1.7.0",
