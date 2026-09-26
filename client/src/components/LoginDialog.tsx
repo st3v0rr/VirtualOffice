@@ -3,22 +3,15 @@ import styled from 'styled-components'
 import TextField from '@mui/material/TextField'
 import Button from '@mui/material/Button'
 import Avatar from '@mui/material/Avatar'
-import Alert from '@mui/material/Alert'
-import AlertTitle from '@mui/material/AlertTitle'
 import ArrowRightIcon from '@mui/icons-material/ArrowRight'
 
-import { Swiper, SwiperSlide } from 'swiper/react'
-import { Navigation } from 'swiper'
-import 'swiper/css'
-import 'swiper/css/navigation'
-
-import Adam from '../images/login/Adam_login.png'
-import Ash from '../images/login/Ash_login.png'
-import Lucy from '../images/login/Lucy_login.png'
-import Nancy from '../images/login/Nancy_login.png'
 import { useAppSelector, useAppDispatch } from '../hooks'
-import { setLoggedIn } from '../stores/UserStore'
+import { setAudioOutputId, setLoggedIn } from '../stores/UserStore'
 import { getAvatarString, getColorByString } from '../util'
+import MediaSetup, { useMediaSetup } from './MediaSetup'
+import AvatarPicker, { randomAvatar } from './AvatarPicker'
+import { loadProfile, saveProfile } from '../utils/profile'
+import { saveMediaSettings } from '../web/mediaDevices'
 
 import phaserGame from '../PhaserGame'
 import Game from '../scenes/Game'
@@ -32,6 +25,8 @@ const Wrapper = styled.form`
   border-radius: 16px;
   padding: 36px 60px;
   box-shadow: 0px 0px 5px #0000006f;
+  max-height: calc(100vh - 32px);
+  overflow-y: auto;
 `
 
 const Title = styled.p`
@@ -82,35 +77,10 @@ const Content = styled.div`
 
 const Left = styled.div`
   margin-right: 48px;
-
-  --swiper-navigation-size: 24px;
-
-  .swiper {
-    width: 160px;
-    height: 220px;
-    border-radius: 8px;
-    overflow: hidden;
-  }
-
-  .swiper-slide {
-    width: 160px;
-    height: 220px;
-    background: #dbdbe0;
-    display: flex;
-    justify-content: center;
-    align-items: center;
-  }
-
-  .swiper-slide img {
-    display: block;
-    width: 95px;
-    height: 136px;
-    object-fit: contain;
-  }
 `
 
 const Right = styled.div`
-  width: 300px;
+  width: 320px;
 `
 
 const Bottom = styled.div`
@@ -119,48 +89,36 @@ const Bottom = styled.div`
   justify-content: center;
 `
 
-const Warning = styled.div`
-  margin-top: 30px;
-  position: relative;
-  display: flex;
-  flex-direction: column;
-  gap: 3px;
-`
-
-const avatars = [
-  { name: 'adam', img: Adam },
-  { name: 'ash', img: Ash },
-  { name: 'lucy', img: Lucy },
-  { name: 'nancy', img: Nancy },
-]
-
-// shuffle the avatars array
-for (let i = avatars.length - 1; i > 0; i--) {
-  const j = Math.floor(Math.random() * (i + 1))
-  ;[avatars[i], avatars[j]] = [avatars[j], avatars[i]]
-}
-
 export default function LoginDialog() {
-  const [name, setName] = useState<string>('')
-  const [avatarIndex, setAvatarIndex] = useState<number>(0)
+  // prefill with the profile from the last visit
+  const [savedProfile] = useState(loadProfile)
+  const [name, setName] = useState<string>(savedProfile?.name ?? '')
+  const [avatar, setAvatar] = useState<string>(() => savedProfile?.avatar ?? randomAvatar())
   const [nameFieldEmpty, setNameFieldEmpty] = useState<boolean>(false)
   const dispatch = useAppDispatch()
-  const videoConnected = useAppSelector((state) => state.user.videoConnected)
   const roomJoined = useAppSelector((state) => state.room.roomJoined)
   const roomName = useAppSelector((state) => state.room.roomName)
   const roomDescription = useAppSelector((state) => state.room.roomDescription)
   const game = phaserGame.scene.keys.game as Game
+  const media = useMediaSetup()
 
   const handleSubmit = (event: React.FormEvent<HTMLFormElement>) => {
     event.preventDefault()
-    if (name === '') {
+    const trimmedName = name.trim()
+    if (trimmedName === '') {
       setNameFieldEmpty(true)
     } else if (roomJoined) {
-      console.log('Join! Name:', name, 'Avatar:', avatars[avatarIndex].name)
+      saveProfile({ name: trimmedName, avatar })
+      saveMediaSettings(media.settings)
       game.registerKeys()
-      game.myPlayer.setPlayerName(name)
-      game.myPlayer.setPlayerTexture(avatars[avatarIndex].name)
+      game.myPlayer.setPlayerName(trimmedName)
+      game.myPlayer.setPlayerTexture(avatar)
+      dispatch(setAudioOutputId(media.settings.audioOutputId))
+      // hand the preview stream over to the video chat instead of requesting a new one
+      const stream = media.release()
+      if (stream) game.network.webRTC?.useMediaStream(stream, media.settings)
       game.network.readyToConnect()
+      game.zoomToPlayer()
       dispatch(setLoggedIn(true))
     }
   }
@@ -180,21 +138,7 @@ export default function LoginDialog() {
       <Content>
         <Left>
           <SubTitle>Select an avatar</SubTitle>
-          <Swiper
-            modules={[Navigation]}
-            navigation
-            spaceBetween={0}
-            slidesPerView={1}
-            onSlideChange={(swiper) => {
-              setAvatarIndex(swiper.activeIndex)
-            }}
-          >
-            {avatars.map((avatar) => (
-              <SwiperSlide key={avatar.name}>
-                <img src={avatar.img} alt={avatar.name} />
-              </SwiperSlide>
-            ))}
-          </Swiper>
+          <AvatarPicker value={avatar} onChange={setAvatar} />
         </Left>
         <Right>
           <TextField
@@ -205,33 +149,10 @@ export default function LoginDialog() {
             color="secondary"
             error={nameFieldEmpty}
             helperText={nameFieldEmpty && 'Name is required'}
-            onInput={(e) => {
-              setName((e.target as HTMLInputElement).value)
-            }}
+            value={name}
+            onChange={(e) => setName(e.target.value)}
           />
-          {!videoConnected && (
-            <Warning>
-              <Alert variant="outlined" severity="warning">
-                <AlertTitle>Warning</AlertTitle>
-                No webcam/mic connected - <strong>connect one for best experience!</strong>
-              </Alert>
-              <Button
-                variant="outlined"
-                color="secondary"
-                onClick={() => {
-                  game.network.webRTC?.getUserMedia()
-                }}
-              >
-                Connect Webcam
-              </Button>
-            </Warning>
-          )}
-
-          {videoConnected && (
-            <Warning>
-              <Alert variant="outlined">Webcam connected!</Alert>
-            </Warning>
-          )}
+          <MediaSetup media={media} />
         </Right>
       </Content>
       <Bottom>

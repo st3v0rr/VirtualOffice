@@ -6,11 +6,10 @@ import Tooltip from '@mui/material/Tooltip'
 import IconButton from '@mui/material/IconButton'
 import InputBase from '@mui/material/InputBase'
 import InsertEmoticonIcon from '@mui/icons-material/InsertEmoticon'
-import ChatBubbleOutlineIcon from '@mui/icons-material/ChatBubbleOutline'
+import ChatBubbleOutlineIcon from '@mui/icons-material/ChatBubbleOutlineOutlined'
 import CloseIcon from '@mui/icons-material/Close'
-import 'emoji-mart/css/emoji-mart.css'
-import { Picker } from 'emoji-mart'
 
+import EmojiPicker from './EmojiPicker'
 import phaserGame from '../PhaserGame'
 import Game from '../scenes/Game'
 
@@ -243,16 +242,12 @@ export default function Chat() {
               <div ref={messagesEndRef} />
               {showEmojiPicker && (
                 <EmojiPickerWrapper>
-                  <Picker
-                    theme="dark"
-                    showSkinTones={false}
-                    showPreview={false}
-                    onSelect={(emoji) => {
+                  <EmojiPicker
+                    onEmojiSelect={(emoji) => {
                       setInputValue(inputValue + emoji.native)
                       setShowEmojiPicker(!showEmojiPicker)
                       dispatch(setFocused(true))
                     }}
-                    exclude={['recent', 'flags']}
                   />
                 </EmojiPickerWrapper>
               )}

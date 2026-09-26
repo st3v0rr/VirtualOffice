@@ -1,7 +1,7 @@
 import React from 'react'
 import styled from 'styled-components'
 
-import { useAppSelector } from './hooks'
+import { useAppSelector, useAutoBackgroundMode } from './hooks'
 
 import RoomSelectionDialog from './components/RoomSelectionDialog'
 import LoginDialog from './components/LoginDialog'
@@ -11,11 +11,21 @@ import VideoConnectionDialog from './components/VideoConnectionDialog'
 import Chat from './components/Chat'
 import HelperButtonGroup from './components/HelperButtonGroup'
 import MobileVirtualJoystick from './components/MobileVirtualJoystick'
+import MediaControls from './components/MediaControls'
 
 const Backdrop = styled.div`
   position: absolute;
   height: 100%;
   width: 100%;
+`
+
+// blurs the office (and the helper buttons) behind the join dialogs
+const JoinBackdrop = styled.div`
+  position: fixed;
+  inset: 0;
+  backdrop-filter: blur(6px);
+  -webkit-backdrop-filter: blur(6px);
+  background: rgba(0, 0, 0, 0.15);
 `
 
 function App() {
@@ -24,8 +34,9 @@ function App() {
   const whiteboardDialogOpen = useAppSelector((state) => state.whiteboard.whiteboardDialogOpen)
   const videoConnected = useAppSelector((state) => state.user.videoConnected)
   const roomJoined = useAppSelector((state) => state.room.roomJoined)
+  useAutoBackgroundMode()
 
-  let ui: JSX.Element
+  let ui: React.JSX.Element
   if (loggedIn) {
     if (computerDialogOpen) {
       /* Render ComputerDialog if user is using a computer. */
@@ -54,9 +65,13 @@ function App() {
 
   return (
     <Backdrop>
-      {ui}
       {/* Render HelperButtonGroup if no dialogs are opened. */}
-      {!computerDialogOpen && !whiteboardDialogOpen && <HelperButtonGroup />}
+      {!computerDialogOpen && !whiteboardDialogOpen && <HelperButtonGroup disabled={!loggedIn} />}
+      {/* While joining, blur everything behind the join dialogs (rendered on top of it). */}
+      {!loggedIn && <JoinBackdrop />}
+      {ui}
+      {/* Render MediaControls once my webcam/mic is connected. */}
+      {loggedIn && videoConnected && <MediaControls />}
     </Backdrop>
   )
 }

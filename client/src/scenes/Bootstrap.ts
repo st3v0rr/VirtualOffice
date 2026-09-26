@@ -93,7 +93,6 @@ export default class Bootstrap extends Phaser.Scene {
 
   launchGame() {
     if (!this.preloadComplete) return
-    this.network.webRTC?.checkPreviousPermission()
     this.scene.launch('game', {
       network: this.network,
     })
@@ -103,6 +102,8 @@ export default class Bootstrap extends Phaser.Scene {
   }
 
   changeBackgroundMode(backgroundMode: BackgroundMode) {
+    // the background is launched with the current mode once the assets are loaded
+    if (!this.preloadComplete) return
     this.scene.stop('background')
     this.launchBackground(backgroundMode)
   }

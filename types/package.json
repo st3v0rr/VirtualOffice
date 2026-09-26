@@ -1,14 +1,11 @@
 {
-  "name": "sky-office-types",
+  "name": "@skyoffice/types",
   "version": "1.0.0",
-  "description": "",
-  "main": "index.js",
-  "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1"
-  },
-  "keywords": [],
+  "private": true,
+  "description": "Shared types for the SkyOffice client and server",
   "license": "MIT",
+  "type": "module",
   "dependencies": {
-    "@colyseus/schema": "^1.0.28"
+    "@colyseus/schema": "^5.0.34"
   }
 }

@@ -1,7 +1,7 @@
-import { Client, Room } from 'colyseus.js'
-import { IComputer, IOfficeState, IPlayer, IWhiteboard } from '../../../types/IOfficeState'
+import { Callbacks, Client, type Room } from '@colyseus/sdk'
+import type { IOfficeState, IPlayer } from '../../../types/IOfficeState'
 import { Message } from '../../../types/Messages'
-import { IRoomData, RoomType } from '../../../types/Rooms'
+import { type IRoomData, RoomType } from '../../../types/Rooms'
 import { ItemType } from '../../../types/Items'
 import WebRTC from '../web/WebRTC'
 import { phaserEvents, Event } from '../events/EventCenter'
@@ -21,9 +21,12 @@ import {
 } from '../stores/ChatStore'
 import { setWhiteboardUrls } from '../stores/WhiteboardStore'
 
+// player fields which are forwarded to the game scene whenever they change
+const PLAYER_FIELDS = ['name', 'x', 'y', 'anim', 'readyToConnect', 'videoConnected'] as const
+
 export default class Network {
   private client: Client
-  private room?: Room<IOfficeState>
+  private room?: Room<any, IOfficeState>
   private lobby!: Room
   webRTC?: WebRTC
 
@@ -31,10 +34,9 @@ export default class Network {
 
   constructor() {
     const protocol = window.location.protocol.replace('http', 'ws')
-    const endpoint =
-      process.env.NODE_ENV === 'production'
-        ? import.meta.env.VITE_SERVER_URL
-        : `${protocol}//${window.location.hostname}:2567`
+    const endpoint = import.meta.env.PROD
+      ? import.meta.env.VITE_SERVER_URL
+      : `${protocol}//${window.location.hostname}:2567`
     this.client = new Client(endpoint)
     this.joinLobbyRoom().then(() => {
       store.dispatch(setLobbyJoined(true))
@@ -98,48 +100,51 @@ export default class Network {
     store.dispatch(setSessionId(this.room.sessionId))
     this.webRTC = new WebRTC(this.mySessionId, this)
 
+    const $ = Callbacks.get(this.room)
+
     // new instance added to the players MapSchema
-    this.room.state.players.onAdd = (player: IPlayer, key: string) => {
+    $.onAdd('players', (player, key) => {
       if (key === this.mySessionId) return
 
-      // track changes on every child object inside the players MapSchema
-      player.onChange = (changes) => {
-        changes.forEach((change) => {
-          const { field, value } = change
-          phaserEvents.emit(Event.PLAYER_UPDATED, field, value, key)
-
+      // track changes on every field of the child object inside the players MapSchema
+      PLAYER_FIELDS.forEach((field) => {
+        $.listen(player, field, (value, previousValue) => {
           // when a new player finished setting up player name
-          if (field === 'name' && value !== '') {
+          if (field === 'name' && value !== '' && !previousValue) {
             phaserEvents.emit(Event.PLAYER_JOINED, player, key)
-            store.dispatch(setPlayerNameMap({ id: key, name: value }))
-            store.dispatch(pushPlayerJoinedMessage(value))
+            store.dispatch(pushPlayerJoinedMessage(value as string))
           }
+          if (field === 'name' && value !== '') {
+            store.dispatch(setPlayerNameMap({ id: key, name: value as string }))
+          }
+
+          phaserEvents.emit(Event.PLAYER_UPDATED, field, value, key)
         })
-      }
-    }
+      })
+    })
 
     // an instance removed from the players MapSchema
-    this.room.state.players.onRemove = (player: IPlayer, key: string) => {
+    $.onRemove('players', (player, key) => {
       phaserEvents.emit(Event.PLAYER_LEFT, key)
       this.webRTC?.deleteVideoStream(key)
       this.webRTC?.deleteOnCalledVideoStream(key)
       store.dispatch(pushPlayerLeftMessage(player.name))
       store.dispatch(removePlayerNameMap(key))
-    }
+    })
 
     // new instance added to the computers MapSchema
-    this.room.state.computers.onAdd = (computer: IComputer, key: string) => {
+    $.onAdd('computers', (computer, key) => {
       // track changes on every child object's connectedUser
-      computer.connectedUser.onAdd = (item, index) => {
+      $.onAdd(computer, 'connectedUser', (item) => {
         phaserEvents.emit(Event.ITEM_USER_ADDED, item, key, ItemType.COMPUTER)
-      }
-      computer.connectedUser.onRemove = (item, index) => {
+      })
+      $.onRemove(computer, 'connectedUser', (item) => {
         phaserEvents.emit(Event.ITEM_USER_REMOVED, item, key, ItemType.COMPUTER)
-      }
-    }
+      })
+    })
 
     // new instance added to the whiteboards MapSchema
-    this.room.state.whiteboards.onAdd = (whiteboard: IWhiteboard, key: string) => {
+    $.onAdd('whiteboards', (whiteboard, key) => {
       store.dispatch(
         setWhiteboardUrls({
           whiteboardId: key,
@@ -147,18 +152,18 @@ export default class Network {
         })
       )
       // track changes on every child object's connectedUser
-      whiteboard.connectedUser.onAdd = (item, index) => {
+      $.onAdd(whiteboard, 'connectedUser', (item) => {
         phaserEvents.emit(Event.ITEM_USER_ADDED, item, key, ItemType.WHITEBOARD)
-      }
-      whiteboard.connectedUser.onRemove = (item, index) => {
+      })
+      $.onRemove(whiteboard, 'connectedUser', (item) => {
         phaserEvents.emit(Event.ITEM_USER_REMOVED, item, key, ItemType.WHITEBOARD)
-      }
-    }
+      })
+    })
 
     // new instance added to the chatMessages ArraySchema
-    this.room.state.chatMessages.onAdd = (item, index) => {
-      store.dispatch(pushChatMessage(item))
-    }
+    $.onAdd('chatMessages', ({ author, createdAt, content }) => {
+      store.dispatch(pushChatMessage({ author, createdAt, content }))
+    })
 
     // when the server sends room data
     this.room.onMessage(Message.SEND_ROOM_DATA, (content) => {

@@ -22,6 +22,13 @@ import store from '../stores'
 import { setFocused, setShowChat } from '../stores/ChatStore'
 import { NavKeys, Keyboard } from '../../../types/KeyboardState'
 
+const PLAYER_ZOOM = 1.5
+const ZOOM_IN_DURATION = 1500 // ms
+// leave a small margin around the map in the overview
+const OVERVIEW_PADDING = 0.95
+// on big screens don't get closer than this, so joining still zooms in noticeably
+const MAX_OVERVIEW_ZOOM = 1
+
 export default class Game extends Phaser.Scene {
   network!: Network
   private cursors!: NavKeys
@@ -34,6 +41,7 @@ export default class Game extends Phaser.Scene {
   private otherPlayerMap = new Map<string, OtherPlayer>()
   computerMap = new Map<string, Computer>()
   private whiteboardMap = new Map<string, Whiteboard>()
+  private inOverview = false
 
   constructor() {
     super('game')
@@ -41,29 +49,55 @@ export default class Game extends Phaser.Scene {
 
   registerKeys() {
     this.cursors = {
-      ...this.input.keyboard.createCursorKeys(),
-      ...(this.input.keyboard.addKeys('W,S,A,D') as Keyboard),
+      ...this.input.keyboard!.createCursorKeys(),
+      ...(this.input.keyboard!.addKeys('W,S,A,D') as Keyboard),
     }
 
     // maybe we can have a dedicated method for adding keys if more keys are needed in the future
-    this.keyE = this.input.keyboard.addKey('E')
-    this.keyR = this.input.keyboard.addKey('R')
-    this.input.keyboard.disableGlobalCapture()
-    this.input.keyboard.on('keydown-ENTER', (event) => {
+    this.keyE = this.input.keyboard!.addKey('E')
+    this.keyR = this.input.keyboard!.addKey('R')
+    this.input.keyboard!.disableGlobalCapture()
+    this.input.keyboard!.on('keydown-ENTER', (event) => {
       store.dispatch(setShowChat(true))
       store.dispatch(setFocused(true))
     })
-    this.input.keyboard.on('keydown-ESC', (event) => {
+    this.input.keyboard!.on('keydown-ESC', (event) => {
       store.dispatch(setShowChat(false))
     })
   }
 
   disableKeys() {
-    this.input.keyboard.enabled = false
+    this.input.keyboard!.enabled = false
   }
 
   enableKeys() {
-    this.input.keyboard.enabled = true
+    this.input.keyboard!.enabled = true
+  }
+
+  // fit the whole map into the view
+  showOverview() {
+    const camera = this.cameras.main
+    const { widthInPixels, heightInPixels } = this.map
+    this.inOverview = true
+    camera.stopFollow()
+    const fitZoom = Math.min(camera.width / widthInPixels, camera.height / heightInPixels)
+    camera.setZoom(Math.min(fitZoom * OVERVIEW_PADDING, MAX_OVERVIEW_ZOOM))
+    camera.centerOn(widthInPixels / 2, heightInPixels / 2)
+  }
+
+  // fly from the overview to my player, then follow it
+  zoomToPlayer() {
+    if (!this.inOverview) return
+    this.inOverview = false
+    const camera = this.cameras.main
+    camera.pan(this.myPlayer.x, this.myPlayer.y, ZOOM_IN_DURATION, 'Sine.easeInOut')
+    camera.zoomTo(PLAYER_ZOOM, ZOOM_IN_DURATION, 'Sine.easeInOut', false, (_camera, progress) => {
+      if (progress === 1) camera.startFollow(this.myPlayer, true)
+    })
+  }
+
+  private handleResize() {
+    if (this.inOverview) this.showOverview()
   }
 
   create(data: { network: Network }) {
@@ -76,9 +110,9 @@ export default class Game extends Phaser.Scene {
     createCharacterAnims(this.anims)
 
     this.map = this.make.tilemap({ key: 'tilemap' })
-    const FloorAndGround = this.map.addTilesetImage('FloorAndGround', 'tiles_wall')
+    const FloorAndGround = this.map.addTilesetImage('FloorAndGround', 'tiles_wall')!
 
-    const groundLayer = this.map.createLayer('Ground', FloorAndGround)
+    const groundLayer = this.map.createLayer('Ground', FloorAndGround)!
     groundLayer.setCollisionByProperty({ collides: true })
 
     // debugDraw(groundLayer, this)
@@ -88,7 +122,7 @@ export default class Game extends Phaser.Scene {
 
     // import chair objects from Tiled map to Phaser
     const chairs = this.physics.add.staticGroup({ classType: Chair })
-    const chairLayer = this.map.getObjectLayer('Chair')
+    const chairLayer = this.map.getObjectLayer('Chair')!
     chairLayer.objects.forEach((chairObj) => {
       const item = this.addObjectFromTiled(chairs, chairObj, 'chairs', 'chair') as Chair
       // custom properties[0] is the object direction specified in Tiled
@@ -97,7 +131,7 @@ export default class Game extends Phaser.Scene {
 
     // import computers objects from Tiled map to Phaser
     const computers = this.physics.add.staticGroup({ classType: Computer })
-    const computerLayer = this.map.getObjectLayer('Computer')
+    const computerLayer = this.map.getObjectLayer('Computer')!
     computerLayer.objects.forEach((obj, i) => {
       const item = this.addObjectFromTiled(computers, obj, 'computers', 'computer') as Computer
       item.setDepth(item.y + item.height * 0.27)
@@ -108,7 +142,7 @@ export default class Game extends Phaser.Scene {
 
     // import whiteboards objects from Tiled map to Phaser
     const whiteboards = this.physics.add.staticGroup({ classType: Whiteboard })
-    const whiteboardLayer = this.map.getObjectLayer('Whiteboard')
+    const whiteboardLayer = this.map.getObjectLayer('Whiteboard')!
     whiteboardLayer.objects.forEach((obj, i) => {
       const item = this.addObjectFromTiled(
         whiteboards,
@@ -123,7 +157,7 @@ export default class Game extends Phaser.Scene {
 
     // import vending machine objects from Tiled map to Phaser
     const vendingMachines = this.physics.add.staticGroup({ classType: VendingMachine })
-    const vendingMachineLayer = this.map.getObjectLayer('VendingMachine')
+    const vendingMachineLayer = this.map.getObjectLayer('VendingMachine')!
     vendingMachineLayer.objects.forEach((obj, i) => {
       this.addObjectFromTiled(vendingMachines, obj, 'vendingmachines', 'vendingmachine')
     })
@@ -138,8 +172,10 @@ export default class Game extends Phaser.Scene {
 
     this.otherPlayers = this.physics.add.group({ classType: OtherPlayer })
 
-    this.cameras.main.zoom = 1.5
-    this.cameras.main.startFollow(this.myPlayer, true)
+    // show the whole office behind the join screen, zoomToPlayer() is called on join
+    this.showOverview()
+    this.scale.on('resize', this.handleResize, this)
+    this.events.once('shutdown', () => this.scale.off('resize', this.handleResize, this))
 
     this.physics.add.collider([this.myPlayer, this.myPlayer.playerContainer], groundLayer)
     this.physics.add.collider([this.myPlayer, this.myPlayer.playerContainer], vendingMachines)
@@ -197,7 +233,7 @@ export default class Game extends Phaser.Scene {
     const actualX = object.x! + object.width! * 0.5
     const actualY = object.y! - object.height! * 0.5
     const obj = group
-      .get(actualX, actualY, key, object.gid! - this.map.getTileset(tilesetName).firstgid)
+      .get(actualX, actualY, key, object.gid! - this.map.getTileset(tilesetName)!.firstgid)
       .setDepth(actualY)
     return obj
   }
@@ -209,12 +245,12 @@ export default class Game extends Phaser.Scene {
     collidable: boolean
   ) {
     const group = this.physics.add.staticGroup()
-    const objectLayer = this.map.getObjectLayer(objectLayerName)
+    const objectLayer = this.map.getObjectLayer(objectLayerName)!
     objectLayer.objects.forEach((object) => {
       const actualX = object.x! + object.width! * 0.5
       const actualY = object.y! - object.height! * 0.5
       group
-        .get(actualX, actualY, key, object.gid! - this.map.getTileset(tilesetName).firstgid)
+        .get(actualX, actualY, key, object.gid! - this.map.getTileset(tilesetName)!.firstgid)
         .setDepth(actualY)
     })
     if (this.myPlayer && collidable)

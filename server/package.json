@@ -1,0 +1,29 @@
+{
+  "name": "@skyoffice/server",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Colyseus server for SkyOffice",
+  "license": "MIT",
+  "type": "module",
+  "scripts": {
+    "dev": "tsx watch index.ts",
+    "build": "tsc",
+    "start": "node lib/server/index.js",
+    "typecheck": "tsc --noEmit"
+  },
+  "dependencies": {
+    "@colyseus/command": "^0.3.2",
+    "@colyseus/schema": "^5.0.34",
+    "bcryptjs": "^3.0.3",
+    "colyseus": "^0.18.8",
+    "cors": "^2.8.6",
+    "express": "^5.2.1"
+  },
+  "devDependencies": {
+    "@types/cors": "^2.8.19",
+    "@types/express": "^5.0.6",
+    "@types/node": "^26.6.3",
+    "tsx": "^4.23.15",
+    "typescript": "~6.0"
+  }
+}

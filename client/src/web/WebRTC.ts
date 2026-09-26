@@ -1,14 +1,20 @@
-import Peer from 'peerjs'
+import Peer, { type MediaConnection } from 'peerjs'
 import Network from '../services/Network'
 import store from '../stores'
-import { setVideoConnected } from '../stores/UserStore'
+import { setCameraEnabled, setMicrophoneEnabled, setVideoConnected } from '../stores/UserStore'
+import {
+  type MediaSettings,
+  applyTrackSettings,
+  getMediaStream,
+  loadMediaSettings,
+  setAudioOutput,
+} from './mediaDevices'
 
 export default class WebRTC {
   private myPeer: Peer
-  private peers = new Map<string, { call: Peer.MediaConnection; video: HTMLVideoElement }>()
-  private onCalledPeers = new Map<string, { call: Peer.MediaConnection; video: HTMLVideoElement }>()
+  private peers = new Map<string, { call: MediaConnection; video: HTMLVideoElement }>()
+  private onCalledPeers = new Map<string, { call: MediaConnection; video: HTMLVideoElement }>()
   private videoGrid = document.querySelector('.video-grid')
-  private buttonGrid = document.querySelector('.button-grid')
   private myVideo = document.createElement('video')
   private myStream?: MediaStream
   private network: Network
@@ -52,31 +58,55 @@ export default class WebRTC {
     })
   }
 
-  // check if permission has been granted before
-  checkPreviousPermission() {
-    const permissionName = 'microphone' as PermissionName
-    navigator.permissions?.query({ name: permissionName }).then((result) => {
-      if (result.state === 'granted') this.getUserMedia(false)
-    })
-  }
-
+  // request camera and microphone with the devices chosen on the join screen
   getUserMedia(alertOnError = true) {
-    // ask the browser to get user media
-    navigator.mediaDevices
-      ?.getUserMedia({
-        video: true,
-        audio: true,
-      })
-      .then((stream) => {
-        this.myStream = stream
-        this.addVideoStream(this.myVideo, this.myStream)
-        this.setUpButtons()
-        store.dispatch(setVideoConnected(true))
-        this.network.videoConnected()
-      })
-      .catch((error) => {
+    const settings = loadMediaSettings()
+    getMediaStream(settings)
+      .then((stream) => this.useMediaStream(stream, settings))
+      .catch(() => {
         if (alertOnError) window.alert('No webcam or microphone found, or permission is blocked')
       })
+  }
+
+  // use an already acquired stream (e.g. the preview from the join screen) for video chat
+  useMediaStream(stream: MediaStream, settings: MediaSettings) {
+    applyTrackSettings(stream, settings)
+    this.myStream = stream
+    this.addVideoStream(this.myVideo, this.myStream)
+    this.syncTrackState()
+    store.dispatch(setVideoConnected(true))
+    this.network.videoConnected()
+  }
+
+  /**
+   * Switch to a new camera/microphone stream (e.g. from the settings dialog) without
+   * hanging up: the tracks sent to the connected players are replaced in place.
+   */
+  replaceMediaStream(stream: MediaStream, settings: MediaSettings) {
+    const oldStream = this.myStream
+    if (!oldStream) return this.useMediaStream(stream, settings)
+
+    applyTrackSettings(stream, settings)
+    this.myStream = stream
+    this.myVideo.srcObject = stream
+
+    for (const { call } of [...this.peers.values(), ...this.onCalledPeers.values()]) {
+      for (const transceiver of call.peerConnection?.getTransceivers() ?? []) {
+        const kind = transceiver.receiver.track.kind
+        const track = stream.getTracks().find((t) => t.kind === kind)
+        if (track) transceiver.sender.replaceTrack(track)
+      }
+    }
+
+    oldStream.getTracks().forEach((track) => track.stop())
+    this.syncTrackState()
+  }
+
+  // switch the speaker used for the audio of all connected players
+  setAudioOutput(deviceId: string) {
+    for (const { video } of [...this.peers.values(), ...this.onCalledPeers.values()]) {
+      setAudioOutput(video, deviceId)
+    }
   }
 
   // method to call a peer
@@ -102,6 +132,7 @@ export default class WebRTC {
   addVideoStream(video: HTMLVideoElement, stream: MediaStream) {
     video.srcObject = stream
     video.playsInline = true
+    if (video !== this.myVideo) setAudioOutput(video, store.getState().user.audioOutputId)
     video.addEventListener('loadedmetadata', () => {
       video.play()
     })
@@ -130,37 +161,21 @@ export default class WebRTC {
     }
   }
 
-  // method to set up mute/unmute and video on/off buttons
-  setUpButtons() {
-    const audioButton = document.createElement('button')
-    audioButton.innerText = 'Mute'
-    audioButton.addEventListener('click', () => {
-      if (this.myStream) {
-        const audioTrack = this.myStream.getAudioTracks()[0]
-        if (audioTrack.enabled) {
-          audioTrack.enabled = false
-          audioButton.innerText = 'Unmute'
-        } else {
-          audioTrack.enabled = true
-          audioButton.innerText = 'Mute'
-        }
-      }
-    })
-    const videoButton = document.createElement('button')
-    videoButton.innerText = 'Video off'
-    videoButton.addEventListener('click', () => {
-      if (this.myStream) {
-        const audioTrack = this.myStream.getVideoTracks()[0]
-        if (audioTrack.enabled) {
-          audioTrack.enabled = false
-          videoButton.innerText = 'Video on'
-        } else {
-          audioTrack.enabled = true
-          videoButton.innerText = 'Video off'
-        }
-      }
-    })
-    this.buttonGrid?.append(audioButton)
-    this.buttonGrid?.append(videoButton)
+  setMicrophoneEnabled(enabled: boolean) {
+    this.myStream?.getAudioTracks().forEach((track) => (track.enabled = enabled))
+    this.syncTrackState()
+  }
+
+  setCameraEnabled(enabled: boolean) {
+    this.myStream?.getVideoTracks().forEach((track) => (track.enabled = enabled))
+    this.syncTrackState()
+  }
+
+  // publish the state of my tracks for the media controls
+  private syncTrackState() {
+    const audioTrack = this.myStream?.getAudioTracks()[0]
+    const videoTrack = this.myStream?.getVideoTracks()[0]
+    store.dispatch(setMicrophoneEnabled(audioTrack ? audioTrack.enabled : null))
+    store.dispatch(setCameraEnabled(videoTrack ? videoTrack.enabled : null))
   }
 }

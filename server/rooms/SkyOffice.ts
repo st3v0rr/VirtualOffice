@@ -1,23 +1,24 @@
-import bcrypt from 'bcrypt'
-import { Room, Client, ServerError } from 'colyseus'
+import bcrypt from 'bcryptjs'
+import { Room, ServerError, type Client } from 'colyseus'
 import { Dispatcher } from '@colyseus/command'
-import { Player, OfficeState, Computer, Whiteboard } from './schema/OfficeState'
-import { Message } from '../../types/Messages'
-import { IRoomData } from '../../types/Rooms'
-import { whiteboardRoomIds } from './schema/OfficeState'
-import PlayerUpdateCommand from './commands/PlayerUpdateCommand'
-import PlayerUpdateNameCommand from './commands/PlayerUpdateNameCommand'
+import { Player, OfficeState, Computer, Whiteboard } from './schema/OfficeState.ts'
+import { Message } from '../../types/Messages.ts'
+import type { IRoomData } from '../../types/Rooms.ts'
+import { whiteboardRoomIds } from './schema/OfficeState.ts'
+import PlayerUpdateCommand from './commands/PlayerUpdateCommand.ts'
+import PlayerUpdateNameCommand from './commands/PlayerUpdateNameCommand.ts'
 import {
   ComputerAddUserCommand,
   ComputerRemoveUserCommand,
-} from './commands/ComputerUpdateArrayCommand'
+} from './commands/ComputerUpdateArrayCommand.ts'
 import {
   WhiteboardAddUserCommand,
   WhiteboardRemoveUserCommand,
-} from './commands/WhiteboardUpdateArrayCommand'
-import ChatMessageUpdateCommand from './commands/ChatMessageUpdateCommand'
+} from './commands/WhiteboardUpdateArrayCommand.ts'
+import ChatMessageUpdateCommand from './commands/ChatMessageUpdateCommand.ts'
 
-export class SkyOffice extends Room<OfficeState> {
+export class SkyOffice extends Room<{ state: OfficeState }> {
+  state = new OfficeState()
   private dispatcher = new Dispatcher(this)
   private name: string
   private description: string
@@ -36,8 +37,6 @@ export class SkyOffice extends Room<OfficeState> {
       hasPassword = true
     }
     this.setMetadata({ name, description, hasPassword })
-
-    this.setState(new OfficeState())
 
     // HARD-CODED: Add 5 computers in a room
     for (let i = 0; i < 5; i++) {
@@ -165,7 +164,7 @@ export class SkyOffice extends Room<OfficeState> {
     return true
   }
 
-  onJoin(client: Client, options: any) {
+  onJoin(client: Client) {
     this.state.players.set(client.sessionId, new Player())
     client.send(Message.SEND_ROOM_DATA, {
       id: this.roomId,
@@ -174,7 +173,7 @@ export class SkyOffice extends Room<OfficeState> {
     })
   }
 
-  onLeave(client: Client, consented: boolean) {
+  onLeave(client: Client) {
     if (this.state.players.has(client.sessionId)) {
       this.state.players.delete(client.sessionId)
     }

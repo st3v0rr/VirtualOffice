@@ -68,7 +68,9 @@ const VideoGrid = styled.div`
       color: #fff;
       overflow: hidden;
       text-overflow: ellipsis;
-      text-shadow: 0 1px 2px rgb(0 0 0 / 60%), 0 0 2px rgb(0 0 0 / 30%);
+      text-shadow:
+        0 1px 2px rgb(0 0 0 / 60%),
+        0 0 2px rgb(0 0 0 / 30%);
       white-space: nowrap;
     }
   }

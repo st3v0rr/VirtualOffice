@@ -1,25 +1,22 @@
 import React, { useState } from 'react'
 import styled from 'styled-components'
-import Fab from '@mui/material/Fab'
 import IconButton from '@mui/material/IconButton'
 import Avatar from '@mui/material/Avatar'
 import Tooltip from '@mui/material/Tooltip'
-import HelpOutlineIcon from '@mui/icons-material/HelpOutline'
+import HelpOutlineIcon from '@mui/icons-material/HelpOutlineOutlined'
 import ShareIcon from '@mui/icons-material/Share'
-import LightModeIcon from '@mui/icons-material/LightMode'
-import DarkModeIcon from '@mui/icons-material/DarkMode'
 import CloseIcon from '@mui/icons-material/Close'
 import LightbulbIcon from '@mui/icons-material/Lightbulb'
 import ArrowRightIcon from '@mui/icons-material/ArrowRight'
-import GitHubIcon from '@mui/icons-material/GitHub'
-import TwitterIcon from '@mui/icons-material/Twitter'
+import SettingsIcon from '@mui/icons-material/Settings'
 import VideogameAssetIcon from '@mui/icons-material/VideogameAsset'
 import VideogameAssetOffIcon from '@mui/icons-material/VideogameAssetOff'
 
-import { BackgroundMode } from '../../../types/BackgroundMode'
-import { setShowJoystick, toggleBackgroundMode } from '../stores/UserStore'
+import { setShowJoystick } from '../stores/UserStore'
 import { useAppSelector, useAppDispatch } from '../hooks'
 import { getAvatarString, getColorByString } from '../util'
+import StyledFab from './StyledFab'
+import SettingsDialog from './SettingsDialog'
 
 const Backdrop = styled.div`
   position: fixed;
@@ -99,17 +96,13 @@ const RoomDescription = styled.div`
   justify-content: center;
 `
 
-const StyledFab = styled(Fab)<{ target?: string }>`
-  &:hover {
-    color: #1ea2df;
-  }
-`
-
-export default function HelperButtonGroup() {
+// `disabled` makes the buttons unreachable by mouse and keyboard, e.g. while joining
+export default function HelperButtonGroup({ disabled = false }: { disabled?: boolean }) {
   const [showControlGuide, setShowControlGuide] = useState(false)
   const [showRoomInfo, setShowRoomInfo] = useState(false)
+  const [showSettings, setShowSettings] = useState(false)
+  const loggedIn = useAppSelector((state) => state.user.loggedIn)
   const showJoystick = useAppSelector((state) => state.user.showJoystick)
-  const backgroundMode = useAppSelector((state) => state.user.backgroundMode)
   const roomJoined = useAppSelector((state) => state.room.roomJoined)
   const roomId = useAppSelector((state) => state.room.roomId)
   const roomName = useAppSelector((state) => state.room.roomName)
@@ -117,7 +110,7 @@ export default function HelperButtonGroup() {
   const dispatch = useAppDispatch()
 
   return (
-    <Backdrop>
+    <Backdrop inert={disabled}>
       <div className="wrapper-group">
         {roomJoined && (
           <Tooltip title={showJoystick ? 'Disable virtual joystick' : 'Enable virtual joystick'}>
@@ -206,26 +199,15 @@ export default function HelperButtonGroup() {
             </Tooltip>
           </>
         )}
-        <Tooltip title="Visit Our GitHub">
-          <StyledFab
-            size="small"
-            href="https://github.com/kevinshen56714/SkyOffice"
-            target="_blank"
-          >
-            <GitHubIcon />
-          </StyledFab>
-        </Tooltip>
-        <Tooltip title="Follow Us on Twitter">
-          <StyledFab size="small" href="https://twitter.com/SkyOfficeApp" target="_blank">
-            <TwitterIcon />
-          </StyledFab>
-        </Tooltip>
-        <Tooltip title="Switch Background Theme">
-          <StyledFab size="small" onClick={() => dispatch(toggleBackgroundMode())}>
-            {backgroundMode === BackgroundMode.DAY ? <DarkModeIcon /> : <LightModeIcon />}
-          </StyledFab>
-        </Tooltip>
+        {loggedIn && (
+          <Tooltip title="Settings">
+            <StyledFab size="small" onClick={() => setShowSettings(true)}>
+              <SettingsIcon />
+            </StyledFab>
+          </Tooltip>
+        )}
       </ButtonGroup>
+      <SettingsDialog open={showSettings} onClose={() => setShowSettings(false)} />
     </Backdrop>
   )
 }

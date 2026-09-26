@@ -1,4 +1,4 @@
-import { useEffect, useLayoutEffect, useState } from 'react'
+import { useEffect, useState } from 'react'
 import styled from 'styled-components'
 import JoystickItem from './Joystick'
 
@@ -30,7 +30,7 @@ const JoystickWrapper = styled.div`
 `
 export const minimumScreenWidthSize = 650 //px
 
-const isSmallScreen = (smallScreenSize: number) => {
+const useSmallScreen = (smallScreenSize: number) => {
   const [width, setWidth] = useState(window.innerWidth)
 
   useEffect(() => {
@@ -45,10 +45,8 @@ const isSmallScreen = (smallScreenSize: number) => {
 export default function MobileVirtualJoystick() {
   const showJoystick = useAppSelector((state) => state.user.showJoystick)
   const showChat = useAppSelector((state) => state.chat.showChat)
-  const hasSmallScreen = isSmallScreen(minimumScreenWidthSize)
+  const hasSmallScreen = useSmallScreen(minimumScreenWidthSize)
   const game = phaserGame.scene.keys.game as Game
-
-  useEffect(() => {}, [showJoystick, showChat])
 
   const handleMovement = (movement: JoystickMovement) => {
     game.myPlayer?.handleJoystickMovement(movement)

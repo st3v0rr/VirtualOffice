@@ -33,15 +33,22 @@ export default class MyPlayer extends Player {
   }
 
   setPlayerName(name: string) {
+    // only announce the first name, later changes come from the settings dialog
+    const isFirstName = this.playerName.text === ''
     this.playerName.setText(name)
     phaserEvents.emit(Event.MY_PLAYER_NAME_CHANGE, name)
-    store.dispatch(pushPlayerJoinedMessage(name))
+    if (isFirstName) store.dispatch(pushPlayerJoinedMessage(name))
   }
 
   setPlayerTexture(texture: string) {
     this.playerTexture = texture
-    this.anims.play(`${this.playerTexture}_idle_down`, true)
-    phaserEvents.emit(Event.MY_PLAYER_TEXTURE_CHANGE, this.x, this.y, this.anims.currentAnim.key)
+    // keep the current animation (e.g. sitting) and only swap the character
+    const currentAnim = this.anims.currentAnim?.key
+    const animState = currentAnim
+      ? currentAnim.substring(currentAnim.indexOf('_') + 1)
+      : 'idle_down'
+    this.anims.play(`${this.playerTexture}_${animState}`, true)
+    phaserEvents.emit(Event.MY_PLAYER_TEXTURE_CHANGE, this.x, this.y, this.anims.currentAnim!.key)
   }
 
   handleJoystickMovement(movement: JoystickMovement) {
@@ -62,23 +69,20 @@ export default class MyPlayer extends Player {
     if (Phaser.Input.Keyboard.JustDown(keyR)) {
       switch (item?.itemType) {
         case ItemType.COMPUTER:
-          const computer = item as Computer
-          computer.openDialog(this.playerId, network)
+          ;(item as Computer).openDialog(this.playerId, network)
           break
         case ItemType.WHITEBOARD:
-          const whiteboard = item as Whiteboard
-          whiteboard.openDialog(network)
+          ;(item as Whiteboard).openDialog(network)
           break
         case ItemType.VENDINGMACHINE:
           // hacky and hard-coded, but leaving it as is for now
-          const url = 'https://www.buymeacoffee.com/skyoffice'
-          openURL(url)
+          openURL('https://www.buymeacoffee.com/skyoffice')
           break
       }
     }
 
     switch (this.playerBehavior) {
-      case PlayerBehavior.IDLE:
+      case PlayerBehavior.IDLE: {
         // if press E in front of selected chair
         if (Phaser.Input.Keyboard.JustDown(keyE) && item?.itemType === ItemType.CHAIR) {
           const chairItem = item as Chair
@@ -114,7 +118,7 @@ export default class MyPlayer extends Player {
                 playerSelector.setPosition(0, 0)
               }
               // send new location and anim to server
-              network.updatePlayer(this.x, this.y, this.anims.currentAnim.key)
+              network.updatePlayer(this.x, this.y, this.anims.currentAnim!.key)
             },
             loop: false,
           })
@@ -154,13 +158,13 @@ export default class MyPlayer extends Player {
         }
         // update character velocity
         this.setVelocity(vx, vy)
-        this.body.velocity.setLength(speed)
+        this.body!.velocity.setLength(speed)
         // also update playerNameContainer velocity
         this.playContainerBody.setVelocity(vx, vy)
         this.playContainerBody.velocity.setLength(speed)
 
         // update animation according to velocity and send new location and anim to server
-        if (vx !== 0 || vy !== 0) network.updatePlayer(this.x, this.y, this.anims.currentAnim.key)
+        if (vx !== 0 || vy !== 0) network.updatePlayer(this.x, this.y, this.anims.currentAnim!.key)
         if (vx > 0) {
           this.play(`${this.playerTexture}_run_right`, true)
         } else if (vx < 0) {
@@ -170,29 +174,30 @@ export default class MyPlayer extends Player {
         } else if (vy < 0) {
           this.play(`${this.playerTexture}_run_up`, true)
         } else {
-          const parts = this.anims.currentAnim.key.split('_')
+          const parts = this.anims.currentAnim!.key.split('_')
           parts[1] = 'idle'
           const newAnim = parts.join('_')
           // this prevents idle animation keeps getting called
-          if (this.anims.currentAnim.key !== newAnim) {
+          if (this.anims.currentAnim!.key !== newAnim) {
             this.play(parts.join('_'), true)
             // send new location and anim to server
-            network.updatePlayer(this.x, this.y, this.anims.currentAnim.key)
+            network.updatePlayer(this.x, this.y, this.anims.currentAnim!.key)
           }
         }
         break
+      }
 
       case PlayerBehavior.SITTING:
         // back to idle if player press E while sitting
         if (Phaser.Input.Keyboard.JustDown(keyE)) {
-          const parts = this.anims.currentAnim.key.split('_')
+          const parts = this.anims.currentAnim!.key.split('_')
           parts[1] = 'idle'
           this.play(parts.join('_'), true)
           this.playerBehavior = PlayerBehavior.IDLE
           this.chairOnSit?.clearDialogBox()
           playerSelector.setPosition(this.x, this.y)
           playerSelector.update(this, cursors)
-          network.updatePlayer(this.x, this.y, this.anims.currentAnim.key)
+          network.updatePlayer(this.x, this.y, this.anims.currentAnim!.key)
         }
         break
     }
@@ -225,8 +230,8 @@ Phaser.GameObjects.GameObjectFactory.register(
     this.scene.physics.world.enableBody(sprite, Phaser.Physics.Arcade.DYNAMIC_BODY)
 
     const collisionScale = [0.5, 0.2]
-    sprite.body
-      .setSize(sprite.width * collisionScale[0], sprite.height * collisionScale[1])
+    sprite
+      .body!.setSize(sprite.width * collisionScale[0], sprite.height * collisionScale[1])
       .setOffset(
         sprite.width * (1 - collisionScale[0]) * 0.5,
         sprite.height * (1 - collisionScale[1])

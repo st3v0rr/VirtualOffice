@@ -1,7 +1,10 @@
 import { createSlice, PayloadAction } from '@reduxjs/toolkit'
-import { IChatMessage } from '../../../types/IOfficeState'
+import type { IChatMessage } from '../../../types/IOfficeState'
 import phaserGame from '../PhaserGame'
 import Game from '../scenes/Game'
+
+// plain copy of the synced chat message schema, so it can be stored in redux
+export type ChatMessage = Pick<IChatMessage, 'author' | 'createdAt' | 'content'>
 
 export enum MessageType {
   PLAYER_JOINED,
@@ -12,12 +15,12 @@ export enum MessageType {
 export const chatSlice = createSlice({
   name: 'chat',
   initialState: {
-    chatMessages: new Array<{ messageType: MessageType; chatMessage: IChatMessage }>(),
+    chatMessages: new Array<{ messageType: MessageType; chatMessage: ChatMessage }>(),
     focused: false,
     showChat: true,
   },
   reducers: {
-    pushChatMessage: (state, action: PayloadAction<IChatMessage>) => {
+    pushChatMessage: (state, action: PayloadAction<ChatMessage>) => {
       state.chatMessages.push({
         messageType: MessageType.REGULAR_MESSAGE,
         chatMessage: action.payload,
@@ -30,7 +33,7 @@ export const chatSlice = createSlice({
           createdAt: new Date().getTime(),
           author: action.payload,
           content: 'joined the lobby',
-        } as IChatMessage,
+        },
       })
     },
     pushPlayerLeftMessage: (state, action: PayloadAction<string>) => {
@@ -40,12 +43,13 @@ export const chatSlice = createSlice({
           createdAt: new Date().getTime(),
           author: action.payload,
           content: 'left the lobby',
-        } as IChatMessage,
+        },
       })
     },
     setFocused: (state, action: PayloadAction<boolean>) => {
       const game = phaserGame.scene.keys.game as Game
-      action.payload ? game.disableKeys() : game.enableKeys()
+      if (action.payload) game.disableKeys()
+      else game.enableKeys()
       state.focused = action.payload
     },
     setShowChat: (state, action: PayloadAction<boolean>) => {

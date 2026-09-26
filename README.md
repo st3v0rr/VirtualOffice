@@ -62,35 +62,40 @@ SkyOffice works on all PC browsers (mobile browsers are currently not supported)
 
 ## Prerequisites
 
-You'll need [Node.js](https://nodejs.org/en/), [npm](https://www.npmjs.com/) installed.
+You'll need [Node.js](https://nodejs.org/en/) 22.12 or newer (npm is included).
 
 ## Getting Started
 
-Clone this repository to your local machine:
+Clone this repository and install all dependencies (the repo is an npm workspace with `server`, `client` and `types`):
 
 ```bash
 git clone https://github.com/kevinshen56714/SkyOffice.git
+cd SkyOffice
+npm install
 ```
 
-This will create a folder named `SkyOffice`. You can specify a different folder name like this:
+Start server (`ws://localhost:2567`) and client (`http://localhost:3000`) together:
 
 ```bash
-git clone https://github.com/kevinshen56714/SkyOffice.git my-folder-name
+npm run dev
 ```
 
-To start a server, go into the project folder and install dependencies/run start command:
+or separately with `npm run dev:server` and `npm run dev:client`.
 
-```bash
-cd SkyOffice or 'my-folder-name'
-yarn && yarn start
-```
+## Scripts
 
-To start a client, go into the client folder and install dependencies/run start command:
+| Command             | Description                                            |
+| ------------------- | ------------------------------------------------------ |
+| `npm run dev`       | Start server and client in watch mode                  |
+| `npm run build`     | Build server (`server/lib`) and client (`client/dist`) |
+| `npm start`         | Run the built server                                   |
+| `npm run typecheck` | Type-check all workspaces                              |
+| `npm run lint`      | Lint with ESLint                                       |
+| `npm run format`    | Format with Prettier                                   |
 
-```bash
-cd SkyOffice/client or 'my-folder-name/client'
-yarn && yarn dev
-```
+For production builds of the client, set `VITE_SERVER_URL` to the WebSocket URL of your server (e.g. `wss://my-server.example.com`).
+
+The day/night background follows sunrise and sunset. It uses the center of Germany by default; set `VITE_OFFICE_LATITUDE` and `VITE_OFFICE_LONGITUDE` to use the location of your office instead.
 
 ## Credits 🎉
 

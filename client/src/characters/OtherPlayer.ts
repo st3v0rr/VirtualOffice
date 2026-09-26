@@ -109,7 +109,7 @@ export default class OtherPlayer extends Player {
 
     this.lastUpdateTimestamp = t
     this.setDepth(this.y) // change player.depth based on player.y
-    const animParts = this.anims.currentAnim.key.split('_')
+    const animParts = this.anims.currentAnim!.key.split('_')
     const animState = animParts[1]
     if (animState === 'sit') {
       const animDir = animParts[2]
@@ -147,7 +147,7 @@ export default class OtherPlayer extends Player {
 
     // update character velocity
     this.setVelocity(vx, vy)
-    this.body.velocity.setLength(speed)
+    this.body!.velocity.setLength(speed)
     // also update playerNameContainer velocity
     this.playContainerBody.setVelocity(vx, vy)
     this.playContainerBody.velocity.setLength(speed)
@@ -157,8 +157,8 @@ export default class OtherPlayer extends Player {
     this.connectionBufferTime += dt
     if (
       this.connected &&
-      !this.body.embedded &&
-      this.body.touching.none &&
+      !this.body!.embedded &&
+      this.body!.touching.none &&
       this.connectionBufferTime >= 750
     ) {
       if (this.x < 610 && this.y > 515 && this.myPlayer!.x < 610 && this.myPlayer!.y > 515) return
@@ -203,8 +203,8 @@ Phaser.GameObjects.GameObjectFactory.register(
     this.scene.physics.world.enableBody(sprite, Phaser.Physics.Arcade.DYNAMIC_BODY)
 
     const collisionScale = [6, 4]
-    sprite.body
-      .setSize(sprite.width * collisionScale[0], sprite.height * collisionScale[1])
+    sprite
+      .body!.setSize(sprite.width * collisionScale[0], sprite.height * collisionScale[1])
       .setOffset(
         sprite.width * (1 - collisionScale[0]) * 0.5,
         sprite.height * (1 - collisionScale[1]) * 0.5 + 17
