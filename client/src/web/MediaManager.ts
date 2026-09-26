@@ -22,6 +22,8 @@ import {
 // (the gap avoids flickering connections at the edge)
 const NEAR_DISTANCE = 110
 const FAR_DISTANCE = 170
+// at most this many people close by are connected at once
+const MAX_NEARBY_PEERS = 12
 // wait before connecting again when the video chat server was not reachable
 const RETRY_DELAY = 10_000 // ms
 
@@ -51,6 +53,8 @@ export default class MediaManager {
   private location: MediaLocation | null = null
   private locationKey?: string
   private nearby = new Set<string>()
+  // the closest of the nearby players, the ones I actually listen to
+  private listening = new Set<string>()
   private speaking = new Set<string>()
   private streamCache = new Map<string, MediaStream>()
   // room switches run one after another
@@ -156,7 +160,14 @@ export default class MediaManager {
         changed = true
       }
     }
-    if (changed) this.applySubscriptions()
+    // in a crowd (e.g. the foyer during an event) only connect to the closest players
+    const closest = [...this.nearby]
+      .sort((a, b) => distances.get(a)! - distances.get(b)!)
+      .slice(0, MAX_NEARBY_PEERS)
+    if (changed || closest.some((id) => !this.listening.has(id))) {
+      this.listening = new Set(closest)
+      this.applySubscriptions()
+    }
   }
 
   private async moveTo(location: MediaLocation | null) {
@@ -261,7 +272,7 @@ export default class MediaManager {
   }
 
   private shouldListenTo(identity: string) {
-    return this.location?.mode === 'everyone' || this.nearby.has(identity)
+    return this.location?.mode === 'everyone' || this.listening.has(identity)
   }
 
   private applySubscription(publication: RemoteTrackPublication, participant: RemoteParticipant) {

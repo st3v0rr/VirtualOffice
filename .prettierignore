@@ -3,3 +3,4 @@ dist
 lib
 package-lock.json
 client/public
+tools/map/template.json
