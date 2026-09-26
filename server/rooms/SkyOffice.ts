@@ -4,7 +4,6 @@ import { Dispatcher } from '@colyseus/command'
 import { Player, OfficeState, Computer, Whiteboard } from './schema/OfficeState.ts'
 import { Message } from '../../types/Messages.ts'
 import type { IRoomData } from '../../types/Rooms.ts'
-import { whiteboardRoomIds } from './schema/OfficeState.ts'
 import PlayerUpdateCommand from './commands/PlayerUpdateCommand.ts'
 import PlayerUpdateNameCommand from './commands/PlayerUpdateNameCommand.ts'
 import {
@@ -16,6 +15,20 @@ import {
   WhiteboardRemoveUserCommand,
 } from './commands/WhiteboardUpdateArrayCommand.ts'
 import ChatMessageUpdateCommand from './commands/ChatMessageUpdateCommand.ts'
+import {
+  WhiteboardAddArrowCommand,
+  WhiteboardAddNoteCommand,
+  WhiteboardDeleteArrowCommand,
+  WhiteboardDeleteNoteCommand,
+  WhiteboardUpdateNoteCommand,
+} from './commands/WhiteboardBoardCommands.ts'
+import type {
+  AddArrowMessage,
+  AddNoteMessage,
+  DeleteArrowMessage,
+  DeleteNoteMessage,
+  UpdateNoteMessage,
+} from '../../types/Whiteboard.ts'
 
 export class SkyOffice extends Room<{ state: OfficeState }> {
   state = new OfficeState()
@@ -94,6 +107,23 @@ export class SkyOffice extends Room<{ state: OfficeState }> {
         })
       }
     )
+
+    // sticky notes and arrows on a whiteboard
+    this.onMessage(Message.WHITEBOARD_ADD_NOTE, (client, message: AddNoteMessage) => {
+      this.dispatcher.dispatch(new WhiteboardAddNoteCommand(), { ...message, client })
+    })
+    this.onMessage(Message.WHITEBOARD_UPDATE_NOTE, (client, message: UpdateNoteMessage) => {
+      this.dispatcher.dispatch(new WhiteboardUpdateNoteCommand(), { ...message, client })
+    })
+    this.onMessage(Message.WHITEBOARD_DELETE_NOTE, (client, message: DeleteNoteMessage) => {
+      this.dispatcher.dispatch(new WhiteboardDeleteNoteCommand(), { ...message, client })
+    })
+    this.onMessage(Message.WHITEBOARD_ADD_ARROW, (client, message: AddArrowMessage) => {
+      this.dispatcher.dispatch(new WhiteboardAddArrowCommand(), { ...message, client })
+    })
+    this.onMessage(Message.WHITEBOARD_DELETE_ARROW, (client, message: DeleteArrowMessage) => {
+      this.dispatcher.dispatch(new WhiteboardDeleteArrowCommand(), { ...message, client })
+    })
 
     // when receiving updatePlayer message, call the PlayerUpdateCommand
     this.onMessage(
@@ -190,10 +220,6 @@ export class SkyOffice extends Room<{ state: OfficeState }> {
   }
 
   onDispose() {
-    this.state.whiteboards.forEach((whiteboard) => {
-      if (whiteboardRoomIds.has(whiteboard.roomId)) whiteboardRoomIds.delete(whiteboard.roomId)
-    })
-
     console.log('room', this.roomId, 'disposing...')
     this.dispatcher.stop()
   }

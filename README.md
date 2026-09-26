@@ -26,7 +26,7 @@ SkyOffice works on all PC browsers (mobile browsers are currently not supported)
 - [Multifunctional Rooms](#multifunctional-rooms)
 - [Text Message Chat](#text-message-chat-with-real-time-dialog-bubbles)
 - [Custom/Private Rooms](#customprivate-rooms)
-- [Embedded Whiteboards](#embedded-whiteboards) (iframe embed of [WBO](https://github.com/lovasoa/whitebophir))
+- [Whiteboards](#whiteboards) with sticky notes and arrows, synced live (built with [React Flow](https://reactflow.dev))
 
 ### Proximity Chat (distance-based interactive system)
 
@@ -44,9 +44,9 @@ SkyOffice works on all PC browsers (mobile browsers are currently not supported)
 
 ![image](https://user-images.githubusercontent.com/11501902/145925423-3b5b9026-d3b9-429d-920b-98b0bcd6300a.png)
 
-### Embedded Whiteboards
+### Whiteboards
 
-![image](https://user-images.githubusercontent.com/11501902/147785323-19dbf0e6-056d-44c5-8efe-e969297bbe52.png)
+Press `R` in front of a whiteboard to open it. Add sticky notes with the toolbar or by double-clicking the board, double-click a note to write, drag from the dots on its edges to connect notes with arrows, and use `Del` to delete the selection. Everyone at the same whiteboard sees the changes live. Boards are kept in the server's memory, so they're reset when the server restarts or a custom room is closed.
 
 ### Custom/Private Rooms
 
@@ -102,8 +102,6 @@ The day/night background follows sunrise and sunset. It uses the center of Germa
 Big thanks to this great repo - [ourcade/phaser3-typescript-parcel-template](https://github.com/ourcade/phaser3-typescript-parcel-template)
 
 Big thanks to pixel artist - [LimeZu](https://limezu.itch.io/)
-
-Big thanks to open-source whiteboard project - [WBO](https://github.com/lovasoa/whitebophir)
 
 ## License
 

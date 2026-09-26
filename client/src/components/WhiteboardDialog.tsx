@@ -1,10 +1,10 @@
-import React from 'react'
 import styled from 'styled-components'
 import IconButton from '@mui/material/IconButton'
 import CloseIcon from '@mui/icons-material/Close'
 
 import { useAppSelector, useAppDispatch } from '../hooks'
 import { closeWhiteboardDialog } from '../stores/WhiteboardStore'
+import WhiteboardBoard from './whiteboard/WhiteboardBoard'
 
 const Backdrop = styled.div`
   position: fixed;
@@ -27,7 +27,6 @@ const Wrapper = styled.div`
   position: relative;
   display: flex;
   flex-direction: column;
-  min-width: max-content;
 
   .close {
     position: absolute;
@@ -38,19 +37,12 @@ const Wrapper = styled.div`
 
 const WhiteboardWrapper = styled.div`
   flex: 1;
-  border-radius: 25px;
-  overflow: hidden;
+  min-height: 0;
   margin-right: 25px;
-
-  iframe {
-    width: 100%;
-    height: 100%;
-    background: #fff;
-  }
 `
 
 export default function WhiteboardDialog() {
-  const whiteboardUrl = useAppSelector((state) => state.whiteboard.whiteboardUrl)
+  const whiteboardId = useAppSelector((state) => state.whiteboard.whiteboardId)
   const dispatch = useAppDispatch()
 
   return (
@@ -63,9 +55,9 @@ export default function WhiteboardDialog() {
         >
           <CloseIcon />
         </IconButton>
-        {whiteboardUrl && (
+        {whiteboardId && (
           <WhiteboardWrapper>
-            <iframe title="white board" src={whiteboardUrl} />
+            <WhiteboardBoard whiteboardId={whiteboardId} />
           </WhiteboardWrapper>
         )}
       </Wrapper>

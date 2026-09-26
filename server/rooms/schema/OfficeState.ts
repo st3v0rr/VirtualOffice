@@ -4,6 +4,8 @@ import type {
   IOfficeState,
   IComputer,
   IWhiteboard,
+  INote,
+  IArrow,
   IChatMessage,
 } from '../../../types/IOfficeState.ts'
 
@@ -20,9 +22,27 @@ export class Computer extends Schema implements IComputer {
   @type({ set: 'string' }) connectedUser = new SetSchema<string>()
 }
 
+export class Note extends Schema implements INote {
+  @type('number') x = 0
+  @type('number') y = 0
+  @type('number') width = 0
+  @type('number') height = 0
+  @type('string') text = ''
+  @type('string') color = ''
+  @type('string') author = ''
+}
+
+export class Arrow extends Schema implements IArrow {
+  @type('string') from = ''
+  @type('string') to = ''
+  @type('string') fromSide = ''
+  @type('string') toSide = ''
+}
+
 export class Whiteboard extends Schema implements IWhiteboard {
-  @type('string') roomId = getRoomId()
   @type({ set: 'string' }) connectedUser = new SetSchema<string>()
+  @type({ map: Note }) notes = new MapSchema<Note>()
+  @type({ map: Arrow }) arrows = new MapSchema<Arrow>()
 }
 
 export class ChatMessage extends Schema implements IChatMessage {
@@ -43,22 +63,4 @@ export class OfficeState extends Schema implements IOfficeState {
 
   @type([ChatMessage])
   chatMessages = new ArraySchema<ChatMessage>()
-}
-
-export const whiteboardRoomIds = new Set<string>()
-const characters = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789'
-const charactersLength = characters.length
-
-function getRoomId(): string {
-  let result = ''
-  for (let i = 0; i < 12; i++) {
-    result += characters.charAt(Math.floor(Math.random() * charactersLength))
-  }
-  if (!whiteboardRoomIds.has(result)) {
-    whiteboardRoomIds.add(result)
-    return result
-  } else {
-    console.log('roomId exists, remaking another one.')
-    return getRoomId()
-  }
 }
