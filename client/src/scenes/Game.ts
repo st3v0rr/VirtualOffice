@@ -143,10 +143,14 @@ export default class Game extends Phaser.Scene {
     this.map = this.make.tilemap({ key: 'tilemap' })
     const FloorAndGround = this.map.addTilesetImage('FloorAndGround', 'tiles_wall')!
 
-    const groundLayer = this.map.createLayer('Ground', FloorAndGround)!
-    groundLayer.setCollisionByProperty({ collides: true })
+    // tile layers in map order (e.g. floor under the walls, then the walls), walls collide
+    const groundLayers = this.map.layers.map((layer) => {
+      const tileLayer = this.map.createLayer(layer.name, FloorAndGround)!
+      tileLayer.setCollisionByProperty({ collides: true })
+      return tileLayer
+    })
 
-    // debugDraw(groundLayer, this)
+    // debugDraw(groundLayers[0], this)
 
     this.officeMap = parseOfficeMap(this.cache.tilemap.get('tilemap').data)
     const { spawn } = this.officeMap
@@ -197,7 +201,7 @@ export default class Game extends Phaser.Scene {
     this.scale.on('resize', this.handleResize, this)
     this.events.once('shutdown', () => this.scale.off('resize', this.handleResize, this))
 
-    this.physics.add.collider([this.myPlayer, this.myPlayer.playerContainer], groundLayer)
+    this.physics.add.collider([this.myPlayer, this.myPlayer.playerContainer], groundLayers)
     this.physics.add.collider([this.myPlayer, this.myPlayer.playerContainer], vendingMachines)
 
     this.physics.add.overlap(
