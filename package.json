@@ -26,7 +26,6 @@
     "build": "npm run build -w server && npm run build -w client",
     "build:server": "npm run build -w server",
     "build:client": "npm run build -w client",
-    "build:map": "python3 tools/map/build_map.py",
     "start": "npm start -w server",
     "typecheck": "npm run typecheck --workspaces --if-present",
     "lint": "eslint .",
