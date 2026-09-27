@@ -222,6 +222,10 @@ export default class Game extends Phaser.Scene {
   }
 
   private handleItemSelectorOverlap(playerSelector, selectionItem) {
+    // while sitting, only the item in front can be used (e.g. a computer), not the chair of the next row
+    if (this.myPlayer.playerBehavior === PlayerBehavior.SITTING && selectionItem instanceof Chair) {
+      return
+    }
     const currentItem = playerSelector.selectedItem as Item
     // currentItem is undefined if nothing was perviously selected
     if (currentItem) {
