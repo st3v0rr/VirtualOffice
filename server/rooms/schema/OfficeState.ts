@@ -14,6 +14,8 @@ export class Player extends Schema implements IPlayer {
   @type('number') x = 705
   @type('number') y = 500
   @type('string') anim = 'adam_idle_down'
+  // serialized AvatarDescription (see types/Avatar.ts), empty for clients without the editor
+  @type('string') avatar = ''
 }
 
 export class Computer extends Schema implements IComputer {

@@ -9,6 +9,7 @@ import { createMediaGrant } from '../media.ts'
 import { getMediaLocation, type MediaTokenRequest } from '../../types/Media.ts'
 import PlayerUpdateCommand from './commands/PlayerUpdateCommand.ts'
 import PlayerUpdateNameCommand from './commands/PlayerUpdateNameCommand.ts'
+import PlayerUpdateAvatarCommand from './commands/PlayerUpdateAvatarCommand.ts'
 import {
   ComputerAddUserCommand,
   ComputerRemoveUserCommand,
@@ -132,6 +133,14 @@ export class SkyOffice extends Room<{ state: OfficeState }> {
       this.dispatcher.dispatch(new PlayerUpdateNameCommand(), {
         client,
         name: message.name,
+      })
+    })
+
+    // the layered avatar, invalid descriptions are ignored
+    this.onMessage(Message.UPDATE_PLAYER_AVATAR, (client, message: { avatar: string }) => {
+      this.dispatcher.dispatch(new PlayerUpdateAvatarCommand(), {
+        client,
+        avatar: message?.avatar,
       })
     })
 

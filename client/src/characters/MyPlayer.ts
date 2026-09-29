@@ -15,11 +15,14 @@ import { ItemType } from '../../../types/Items'
 import { NavKeys } from '../../../types/KeyboardState'
 import { JoystickMovement } from '../components/Joystick'
 import { openURL } from '../utils/helpers'
+import { ensureAvatarTexture } from '../avatar/composeAvatar'
+import type { AvatarDescription } from '../../../types/Avatar'
 
 export default class MyPlayer extends Player {
   private playContainerBody: Phaser.Physics.Arcade.Body
   private chairOnSit?: Chair
   public joystickMovement?: JoystickMovement
+  avatar?: AvatarDescription
   constructor(
     scene: Phaser.Scene,
     x: number,
@@ -40,14 +43,11 @@ export default class MyPlayer extends Player {
     if (isFirstName) store.dispatch(pushPlayerJoinedMessage(name))
   }
 
-  setPlayerTexture(texture: string) {
-    this.playerTexture = texture
+  setAvatar(avatar: AvatarDescription) {
+    this.avatar = avatar
     // keep the current animation (e.g. sitting) and only swap the character
-    const currentAnim = this.anims.currentAnim?.key
-    const animState = currentAnim
-      ? currentAnim.substring(currentAnim.indexOf('_') + 1)
-      : 'idle_down'
-    this.anims.play(`${this.playerTexture}_${animState}`, true)
+    this.changeTexture(ensureAvatarTexture(this.scene, avatar))
+    phaserEvents.emit(Event.MY_PLAYER_AVATAR_CHANGE, avatar)
     phaserEvents.emit(Event.MY_PLAYER_TEXTURE_CHANGE, this.x, this.y, this.anims.currentAnim!.key)
   }
 
@@ -229,13 +229,7 @@ Phaser.GameObjects.GameObjectFactory.register(
 
     this.scene.physics.world.enableBody(sprite, Phaser.Physics.Arcade.DYNAMIC_BODY)
 
-    const collisionScale = [0.5, 0.2]
-    sprite
-      .body!.setSize(sprite.width * collisionScale[0], sprite.height * collisionScale[1])
-      .setOffset(
-        sprite.width * (1 - collisionScale[0]) * 0.5,
-        sprite.height * (1 - collisionScale[1])
-      )
+    sprite.updateFootprint()
 
     return sprite
   }

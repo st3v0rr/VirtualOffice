@@ -3,6 +3,7 @@ import Network from '../services/Network'
 import { BackgroundMode } from '../../../types/BackgroundMode'
 import store from '../stores'
 import { setRoomJoined } from '../stores/RoomStore'
+import { preloadLpcAssets } from '../avatar/lpcAssets'
 
 export default class Bootstrap extends Phaser.Scene {
   private preloadComplete = false
@@ -80,6 +81,8 @@ export default class Bootstrap extends Phaser.Scene {
       frameWidth: 32,
       frameHeight: 48,
     })
+
+    preloadLpcAssets(this.load)
 
     this.load.on('complete', () => {
       this.preloadComplete = true

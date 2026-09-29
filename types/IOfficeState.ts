@@ -5,6 +5,7 @@ export interface IPlayer extends Schema {
   x: number
   y: number
   anim: string
+  avatar: string
 }
 
 export interface IComputer extends Schema {

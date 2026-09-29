@@ -13,4 +13,6 @@ export enum Message {
   WHITEBOARD_ADD_ARROW,
   WHITEBOARD_DELETE_ARROW,
   REQUEST_MEDIA_TOKEN,
+  // appended, so the values of the older messages stay the same
+  UPDATE_PLAYER_AVATAR,
 }

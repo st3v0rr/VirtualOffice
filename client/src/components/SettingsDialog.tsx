@@ -7,11 +7,12 @@ import DialogContent from '@mui/material/DialogContent'
 import DialogTitle from '@mui/material/DialogTitle'
 import TextField from '@mui/material/TextField'
 
-import AvatarPicker from './AvatarPicker'
+import AvatarEditor from './AvatarEditor'
 import MediaSetup, { useMediaSetup } from './MediaSetup'
 import { useAppDispatch, useAppSelector } from '../hooks'
 import { setAudioOutputId } from '../stores/UserStore'
-import { saveProfile } from '../utils/profile'
+import { profileAvatar, saveProfile } from '../utils/profile'
+import { serializeAvatar } from '../../../types/Avatar'
 import { type MediaSettings, saveMediaSettings } from '../web/mediaDevices'
 import phaserGame from '../PhaserGame'
 import Game from '../scenes/Game'
@@ -42,7 +43,7 @@ function SettingsContent({ onClose }: { onClose: () => void }) {
   const cameraEnabled = useAppSelector((state) => state.user.cameraEnabled)
 
   const [name, setName] = useState(game.myPlayer.playerName.text)
-  const [avatar, setAvatar] = useState(game.myPlayer.playerTexture)
+  const [avatar, setAvatar] = useState(() => game.myPlayer.avatar ?? profileAvatar(null))
   const [nameFieldEmpty, setNameFieldEmpty] = useState(false)
 
   // start from the live mute/camera state rather than the one stored at join time
@@ -67,11 +68,11 @@ function SettingsContent({ onClose }: { onClose: () => void }) {
       return
     }
 
-    saveProfile({ name: trimmedName, avatar })
+    saveProfile({ name: trimmedName, avatar: serializeAvatar(avatar) })
     saveMediaSettings(media.settings)
 
     if (trimmedName !== game.myPlayer.playerName.text) game.myPlayer.setPlayerName(trimmedName)
-    if (avatar !== game.myPlayer.playerTexture) game.myPlayer.setPlayerTexture(avatar)
+    if (avatar !== game.myPlayer.avatar) game.myPlayer.setAvatar(avatar)
 
     const mediaManager = game.network.media
     dispatch(setAudioOutputId(media.settings.audioOutputId))
@@ -89,7 +90,7 @@ function SettingsContent({ onClose }: { onClose: () => void }) {
         <Content>
           <div>
             <SubTitle>Avatar</SubTitle>
-            <AvatarPicker value={avatar} onChange={setAvatar} />
+            <AvatarEditor value={avatar} onChange={setAvatar} />
           </div>
           <Right>
             <TextField

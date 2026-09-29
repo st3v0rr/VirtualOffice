@@ -9,8 +9,9 @@ import { useAppSelector, useAppDispatch } from '../hooks'
 import { setAudioOutputId, setLoggedIn } from '../stores/UserStore'
 import { getAvatarString, getColorByString } from '../util'
 import MediaSetup, { useMediaSetup } from './MediaSetup'
-import AvatarPicker, { randomAvatar } from './AvatarPicker'
-import { loadProfile, saveProfile } from '../utils/profile'
+import AvatarEditor from './AvatarEditor'
+import { loadProfile, profileAvatar, saveProfile } from '../utils/profile'
+import { serializeAvatar } from '../../../types/Avatar'
 import { saveMediaSettings } from '../web/mediaDevices'
 
 import phaserGame from '../PhaserGame'
@@ -64,7 +65,6 @@ const RoomDescription = styled.div`
 `
 
 const SubTitle = styled.h3`
-  width: 160px;
   font-size: 16px;
   color: #eee;
   text-align: center;
@@ -93,7 +93,7 @@ export default function LoginDialog() {
   // prefill with the profile from the last visit
   const [savedProfile] = useState(loadProfile)
   const [name, setName] = useState<string>(savedProfile?.name ?? '')
-  const [avatar, setAvatar] = useState<string>(() => savedProfile?.avatar ?? randomAvatar())
+  const [avatar, setAvatar] = useState(() => profileAvatar(savedProfile))
   const [nameFieldEmpty, setNameFieldEmpty] = useState<boolean>(false)
   const dispatch = useAppDispatch()
   const roomJoined = useAppSelector((state) => state.room.roomJoined)
@@ -108,11 +108,11 @@ export default function LoginDialog() {
     if (trimmedName === '') {
       setNameFieldEmpty(true)
     } else if (roomJoined) {
-      saveProfile({ name: trimmedName, avatar })
+      saveProfile({ name: trimmedName, avatar: serializeAvatar(avatar) })
       saveMediaSettings(media.settings)
       game.registerKeys()
       game.myPlayer.setPlayerName(trimmedName)
-      game.myPlayer.setPlayerTexture(avatar)
+      game.myPlayer.setAvatar(avatar)
       dispatch(setAudioOutputId(media.settings.audioOutputId))
       // hand the preview stream over to the video chat instead of requesting a new one
       const stream = media.release()
@@ -136,8 +136,8 @@ export default function LoginDialog() {
       </RoomDescription>
       <Content>
         <Left>
-          <SubTitle>Select an avatar</SubTitle>
-          <AvatarPicker value={avatar} onChange={setAvatar} />
+          <SubTitle>Avatar</SubTitle>
+          <AvatarEditor value={avatar} onChange={setAvatar} />
         </Left>
         <Right>
           <TextField

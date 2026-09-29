@@ -1,5 +1,8 @@
+import { parseAvatar, randomAvatar, type AvatarDescription } from '../../../types/Avatar'
+
 export type Profile = {
   name: string
+  // serialized AvatarDescription; older profiles hold one of the old characters (e.g. "adam")
   avatar: string
 }
 
@@ -21,4 +24,9 @@ export function saveProfile(profile: Profile) {
   } catch {
     // ignore, the profile is a convenience only
   }
+}
+
+/** the avatar of the profile, a random one for new users and profiles from the old picker */
+export function profileAvatar(profile: Profile | null): AvatarDescription {
+  return parseAvatar(profile?.avatar) ?? randomAvatar()
 }

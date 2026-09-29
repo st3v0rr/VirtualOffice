@@ -6,6 +6,7 @@ import { ItemType } from '../../../types/Items'
 import MediaManager from '../web/MediaManager'
 import type { MediaGrant, MediaTokenRequest } from '../../../types/Media'
 import { phaserEvents, Event } from '../events/EventCenter'
+import { serializeAvatar, type AvatarDescription } from '../../../types/Avatar'
 import store from '../stores'
 import { setSessionId, setPlayerNameMap, removePlayerNameMap } from '../stores/UserStore'
 import {
@@ -37,7 +38,8 @@ const PLAYER_UPDATE_INTERVAL = 66 // ms
 type PlayerUpdate = { x: number; y: number; anim: string }
 
 // player fields which are forwarded to the game scene whenever they change
-const PLAYER_FIELDS = ['name', 'x', 'y', 'anim'] as const
+// (avatar before anim, so a joining player is drawn with the right character straight away)
+const PLAYER_FIELDS = ['name', 'x', 'y', 'avatar', 'anim'] as const
 
 export default class Network {
   private client: Client
@@ -51,6 +53,8 @@ export default class Network {
   private lastSentPlayerUpdate?: PlayerUpdate
   private lastPlayerUpdateTime = 0
   private playerUpdateTimer?: number
+  // when my last avatar change was sent, to log how long the server takes to sync it back
+  private avatarSentAt = new Map<string, number>()
 
   constructor() {
     const protocol = window.location.protocol.replace('http', 'ws')
@@ -64,6 +68,7 @@ export default class Network {
 
     phaserEvents.on(Event.MY_PLAYER_NAME_CHANGE, this.updatePlayerName, this)
     phaserEvents.on(Event.MY_PLAYER_TEXTURE_CHANGE, this.updatePlayer, this)
+    phaserEvents.on(Event.MY_PLAYER_AVATAR_CHANGE, this.updatePlayerAvatar, this)
   }
 
   /**
@@ -123,7 +128,10 @@ export default class Network {
 
     // new instance added to the players MapSchema
     $.onAdd('players', (player, key) => {
-      if (key === this.mySessionId) return
+      if (key === this.mySessionId) {
+        $.listen(player, 'avatar', (value) => this.logAvatarRoundTrip(value))
+        return
+      }
 
       // track changes on every field of the child object inside the players MapSchema
       PLAYER_FIELDS.forEach((field) => {
@@ -302,6 +310,21 @@ export default class Network {
     // messages are processed in order, so the server knows my current position
     this.sendPositionNow()
     return this.room.request(Message.REQUEST_MEDIA_TOKEN, request)
+  }
+
+  // the avatar is sent on its own, it rarely changes (the server validates it)
+  updatePlayerAvatar(avatar: AvatarDescription) {
+    const serialized = serializeAvatar(avatar)
+    this.avatarSentAt.set(serialized, performance.now())
+    this.room?.send(Message.UPDATE_PLAYER_AVATAR, { avatar: serialized })
+  }
+
+  private logAvatarRoundTrip(avatar: string) {
+    const sentAt = this.avatarSentAt.get(avatar)
+    if (sentAt === undefined) return
+    this.avatarSentAt.delete(avatar)
+    const ms = performance.now() - sentAt
+    console.log(`[avatar] ${avatar} synced back by the server after ${ms.toFixed(1)} ms`)
   }
 
   // method to send player name to Colyseus server

@@ -1,11 +1,21 @@
 import Phaser from 'phaser'
 import Player from './Player'
 import { sittingShiftData } from './Player'
+import { ensureAvatarTexture } from '../avatar/composeAvatar'
+import { parseAvatar } from '../../../types/Avatar'
+
+// the characters from before the avatar editor, still used by clients without it
+const LEGACY_TEXTURES = new Set(['adam', 'ash', 'lucy', 'nancy'])
+const FALLBACK_TEXTURE = 'adam'
 
 export default class OtherPlayer extends Player {
   private targetPosition: [number, number]
   private lastUpdateTimestamp?: number
   private playContainerBody: Phaser.Physics.Arcade.Body
+  // the synced avatar, empty for clients without the avatar editor
+  private avatar = ''
+  // the synced animation, e.g. "adam_run_left" or "lpc-1x2y3z_sit_up"
+  private syncedAnim = ''
 
   constructor(
     scene: Phaser.Scene,
@@ -43,12 +53,43 @@ export default class OtherPlayer extends Player {
         }
         break
 
+      case 'avatar':
+        if (typeof value === 'string' && value !== this.avatar) {
+          this.avatar = value
+          this.applyAnim()
+        }
+        break
+
       case 'anim':
         if (typeof value === 'string') {
-          this.anims.play(value, true)
+          this.syncedAnim = value
+          this.applyAnim()
         }
         break
     }
+  }
+
+  /**
+   * Only state and direction are taken from the synced animation, the character comes from the
+   * avatar: the composed LPC texture (built once per description) or, for clients without the
+   * editor, the old character in the animation key (adam if unknown).
+   */
+  private applyAnim() {
+    const separator = this.syncedAnim.indexOf('_')
+    const animState = separator >= 0 ? this.syncedAnim.substring(separator + 1) : 'idle_down'
+    const avatar = parseAvatar(this.avatar)
+    let texture = FALLBACK_TEXTURE
+    if (avatar) {
+      texture = ensureAvatarTexture(this.scene, avatar)
+    } else if (LEGACY_TEXTURES.has(this.syncedAnim.substring(0, separator))) {
+      texture = this.syncedAnim.substring(0, separator)
+    }
+    if (texture !== this.playerTexture) {
+      this.playerTexture = texture
+      this.updateFootprint()
+    }
+    const key = `${texture}_${animState}`
+    if (this.scene.anims.exists(key)) this.anims.play(key, true)
   }
 
   destroy(fromScene?: boolean) {
@@ -153,13 +194,7 @@ Phaser.GameObjects.GameObjectFactory.register(
     this.scene.physics.world.enableBody(sprite, Phaser.Physics.Arcade.DYNAMIC_BODY)
 
     // same body as my player (it used to be larger to detect who is close by for video)
-    const collisionScale = [0.5, 0.2]
-    sprite
-      .body!.setSize(sprite.width * collisionScale[0], sprite.height * collisionScale[1])
-      .setOffset(
-        sprite.width * (1 - collisionScale[0]) * 0.5,
-        sprite.height * (1 - collisionScale[1])
-      )
+    sprite.updateFootprint()
 
     return sprite
   }
