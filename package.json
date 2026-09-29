@@ -23,6 +23,7 @@
     "dev:server": "npm run dev -w server",
     "dev:client": "npm run dev -w client",
     "dev:livekit": "livekit-server --dev",
+    "bots": "tsx scripts/avatar-bots.ts",
     "build": "npm run build -w server && npm run build -w client",
     "build:server": "npm run build -w server",
     "build:client": "npm run build -w client",
