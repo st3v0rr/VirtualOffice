@@ -157,6 +157,7 @@ input:focus {
   user-select: none;
 }
 .tag .name {
+  transition: opacity 0.3s;
   background: rgba(255, 255, 255, 0.85);
   border-radius: 999px;
   padding: 1px 9px;

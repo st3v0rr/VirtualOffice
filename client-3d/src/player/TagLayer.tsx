@@ -3,12 +3,17 @@ import { useFrame, useThree } from '@react-three/fiber'
 import * as THREE from 'three'
 import { useGame } from '../state/game'
 import { ROOM_LABELS } from '../world/rooms'
+import { me } from '../net/players'
 
 // Name tags, speech bubbles and room signs as DOM on top of the canvas (so the text is
 // crisp and cheap). They are plain elements of the app positioned in one loop, instead
 // of a drei <Html> (a React root and a frame callback) per player.
 
 const TAG_HEIGHT = 1.6
+// names are fully visible up to NAME_NEAR tiles away and gone NAME_FADE tiles later
+const NAME_NEAR = 5
+const NAME_FADE = 4
+const clamp = THREE.MathUtils.clamp
 const anchors = new Map<string, THREE.Object3D>()
 
 // the chibi group a player's tag follows
@@ -51,6 +56,7 @@ const placed = new WeakMap<HTMLDivElement, { px: number; py: number; hidden: boo
 
 // inside the canvas: moves the tags to their chibis every frame
 export function TagProjector() {
+  const mySessionId = useGame((s) => s.sessionId)
   const camera = useThree((s) => s.camera)
   const size = useThree((s) => s.size)
 
@@ -79,6 +85,20 @@ export function TagProjector() {
         continue
       }
       const p = anchor.getWorldPosition(v)
+      // names of people far away fade out, so a full conference room stays readable
+      // (speech bubbles always show)
+      const name = el.lastElementChild?.lastElementChild as HTMLElement | null
+      if (name) {
+        const d = Math.hypot(p.x - me.x, p.z - me.z)
+        const opacity =
+          id === mySessionId
+            ? 1
+            : Math.round(clamp(1 - (d - NAME_NEAR) / NAME_FADE, 0, 1) * 10) / 10
+        if (name.dataset.opacity !== String(opacity)) {
+          name.dataset.opacity = String(opacity)
+          name.style.opacity = String(opacity)
+        }
+      }
       place(el, p.x, p.y + TAG_HEIGHT, p.z)
     }
     ROOM_LABELS.forEach((label, i) => {
