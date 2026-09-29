@@ -13,4 +13,7 @@ export enum Message {
   WHITEBOARD_ADD_ARROW,
   WHITEBOARD_DELETE_ARROW,
   REQUEST_MEDIA_TOKEN,
+  // new messages go to the end, so the numbers of the existing ones stay the same
+  UPDATE_PLAYER_AVATAR,
+  PLAYER_EMOTE,
 }

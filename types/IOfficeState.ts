@@ -5,6 +5,10 @@ export interface IPlayer extends Schema {
   x: number
   y: number
   anim: string
+  // added for the 3D client, the 2D client ignores them:
+  // the avatar as JSON (see client-3d/src/avatar/avatar.ts) and the facing angle in radians
+  avatar: string
+  rot: number
 }
 
 export interface IComputer extends Schema {

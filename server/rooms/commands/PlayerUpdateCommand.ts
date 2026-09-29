@@ -7,11 +7,13 @@ type Payload = {
   x: number
   y: number
   anim: string
+  // only sent by the 3D client
+  rot?: number
 }
 
 export default class PlayerUpdateCommand extends Command<SkyOffice, Payload> {
   execute(data: Payload) {
-    const { client, x, y, anim } = data
+    const { client, x, y, anim, rot } = data
 
     const player = this.room.state.players.get(client.sessionId)
 
@@ -19,5 +21,6 @@ export default class PlayerUpdateCommand extends Command<SkyOffice, Payload> {
     player.x = x
     player.y = y
     player.anim = anim
+    if (typeof rot === 'number' && Number.isFinite(rot)) player.rot = rot
   }
 }

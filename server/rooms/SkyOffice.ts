@@ -9,6 +9,7 @@ import { createMediaGrant } from '../media.ts'
 import { getMediaLocation, type MediaTokenRequest } from '../../types/Media.ts'
 import PlayerUpdateCommand from './commands/PlayerUpdateCommand.ts'
 import PlayerUpdateNameCommand from './commands/PlayerUpdateNameCommand.ts'
+import PlayerUpdateAvatarCommand from './commands/PlayerUpdateAvatarCommand.ts'
 import {
   ComputerAddUserCommand,
   ComputerRemoveUserCommand,
@@ -117,12 +118,13 @@ export class SkyOffice extends Room<{ state: OfficeState }> {
     // when receiving updatePlayer message, call the PlayerUpdateCommand
     this.onMessage(
       Message.UPDATE_PLAYER,
-      (client, message: { x: number; y: number; anim: string }) => {
+      (client, message: { x: number; y: number; anim: string; rot?: number }) => {
         this.dispatcher.dispatch(new PlayerUpdateCommand(), {
           client,
           x: message.x,
           y: message.y,
           anim: message.anim,
+          rot: message.rot,
         })
       }
     )
@@ -133,6 +135,25 @@ export class SkyOffice extends Room<{ state: OfficeState }> {
         client,
         name: message.name,
       })
+    })
+
+    // the look of the 3D avatar, stored as JSON so the server doesn't need to know its parts
+    this.onMessage(Message.UPDATE_PLAYER_AVATAR, (client, message: { avatar: string }) => {
+      this.dispatcher.dispatch(new PlayerUpdateAvatarCommand(), {
+        client,
+        avatar: message?.avatar,
+      })
+    })
+
+    // emotes (waving, cheering) are only shown, not stored, so just pass them on
+    this.onMessage(Message.PLAYER_EMOTE, (client, message: { emote: string }) => {
+      const emote = String(message?.emote ?? '').slice(0, 20)
+      if (!emote) return
+      this.broadcast(
+        Message.PLAYER_EMOTE,
+        { clientId: client.sessionId, emote },
+        { except: client }
+      )
     })
 
     // hand out a LiveKit token for the media room at the player's position or computer;

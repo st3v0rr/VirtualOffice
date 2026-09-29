@@ -14,6 +14,8 @@ export class Player extends Schema implements IPlayer {
   @type('number') x = 705
   @type('number') y = 500
   @type('string') anim = 'adam_idle_down'
+  @type('string') avatar = ''
+  @type('number') rot = 0
 }
 
 export class Computer extends Schema implements IComputer {
