@@ -4,6 +4,8 @@ import { OrthographicCamera } from '@react-three/drei'
 import * as THREE from 'three'
 import { Floor, Walls } from './walls'
 import Furniture from './furniture'
+import Baked from './Baked'
+import { useSettings } from '../state/settings'
 import { Chairs, Computers, VendingMachines, Whiteboards } from './items'
 import { TagProjector } from '../player/TagLayer'
 import LocalPlayer from '../player/LocalPlayer'
@@ -70,6 +72,8 @@ function Players() {
 
 export default function Scene() {
   const connected = useGame((s) => s.connection === 'connected')
+  const outlines = useSettings((s) => s.outlines)
+  const lowWalls = useSettings((s) => s.lowWalls)
   return (
     <>
       <OrthographicCamera makeDefault position={[40, 30, 40]} zoom={20} near={-100} far={300} />
@@ -77,8 +81,11 @@ export default function Scene() {
       <hemisphereLight args={['#fff4fb', '#cbb8e0', 1.4]} />
       <directionalLight position={[8, 14, 5]} intensity={1.6} color="#fff3e2" />
       <Floor onPointerDown={(x, z) => connected && (intent.walkTo = { x, z })} />
-      <Walls />
-      <Furniture />
+      {/* walls and furniture don't move: merged into a few meshes once they mounted */}
+      <Baked key={`${outlines}/${lowWalls}`}>
+        <Walls />
+        <Furniture />
+      </Baked>
       <Chairs />
       <Computers />
       <Whiteboards />

@@ -1,5 +1,6 @@
 // Measures FPS and draw calls of the 3D client in a real (headless) Chromium with GPU.
-// Needs the dev server (it teleports via the window.__game debug hook) and a server;
+// Needs the dev server or a build opened with ?debug (it teleports via the window.__game
+// debug hook) and a server;
 // start bots first for the crowded scenarios (scripts/bots.mjs).
 //
 //   CHROME_PATH=/usr/bin/chromium node client-3d/scripts/measure.mjs [url] [label]
@@ -21,6 +22,12 @@ const browser = await chromium.launch({
   ],
 })
 const page = await browser.newPage({ viewport: { width: 1600, height: 900 } })
+// CPU_THROTTLE=4 simulates a four times slower CPU (e.g. an older office laptop)
+const throttle = Number(process.env.CPU_THROTTLE ?? 1)
+if (throttle > 1) {
+  const cdp = await page.context().newCDPSession(page)
+  await cdp.send('Emulation.setCPUThrottlingRate', { rate: throttle })
+}
 await page.goto(url)
 await page.waitForTimeout(1500)
 
@@ -59,7 +66,7 @@ const setSettings = (patch) =>
     localStorage.setItem(key, JSON.stringify(s))
   }, patch)
 
-console.log(`renderer: ${renderer} ${label}`)
+console.log(`renderer: ${renderer} ${label}${throttle > 1 ? ` (CPU ${throttle}x throttled)` : ''}`)
 await setSettings({ stats: true, outlines: true, postFx: 'off', lowWalls: true })
 await page.reload()
 await page.waitForTimeout(1500)

@@ -16,7 +16,10 @@ export default defineConfig({
     rolldownOptions: {
       output: {
         codeSplitting: {
-          groups: [{ name: 'three', test: /node_modules[\\/](three|@react-three|postprocessing)/ }],
+          groups: [
+            { name: 'three', test: /node_modules[\\/](three|@react-three|postprocessing)/ },
+            { name: 'livekit', test: /node_modules[\\/]livekit-client/ },
+          ],
         },
       },
     },

@@ -47,6 +47,7 @@ function Bubble({ id }: { id: string }) {
 const tagElements = new Map<string, HTMLDivElement>()
 const labelElements: (HTMLDivElement | null)[] = []
 const v = new THREE.Vector3()
+const placed = new WeakMap<HTMLDivElement, { px: number; py: number; hidden: boolean }>()
 
 // inside the canvas: moves the tags to their chibis every frame
 export function TagProjector() {
@@ -55,14 +56,16 @@ export function TagProjector() {
 
   const place = (el: HTMLDivElement, x: number, y: number, z: number) => {
     v.set(x, y, z).project(camera)
-    if (v.x < -1.1 || v.x > 1.1 || v.y < -1.1 || v.y > 1.2) {
-      el.style.visibility = 'hidden'
-      return
-    }
-    el.style.visibility = 'visible'
-    const px = ((v.x + 1) / 2) * size.width
-    const py = ((1 - v.y) / 2) * size.height
-    el.style.transform = `translate3d(${px.toFixed(1)}px, ${py.toFixed(1)}px, 0)`
+    const hidden = v.x < -1.1 || v.x > 1.1 || v.y < -1.1 || v.y > 1.2
+    const px = Math.round(((v.x + 1) / 2) * size.width * 2) / 2
+    const py = Math.round(((1 - v.y) / 2) * size.height * 2) / 2
+    // touching the DOM only when something changed saves style recalculations, e.g.
+    // for a room full of people sitting still
+    const last = placed.get(el)
+    if (last && last.hidden === hidden && (hidden || (last.px === px && last.py === py))) return
+    placed.set(el, { px, py, hidden })
+    el.style.visibility = hidden ? 'hidden' : 'visible'
+    if (!hidden) el.style.transform = `translate3d(${px}px, ${py}px, 0)`
   }
 
   // runs after the camera rig because it is mounted after it (a priority > 0 would
@@ -71,6 +74,7 @@ export function TagProjector() {
     for (const [id, el] of tagElements) {
       const anchor = anchors.get(id)
       if (!anchor) {
+        placed.delete(el)
         el.style.visibility = 'hidden'
         continue
       }

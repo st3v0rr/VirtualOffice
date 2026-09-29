@@ -87,13 +87,49 @@ or separately with `npm run dev:server`, `npm run dev:client` and `npm run dev:l
 | Command             | Description                                            |
 | ------------------- | ------------------------------------------------------ |
 | `npm run dev`       | Start server, client and LiveKit in watch/dev mode     |
-| `npm run build`     | Build server (`server/lib`) and client (`client/dist`) |
+| `npm run dev3d`     | Start server and the 3D client (see [PoC 3D](#poc-3d)) |
+| `npm run build`     | Build server (`server/lib`), client (`client/dist`) and 3D client (`client-3d/dist`) |
 | `npm start`         | Run the built server                                   |
 | `npm run typecheck` | Type-check all workspaces                              |
 | `npm run lint`      | Lint with ESLint                                       |
 | `npm run format`    | Format with Prettier                                   |
 
 For production builds of the client, set `VITE_SERVER_URL` to the WebSocket URL of your server (e.g. `wss://my-server.example.com`).
+
+## PoC 3D
+
+`client-3d/` is a proof of concept of the office in 3D with [React Three Fiber](https://r3f.docs.pmnd.rs): an isometric toy diorama with toon shading, pastel colours, outlines and procedural chibi characters with a character editor. It talks to the same Colyseus server as the 2D client, so players of both clients meet in the same rooms. The 2D client is unchanged. See [POC2_NOTIZ.md](POC2_NOTIZ.md) for the findings, measurements and the status of every feature.
+
+```bash
+npm install
+npm run dev3d              # server (ws://localhost:2567) + 3D client (http://localhost:3100)
+# or separately:
+npm run dev:server
+npm run dev:client3d
+```
+
+Open http://localhost:3100, enter a name, optionally design your character, and join. The 2D client (`npm run dev:client`, http://localhost:3000) can run at the same time for comparison. LiveKit is optional: without it the office works, the HUD shows "Medien nicht verfügbar" and screen sharing says it is not available.
+
+If the server runs on another port, pass its URL: `VITE_SERVER_URL=ws://localhost:2667 npm run dev:client3d` (and `PORT=2667 npm run dev:server`).
+
+| Controls                 |                                          |
+| ------------------------ | ---------------------------------------- |
+| `W A S D` / arrow keys   | walk (screen directions)                 |
+| click on the floor       | walk there (path finding around objects) |
+| click a chair / item     | walk there and sit down / use it         |
+| `E`                      | sit down / stand up                      |
+| `R`                      | use computer, whiteboard, vending machine |
+| `Space` / `1` / `2`      | hop / wave / cheer                       |
+| mouse wheel              | zoom                                     |
+| `Enter`                  | chat                                     |
+
+| Command (in `client-3d/`)                                    | Description                                                        |
+| ------------------------------------------------------------ | ------------------------------------------------------------------ |
+| `npm run extract-map -w client-3d`                           | regenerate `src/map/office.generated.json` from the Tiled map      |
+| `node client-3d/scripts/bots.mjs 40 ws://localhost:2567`     | fill the conference room with 40 bots                              |
+| `node client-3d/scripts/measure.mjs http://localhost:3100/`  | measure FPS and draw calls in headless Chromium (`CHROME_PATH=…`) |
+| `node client-3d/scripts/fake-2d-player.mjs`                  | a player that behaves like the 2D client                           |
+| http://localhost:3100/?gallery                               | all chibi presets side by side                                     |
 
 ## Video chat
 
