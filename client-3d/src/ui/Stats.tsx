@@ -1,6 +1,5 @@
 import { useRef } from 'react'
 import { useFrame, useThree } from '@react-three/fiber'
-import { Html } from '@react-three/drei'
 
 declare global {
   interface Window {
@@ -10,10 +9,9 @@ declare global {
 
 // FPS, frame time and draw calls, measured over half a second. Also exposed as
 // window.__perf so a headless browser can read it (see scripts/measure.mjs).
-export function StatsProbe({ visible }: { visible: boolean }) {
+export function StatsProbe() {
   const gl = useThree((s) => s.gl)
   const scene = useThree((s) => s.scene)
-  const el = useRef<HTMLDivElement>(null)
   const acc = useRef({ frames: 0, time: 0 })
 
   useFrame((_, delta) => {
@@ -35,16 +33,12 @@ export function StatsProbe({ visible }: { visible: boolean }) {
     }
     a.frames = 0
     a.time = 0
-    if (el.current) {
+    const el = document.getElementById('stats')
+    if (el) {
       const p = window.__perf
-      el.current.textContent = `${p.fps} FPS · ${p.frameMs} ms · ${p.calls} draw calls · ${(p.triangles / 1000).toFixed(0)}k tris · ${p.players} chibis`
+      el.textContent = `${p.fps} FPS · ${p.frameMs} ms · ${p.calls} draw calls · ${(p.triangles / 1000).toFixed(0)}k tris · ${p.players} chibis`
     }
   })
 
-  if (!visible) return null
-  return (
-    <Html fullscreen style={{ pointerEvents: 'none' }} zIndexRange={[30, 30]}>
-      <div ref={el} className="stats" />
-    </Html>
-  )
+  return null
 }

@@ -5,7 +5,8 @@ import * as THREE from 'three'
 import { Floor, Walls } from './walls'
 import Furniture from './furniture'
 import { Chairs, Computers, VendingMachines, Whiteboards } from './items'
-import RoomLabels from './RoomLabels'
+import { TagProjector } from '../player/TagLayer'
+import { updateView } from './view'
 import LocalPlayer from '../player/LocalPlayer'
 import RemotePlayer from '../player/RemotePlayer'
 import { useGame } from '../state/game'
@@ -53,6 +54,8 @@ function CameraRig({ follow }: { follow: boolean }) {
     camera.position.copy(target.current).add(CAMERA_OFFSET)
     camera.lookAt(target.current)
     camera.updateProjectionMatrix()
+    camera.updateMatrixWorld()
+    updateView(camera)
   })
   return null
 }
@@ -62,7 +65,7 @@ function Players() {
   return (
     <>
       {Object.entries(players).map(([id, p]) => (
-        <RemotePlayer key={id} id={id} name={p.name} avatar={p.avatar} />
+        <RemotePlayer key={id} id={id} avatar={p.avatar} />
       ))}
     </>
   )
@@ -83,7 +86,7 @@ export default function Scene() {
       <Computers />
       <Whiteboards />
       <VendingMachines />
-      <RoomLabels />
+      <TagProjector />
       {connected && (
         <>
           <LocalPlayer />

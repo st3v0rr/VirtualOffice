@@ -2,7 +2,7 @@ import { useRef, useState } from 'react'
 import { useFrame } from '@react-three/fiber'
 import * as THREE from 'three'
 import Chibi from '../avatar/Chibi'
-import Tag from './Tag'
+import { useTagAnchor } from './TagLayer'
 import { createMotion } from '../avatar/motion'
 import type { Avatar } from '../avatar/avatar'
 import { remotes } from '../net/players'
@@ -13,16 +13,9 @@ import { chairs } from '../game/interactables'
 
 const TELEPORT_DISTANCE = 4
 
-export default function RemotePlayer({
-  id,
-  name,
-  avatar,
-}: {
-  id: string
-  name: string
-  avatar: Avatar
-}) {
+export default function RemotePlayer({ id, avatar }: { id: string; avatar: Avatar }) {
   const group = useRef<THREE.Group>(null)
+  useTagAnchor(id, group)
   const [motion] = useState(createMotion)
   const [seed] = useState(() => Math.random())
 
@@ -84,7 +77,6 @@ export default function RemotePlayer({
   return (
     <group ref={group}>
       <Chibi avatar={avatar} motion={motion} seed={seed} />
-      <Tag id={id} name={name} />
     </group>
   )
 }

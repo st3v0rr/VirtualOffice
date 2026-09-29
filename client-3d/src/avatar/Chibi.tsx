@@ -6,6 +6,7 @@ import { flat, toon } from '../toon/materials'
 import { Hull } from '../toon/outline'
 import { useSettings } from '../state/settings'
 import { EMOTE_DURATION, SIT_LIFT, type Motion } from './motion'
+import { inView } from '../world/view'
 
 // A chibi built from primitives: big round head, small body, stubby legs.
 // Units are tiles (1 = 32px of the 2D map); the chibi is about 1.1 tiles tall.
@@ -206,6 +207,7 @@ type ChibiProps = {
 
 export default function Chibi({ avatar, motion, seed = 0 }: ChibiProps) {
   const outline = useSettings((s) => s.outlines)
+  const root = useRef<THREE.Group>(null)
   const bounce = useRef<THREE.Group>(null)
   const hips = useRef<THREE.Group>(null)
   const head = useRef<THREE.Group>(null)
@@ -231,7 +233,9 @@ export default function Chibi({ avatar, motion, seed = 0 }: ChibiProps) {
 
   useFrame(({ clock }, delta) => {
     const mo = motion
-    if (!bounce.current || !hips.current || !head.current) return
+    if (!root.current || !bounce.current || !hips.current || !head.current) return
+    // nobody sees it, so don't animate it (40 chibis in the conference room add up)
+    if (!inView(root.current)) return
     const t = clock.elapsedTime
     const dt = Math.min(delta, 0.1)
     const lerp = (a: number, b: number, k: number) => a + (b - a) * (1 - Math.exp(-k * dt))
@@ -344,7 +348,7 @@ export default function Chibi({ avatar, motion, seed = 0 }: ChibiProps) {
   const armColor = avatar.top === 'tshirt' ? m.skin : m.top
 
   return (
-    <group userData={{ chibi: true }} scale={CHIBI_SCALE}>
+    <group ref={root} userData={{ chibi: true }} scale={CHIBI_SCALE}>
       <mesh
         ref={shadow}
         geometry={shadowGeometry}

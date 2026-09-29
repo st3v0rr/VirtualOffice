@@ -135,6 +135,18 @@ input:focus {
 
 /* ---------- labels in the scene ---------- */
 
+.tag-layer {
+  position: absolute;
+  inset: 0;
+  overflow: hidden;
+  pointer-events: none;
+}
+.tag-layer .anchor {
+  position: absolute;
+  left: 0;
+  top: 0;
+  will-change: transform;
+}
 .tag {
   transform: translate(-50%, -100%);
   display: flex;

@@ -104,7 +104,9 @@ function isGreen(hex: string) {
 }
 
 export function classify(c: Component): Kind {
-  const explicit = PREFABS[`${c.x},${c.y}`]
+  // positions are rounded to quarter tiles, some objects sit a few pixels off the grid
+  const q = (v: number) => Math.round(v * 4) / 4
+  const explicit = PREFABS[`${q(c.x)},${q(c.y)}`]
   if (explicit) return explicit
   // the Wall layer draws the front faces of walls, the 3D walls do that already
   if (c.layer === 'Wall') return 'hidden'

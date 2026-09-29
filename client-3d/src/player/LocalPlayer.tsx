@@ -2,7 +2,7 @@ import { useEffect, useRef } from 'react'
 import { useFrame } from '@react-three/fiber'
 import * as THREE from 'three'
 import Chibi from '../avatar/Chibi'
-import Tag from './Tag'
+import { useTagAnchor } from './TagLayer'
 import { useGame } from '../state/game'
 import { office, toWorld, toMap, chairSitPosition } from '../map/office'
 import { move, findPath, isFree } from '../map/collision'
@@ -56,9 +56,9 @@ function turn(from: number, to: number, k: number) {
 
 export default function LocalPlayer() {
   const avatar = useGame((s) => s.avatar)
-  const name = useGame((s) => s.name)
   const sessionId = useGame((s) => s.sessionId)
   const group = useRef<THREE.Group>(null)
+  useTagAnchor(sessionId, group)
   const keys = useRef(new Set<string>())
   const path = useRef<{ x: number; z: number }[] | null>(null)
   const pendingUse = useRef<Interactable | null>(null)
@@ -300,7 +300,6 @@ export default function LocalPlayer() {
   return (
     <group ref={group}>
       <Chibi avatar={avatar} motion={me.motion} />
-      <Tag id={sessionId ?? 'me'} name={name} />
     </group>
   )
 }

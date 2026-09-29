@@ -6,6 +6,8 @@ import Hud from './ui/Hud'
 import Chat from './ui/Chat'
 import Dialogs from './ui/Dialogs'
 import { StatsProbe } from './ui/Stats'
+import PostFx from './toon/PostFx'
+import { TagOverlay } from './player/TagLayer'
 import { useGame } from './state/game'
 import { useSettings } from './state/settings'
 
@@ -23,8 +25,11 @@ export default function App() {
         onContextMenu={(e) => e.preventDefault()}
       >
         <Scene />
-        <StatsProbe visible={stats} />
+        <StatsProbe />
+        <PostFx />
       </Canvas>
+      <TagOverlay />
+      {stats && <div className="stats" id="stats" />}
       {!connected && <Join />}
       {connected && (
         <>
