@@ -35,7 +35,7 @@ const COLORS = [
   '#f5f0e6',
 ]
 const randomAvatar = () => ({
-  skin: any(['#ffe3d3', '#f9d0b4', '#eab48f', '#c98d66', '#9a6446', '#6e4531']),
+  skin: any(['#ffe3d3', '#f9d0b4', '#eab48f', '#c98d66', '#9a6446', '#7a4c36']),
   hair: any(['bob', 'spiky', 'pigtails', 'bun']),
   hairColor: any(['#4a3a35', '#8a5a3c', '#e9c27d', '#d9735b', '#f4a6c0', '#9fb8f0']),
   top: any(['tshirt', 'hoodie', 'sweater']),

@@ -20,14 +20,17 @@ const legGeometry = new THREE.CapsuleGeometry(0.068, 0.07, 4, 10)
 const armGeometry = new THREE.CapsuleGeometry(0.05, 0.11, 4, 10)
 const skirtGeometry = new THREE.CylinderGeometry(0.17, 0.25, 0.17, 18)
 const hairCapGeometry = new THREE.SphereGeometry(0.33, 22, 14, 0, Math.PI * 2, 0, Math.PI * 0.56)
+// longer hair around the sides and the back, open at the front for the face
+// (phi = PI / 2 points to +z, where the face is)
+const BOB_GAP = Math.PI * 0.6
 const bobGeometry = new THREE.SphereGeometry(
   0.345,
   22,
   14,
-  Math.PI * 0.12,
-  Math.PI * 1.76,
+  Math.PI / 2 + BOB_GAP / 2,
+  Math.PI * 2 - BOB_GAP,
   0,
-  Math.PI * 0.68
+  Math.PI * 0.66
 )
 const spikeGeometry = new THREE.ConeGeometry(0.075, 0.2, 8)
 const mouthGeometry = new THREE.TorusGeometry(0.034, 0.01, 6, 14, Math.PI)
@@ -84,12 +87,8 @@ function Hair({ avatar, outline }: { avatar: Avatar; outline: boolean }) {
     case 'bob':
       return (
         <group>
-          <Part
-            geometry={bobGeometry}
-            material={m}
-            rotation={[-0.2, Math.PI, 0]}
-            outline={outline}
-          />
+          {cap}
+          <Part geometry={bobGeometry} material={m} rotation={[-0.1, 0, 0]} outline={outline} />
           {bangs}
         </group>
       )
@@ -120,12 +119,8 @@ function Hair({ avatar, outline }: { avatar: Avatar; outline: boolean }) {
     case 'pigtails':
       return (
         <group>
-          <Part
-            geometry={bobGeometry}
-            material={m}
-            rotation={[-0.2, Math.PI, 0]}
-            outline={outline}
-          />
+          {cap}
+          <Part geometry={bobGeometry} material={m} rotation={[-0.1, 0, 0]} outline={outline} />
           {bangs}
           {[1, -1].map((side) => (
             <group key={side} position={[side * 0.33, 0.02, -0.06]}>
@@ -170,6 +165,13 @@ function Face({ blinkRef }: { blinkRef: RefObject<THREE.Group | null> }) {
       <group ref={blinkRef}>
         {[1, -1].map((side) => (
           <group key={side} position={[side * 0.112, -0.015, 0.268]} rotation={[0, side * 0.38, 0]}>
+            {/* a light rim keeps the eyes readable on every skin tone */}
+            <mesh
+              geometry={sphereLow}
+              material={flat('#fffaf5')}
+              scale={[0.062, 0.084, 0.03]}
+              position={[0, 0, -0.004]}
+            />
             <mesh geometry={sphereLow} material={flat(EYE_COLOR)} scale={[0.052, 0.074, 0.035]} />
             <mesh
               geometry={sphereLow}
@@ -235,11 +237,11 @@ export default function Chibi({ avatar, motion, seed = 0 }: ChibiProps) {
     [avatar]
   )
 
-  useFrame(({ clock }, delta) => {
+  useFrame(({ clock, camera }, delta) => {
     const mo = motion
     if (!root.current || !bounce.current || !hips.current || !head.current) return
     // nobody sees it, so don't animate it (40 chibis in the conference room add up)
-    if (!inView(root.current)) return
+    if (!inView(root.current, camera, clock.elapsedTime)) return
     const t = clock.elapsedTime
     const dt = Math.min(delta, 0.1)
     const lerp = (a: number, b: number, k: number) => a + (b - a) * (1 - Math.exp(-k * dt))

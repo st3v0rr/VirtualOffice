@@ -39,7 +39,7 @@ export const LABELS: Record<HairStyle | TopStyle | BottomStyle, string> = {
 }
 
 // soft, toy-like colours; the skin tones cover light to dark
-export const SKIN_COLORS = ['#ffe3d3', '#f9d0b4', '#eab48f', '#c98d66', '#9a6446', '#6e4531']
+export const SKIN_COLORS = ['#ffe3d3', '#f9d0b4', '#eab48f', '#c98d66', '#9a6446', '#7a4c36']
 export const HAIR_COLORS = [
   '#4a3a35',
   '#8a5a3c',

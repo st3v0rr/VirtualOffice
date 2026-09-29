@@ -6,7 +6,6 @@ import { Floor, Walls } from './walls'
 import Furniture from './furniture'
 import { Chairs, Computers, VendingMachines, Whiteboards } from './items'
 import { TagProjector } from '../player/TagLayer'
-import { updateView } from './view'
 import LocalPlayer from '../player/LocalPlayer'
 import RemotePlayer from '../player/RemotePlayer'
 import { useGame } from '../state/game'
@@ -54,8 +53,6 @@ function CameraRig({ follow }: { follow: boolean }) {
     camera.position.copy(target.current).add(CAMERA_OFFSET)
     camera.lookAt(target.current)
     camera.updateProjectionMatrix()
-    camera.updateMatrixWorld()
-    updateView(camera)
   })
   return null
 }
