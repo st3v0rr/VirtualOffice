@@ -373,6 +373,40 @@ function WallDecor({ c, tv }: PrefabProps & { tv?: boolean }) {
   )
 }
 
+// The blocking tiles inside a component, merged into rectangles (relative to the
+// component centre). Pieces like the L-shaped desk in the boss office aren't boxes.
+function blockerRects(c: Component) {
+  const inside = (x: number, y: number) =>
+    office.blockers.some(
+      (b) => b.x <= x + 0.01 && b.y <= y + 0.01 && b.x + b.w >= x + 0.99 && b.y + b.h >= y + 0.99
+    )
+  const x0 = Math.floor(c.x)
+  const y0 = Math.floor(c.y)
+  const w = Math.ceil(c.x + c.w) - x0
+  const h = Math.ceil(c.y + c.h) - y0
+  const free = Array.from({ length: h }, (_, y) =>
+    Array.from({ length: w }, (_, x) => inside(x0 + x, y0 + y))
+  )
+  const rects: { x: number; y: number; w: number; h: number }[] = []
+  for (let y = 0; y < h; y++)
+    for (let x = 0; x < w; x++) {
+      if (!free[y][x]) continue
+      let rw = 1
+      while (x + rw < w && free[y][x + rw]) rw++
+      let rh = 1
+      while (y + rh < h && free[y + rh].slice(x, x + rw).every(Boolean)) rh++
+      for (let yy = y; yy < y + rh; yy++) for (let xx = x; xx < x + rw; xx++) free[yy][xx] = false
+      rects.push({
+        x: x0 + x + rw / 2 - (c.x + c.w / 2),
+        y: y0 + y + rh / 2 - (c.y + c.h / 2),
+        w: rw,
+        h: rh,
+      })
+    }
+  // not a blocking component: use the whole bounding box
+  return rects.length ? rects : [{ x: 0, y: 0, w: c.w, h: c.h }]
+}
+
 const Prefab = memo(function Prefab({ c, kind }: { c: Component; kind: Kind }) {
   switch (kind) {
     case 'hidden':
@@ -389,7 +423,11 @@ const Prefab = memo(function Prefab({ c, kind }: { c: Component; kind: Kind }) {
       case 'desk':
         return (
           <group>
-            <Table c={c} color="#f5dcb8" />
+            {blockerRects(c).map((r, i) => (
+              <group key={i} position={[r.x, 0, r.y]}>
+                <Table c={{ ...c, w: r.w, h: r.h }} color="#f5dcb8" />
+              </group>
+            ))}
             <Box
               size={[0.5, 0.03, 0.35]}
               position={[0.1, 0.69, 0]}
@@ -440,11 +478,16 @@ const Prefab = memo(function Prefab({ c, kind }: { c: Component; kind: Kind }) {
       default: {
         const height = c.w * c.h <= 1 ? 0.55 : 0.7
         return (
-          <Box
-            size={[c.w - 0.1, height, c.h - 0.1]}
-            position={[0, height / 2, 0]}
-            color={pastel(c.color)}
-          />
+          <group>
+            {blockerRects(c).map((r, i) => (
+              <Box
+                key={i}
+                size={[r.w - 0.1, height, r.h - 0.1]}
+                position={[r.x, height / 2, r.y]}
+                color={pastel(c.color)}
+              />
+            ))}
+          </group>
         )
       }
     }
