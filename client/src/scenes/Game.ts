@@ -2,6 +2,7 @@ import Phaser from 'phaser'
 
 // import { debugDraw } from '../utils/debug'
 import { createCharacterAnims } from '../anims/CharacterAnims'
+import { benchmarkAvatars } from '../avatar/benchmark'
 
 import Item from '../items/Item'
 import Chair from '../items/Chair'
@@ -139,6 +140,9 @@ export default class Game extends Phaser.Scene {
     }
 
     createCharacterAnims(this.anims)
+    if (import.meta.env.DEV) {
+      ;(window as any).avatarBenchmark = (count?: number) => benchmarkAvatars(this, count)
+    }
 
     this.map = this.make.tilemap({ key: 'tilemap' })
     const FloorAndGround = this.map.addTilesetImage('FloorAndGround', 'tiles_wall')!

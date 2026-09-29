@@ -44,9 +44,13 @@ export function isAvatarTexture(texture: string) {
  * avatar. The layers are stamped onto one DynamicTexture (what a RenderTexture draws into) the first
  * time an avatar is needed, later calls with the same description reuse it.
  */
+export function avatarTextureKey(avatar: AvatarDescription) {
+  return `lpc-${hash(serializeAvatar(avatar))}`
+}
+
 export function ensureAvatarTexture(scene: Phaser.Scene, avatar: AvatarDescription) {
   const serialized = serializeAvatar(avatar)
-  const key = `lpc-${hash(serialized)}`
+  const key = avatarTextureKey(avatar)
   if (scene.textures.exists(key)) return key
 
   const start = performance.now()
