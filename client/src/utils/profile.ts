@@ -6,7 +6,9 @@ export type Profile = {
   avatar: string
 }
 
-const STORAGE_KEY = 'skyoffice:profile'
+// "?profile=b" keeps a second profile, e.g. to test two players in tabs of the same browser
+const profileName = new URLSearchParams(window.location.search).get('profile')
+const STORAGE_KEY = profileName ? `skyoffice:profile:${profileName}` : 'skyoffice:profile'
 
 export function loadProfile(): Profile | null {
   try {

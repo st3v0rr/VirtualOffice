@@ -63,14 +63,6 @@ const FIELDS = [
 const VERSION = '1'
 const SEPARATOR = '.'
 
-export const DEFAULT_AVATAR: AvatarDescription = {
-  body: 'teen_light',
-  hair: 'curly_short',
-  hairColor: 'dark_brown',
-  top: 'polo',
-  bottom: 'pants',
-}
-
 /** e.g. "1.teen_light.curly_short.dark_brown.polo.pants", also used as cache key */
 export function serializeAvatar(avatar: AvatarDescription) {
   return [VERSION, ...FIELDS.map((field) => avatar[field])].join(SEPARATOR)
