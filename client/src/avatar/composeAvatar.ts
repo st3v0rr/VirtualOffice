@@ -39,15 +39,15 @@ export function isAvatarTexture(texture: string) {
   return texture.startsWith('lpc-')
 }
 
+export function avatarTextureKey(avatar: AvatarDescription) {
+  return `lpc-${hash(serializeAvatar(avatar))}`
+}
+
 /**
  * The key of a spritesheet texture with all frames and animations ("<key>_idle_down", ...) of an
  * avatar. The layers are stamped onto one DynamicTexture (what a RenderTexture draws into) the first
  * time an avatar is needed, later calls with the same description reuse it.
  */
-export function avatarTextureKey(avatar: AvatarDescription) {
-  return `lpc-${hash(serializeAvatar(avatar))}`
-}
-
 export function ensureAvatarTexture(scene: Phaser.Scene, avatar: AvatarDescription) {
   const serialized = serializeAvatar(avatar)
   const key = avatarTextureKey(avatar)
@@ -65,9 +65,10 @@ export function ensureAvatarTexture(scene: Phaser.Scene, avatar: AvatarDescripti
   // Phaser 4 buffers the drawing commands until render()
   texture.render()
 
-  for (let row = 0; row < SHEET_HEIGHT / CELL; row++) {
+  for (let direction = 0; direction < DIRECTIONS.length; direction++) {
     for (let column = 0; column < SHEET_COLUMNS; column++) {
-      texture.add(row * SHEET_COLUMNS + column, 0, column * CELL, row * CELL, CELL, CELL)
+      const frame = frameIndex(direction, column)
+      texture.add(frame, 0, column * CELL, direction * CELL, CELL, CELL)
     }
   }
 
@@ -77,7 +78,7 @@ export function ensureAvatarTexture(scene: Phaser.Scene, avatar: AvatarDescripti
         key: `${key}_${state}_${direction}`,
         frames: anim.frames.map((column) => ({
           key,
-          frame: frameIndex(anim.block, directionIndex, column),
+          frame: frameIndex(directionIndex, column),
         })),
         frameRate: anim.frameRate,
         repeat: anim.repeat,
