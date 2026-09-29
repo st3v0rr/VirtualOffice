@@ -8,8 +8,12 @@ import Dialogs from './ui/Dialogs'
 import { StatsProbe } from './ui/Stats'
 import PostFx from './toon/PostFx'
 import { TagOverlay } from './player/TagLayer'
+import Joystick from './ui/Joystick'
 import { useGame } from './state/game'
 import { useSettings } from './state/settings'
+
+// touch screens get a joystick
+const touch = typeof window !== 'undefined' && window.matchMedia('(pointer: coarse)').matches
 
 export default function App() {
   const connected = useGame((s) => s.connection === 'connected')
@@ -36,6 +40,7 @@ export default function App() {
           <Hud />
           <Chat />
           <Dialogs />
+          {touch && <Joystick />}
         </>
       )}
       {editorOpen && <AvatarEditor />}

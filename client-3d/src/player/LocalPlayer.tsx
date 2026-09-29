@@ -8,7 +8,7 @@ import { office, toWorld, toMap, chairSitPosition } from '../map/office'
 import { move, findPath, isFree } from '../map/collision'
 import { me, toAnim } from '../net/players'
 import { network } from '../net/network'
-import { intent } from '../game/intent'
+import { intent, joystick } from '../game/intent'
 import { clock, playEmote } from '../game/actions'
 import {
   chairs,
@@ -203,6 +203,9 @@ export default function LocalPlayer() {
       if (KEYS_DOWN.some((key) => k.has(key))) input.sub(SCREEN_UP)
       if (KEYS_RIGHT.some((key) => k.has(key))) input.add(SCREEN_RIGHT)
       if (KEYS_LEFT.some((key) => k.has(key))) input.sub(SCREEN_RIGHT)
+      if (joystick.x || joystick.y) {
+        input.addScaledVector(SCREEN_RIGHT, joystick.x).addScaledVector(SCREEN_UP, joystick.y)
+      }
     }
 
     let vx = 0
@@ -211,7 +214,9 @@ export default function LocalPlayer() {
       path.current = null
       pendingUse.current = null
       if (me.sittingOn) standUp()
-      input.normalize()
+      // keys are full speed, the joystick can be pushed half way
+      const strength = Math.min(1, input.length())
+      input.normalize().multiplyScalar(strength)
       vx = input.x
       vz = input.y
     } else if (path.current && !me.sittingOn) {
@@ -254,7 +259,7 @@ export default function LocalPlayer() {
         motion.state = state
         motion.since = now
       }
-      motion.speed = moving ? 1 : 0
+      motion.speed = moving ? Math.min(1, Math.hypot(vx, vz)) : 0
     }
 
     g.position.set(me.x, 0, me.z)

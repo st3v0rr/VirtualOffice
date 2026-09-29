@@ -69,6 +69,7 @@ function Settings({ onClose }: { onClose: () => void }) {
 
 export default function Hud() {
   const prompt = useGame((s) => s.prompt)
+  const roomName = useGame((s) => s.roomName)
   const playerCount = useGame((s) => Object.keys(s.players).length + 1)
   const [settings, setSettings] = useState(false)
   const [help, setHelp] = useState(true)
@@ -76,7 +77,9 @@ export default function Hud() {
   return (
     <>
       <div className="hud-top">
-        <span className="pill">🏢 Public Lobby · {playerCount} online</span>
+        <span className="pill">
+          🏢 {roomName || 'Büro'} · {playerCount} online
+        </span>
         <MediaBadge />
         <button
           className="pill button"

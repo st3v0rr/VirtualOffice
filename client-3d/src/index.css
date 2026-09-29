@@ -559,3 +559,65 @@ input:focus {
 .drinks .emoji {
   font-size: 32px;
 }
+
+/* ---------- touch joystick ---------- */
+
+.joystick {
+  position: absolute;
+  right: 24px;
+  bottom: 90px;
+  width: 120px;
+  height: 120px;
+  border-radius: 50%;
+  background: rgba(255, 255, 255, 0.45);
+  border: 3px solid rgba(255, 255, 255, 0.8);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  touch-action: none;
+}
+.joystick .knob {
+  width: 52px;
+  height: 52px;
+  border-radius: 50%;
+  background: var(--lilac);
+  border: 3px solid white;
+  box-shadow: 0 3px 10px rgba(74, 63, 85, 0.3);
+}
+
+/* ---------- room selection ---------- */
+
+.rooms {
+  width: 100%;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  max-height: 180px;
+  overflow-y: auto;
+}
+.rooms label {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 6px 12px;
+  border-radius: 12px;
+  cursor: pointer;
+  border: 2px solid transparent;
+}
+.rooms label.active {
+  border-color: var(--lilac);
+  background: white;
+}
+.rooms input {
+  accent-color: #a98ae0;
+}
+.new-room {
+  width: 100%;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+.join input[type='password'],
+.new-room input {
+  font-size: 15px;
+}

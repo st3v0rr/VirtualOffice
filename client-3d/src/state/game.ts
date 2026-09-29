@@ -10,6 +10,15 @@ export type Bubble = { text: string; until: number }
 export type Dialog =
   { kind: 'computer'; id: string } | { kind: 'whiteboard'; id: string } | { kind: 'vending' } | null
 
+// a custom room from the lobby
+export type LobbyRoom = {
+  roomId: string
+  name: string
+  description: string
+  hasPassword: boolean
+  clients: number
+}
+
 export type MediaStatus = 'unknown' | 'checking' | 'available' | 'unavailable' | 'quiet'
 
 type GameState = {
@@ -22,6 +31,8 @@ type GameState = {
   // id -> name / avatar of the other players, only changes when someone joins,
   // leaves, renames or changes clothes
   players: Record<string, { name: string; avatar: Avatar }>
+  rooms: LobbyRoom[]
+  roomName: string
   chat: ChatLine[]
   bubbles: Record<string, Bubble>
   editorOpen: boolean
@@ -44,6 +55,8 @@ export const useGame = create<GameState>()((set) => ({
   avatar: saved ?? DEFAULT_AVATAR,
   hasSavedAvatar: saved !== null,
   players: {},
+  rooms: [],
+  roomName: '',
   chat: [],
   bubbles: {},
   editorOpen: false,

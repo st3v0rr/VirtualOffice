@@ -14,13 +14,18 @@ import { useBoards } from '../state/boards'
 import { avatarForTexture, parseAvatar, type Avatar } from '../avatar/avatar'
 import { DRINKS, EMOTES, type Drink, type Emote } from '../avatar/motion'
 import { toWorld } from '../map/office'
-import { useGame, pushChat, showBubble } from '../state/game'
+import { useGame, pushChat, showBubble, type LobbyRoom } from '../state/game'
 import { remotes, parseAnim, DIRECTION_ANGLE } from './players'
 
 // how often my position is sent while moving, same as the 2D client (15 per second)
 const PLAYER_UPDATE_INTERVAL = 66
 
 type PlayerUpdate = { x: number; y: number; anim: string; rot: number }
+
+export type RoomTarget =
+  | { kind: 'public' }
+  | { kind: 'custom'; roomId: string; password?: string }
+  | { kind: 'create'; name: string; description: string; password?: string }
 
 function serverEndpoint() {
   if (import.meta.env.VITE_SERVER_URL) return import.meta.env.VITE_SERVER_URL as string
@@ -41,19 +46,69 @@ class Network {
   private lastSentAt = 0
   private timer?: number
 
-  async join(name: string, avatar: Avatar, spawn: { x: number; y: number; anim: string }) {
+  private lobby?: Room
+
+  // the list of custom rooms, kept up to date by Colyseus' lobby room
+  async joinLobby() {
+    if (this.lobby) return
+    try {
+      const lobby = await this.client.joinOrCreate(RoomType.LOBBY)
+      this.lobby = lobby
+      const set = (rooms: LobbyRoom[]) => useGame.getState().set({ rooms })
+      const toRoom = (roomId: string, room: any): LobbyRoom => ({
+        roomId,
+        name: room.metadata?.name ?? roomId,
+        description: room.metadata?.description ?? '',
+        hasPassword: !!room.metadata?.hasPassword,
+        clients: room.clients ?? 0,
+      })
+      lobby.onMessage('rooms', (rooms: any[]) => set(rooms.map((r) => toRoom(r.roomId, r))))
+      lobby.onMessage('+', ([roomId, room]: [string, any]) =>
+        set([...useGame.getState().rooms.filter((r) => r.roomId !== roomId), toRoom(roomId, room)])
+      )
+      lobby.onMessage('-', (roomId: string) =>
+        set(useGame.getState().rooms.filter((r) => r.roomId !== roomId))
+      )
+    } catch (error) {
+      console.warn('Lobby not available', error)
+    }
+  }
+
+  async join(
+    name: string,
+    avatar: Avatar,
+    spawn: { x: number; y: number; anim: string },
+    target: RoomTarget = { kind: 'public' }
+  ) {
     const game = useGame.getState()
     game.set({ connection: 'connecting', connectionError: undefined })
     try {
-      this.room = await this.client.joinOrCreate(RoomType.PUBLIC)
+      if (target.kind === 'custom') {
+        this.room = await this.client.joinById(target.roomId, { password: target.password || null })
+      } else if (target.kind === 'create') {
+        this.room = await this.client.create(RoomType.CUSTOM, {
+          name: target.name,
+          description: target.description,
+          password: target.password || null,
+          autoDispose: true,
+        })
+      } else {
+        this.room = await this.client.joinOrCreate(RoomType.PUBLIC)
+      }
     } catch (error) {
       console.error(error)
+      const message = (error as Error)?.message
       game.set({
         connection: 'error',
-        connectionError: `Server nicht erreichbar (${serverEndpoint()}). Läuft "npm run dev:server"?`,
+        connectionError:
+          target.kind === 'public'
+            ? `Server nicht erreichbar (${serverEndpoint()}). Läuft "npm run dev:server"?`
+            : `Beitreten fehlgeschlagen: ${message || 'unbekannter Fehler'}`,
       })
       return false
     }
+    this.lobby?.leave()
+    this.lobby = undefined
     const room = this.room
     game.set({ connection: 'connected', sessionId: room.sessionId })
     this.listen(room)
@@ -221,7 +276,9 @@ class Network {
       )
     })
 
-    room.onMessage(Message.SEND_ROOM_DATA, () => {})
+    room.onMessage(Message.SEND_ROOM_DATA, (data: { name: string }) => {
+      useGame.getState().set({ roomName: data.name })
+    })
   }
 
   // position in map pixels (sprite centre like the 2D client), anim in the 2D format
