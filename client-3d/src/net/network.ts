@@ -1,10 +1,18 @@
 import { Callbacks, Client, type Room } from '@colyseus/sdk'
-import type { IOfficeState, IPlayer } from '../../../types/IOfficeState'
+import type { IOfficeState, IPlayer, IWhiteboard } from '../../../types/IOfficeState'
 import { Message } from '../../../types/Messages'
 import { RoomType } from '../../../types/Rooms'
-import type { MediaGrant } from '../../../types/Media'
+import type { MediaGrant, MediaTokenRequest } from '../../../types/Media'
+import type {
+  AddNoteMessage,
+  DeleteNoteMessage,
+  HandleSide,
+  NoteColor,
+  UpdateNoteMessage,
+} from '../../../types/Whiteboard'
+import { useBoards } from '../state/boards'
 import { avatarForTexture, parseAvatar, type Avatar } from '../avatar/avatar'
-import type { Emote } from '../avatar/motion'
+import { DRINKS, EMOTES, type Drink, type Emote } from '../avatar/motion'
 import { toWorld } from '../map/office'
 import { useGame, pushChat, showBubble } from '../state/game'
 import { remotes, parseAnim, DIRECTION_ANGLE } from './players'
@@ -82,6 +90,7 @@ class Network {
         state: parsed.state,
         fresh: true,
         emote: null,
+        drink: null,
       })
       let announced = false
       const syncLook = () => {
@@ -150,9 +159,16 @@ class Network {
 
     room.onMessage(
       Message.PLAYER_EMOTE,
-      ({ clientId, emote }: { clientId: string; emote: Emote }) => {
+      ({ clientId, emote }: { clientId: string; emote: string }) => {
         const remote = remotes.get(clientId)
-        if (remote) remote.emote = emote
+        if (!remote) return
+        const [kind, arg] = String(emote).split(':')
+        if (kind === 'drink' && arg in DRINKS) {
+          remote.drink = arg as Drink
+          remote.emote = 'hop'
+        } else if (EMOTES.includes(kind as Emote)) {
+          remote.emote = kind as Emote
+        }
       }
     )
 
@@ -171,6 +187,39 @@ class Network {
     }
     trackUsers('computers')
     trackUsers('whiteboards')
+
+    // sticky notes and arrows of the whiteboards
+    const boards = useBoards.getState()
+    $.onAdd('whiteboards', (whiteboard: IWhiteboard, boardId: string) => {
+      $.onAdd(whiteboard, 'notes', (note, noteId) => {
+        const sync = () =>
+          boards.upsertNote(boardId, {
+            id: String(noteId),
+            x: note.x,
+            y: note.y,
+            width: note.width,
+            height: note.height,
+            text: note.text,
+            color: note.color as NoteColor,
+            author: note.author,
+          })
+        sync()
+        $.onChange(note, sync)
+      })
+      $.onRemove(whiteboard, 'notes', (_note, noteId) => boards.removeNote(boardId, String(noteId)))
+      $.onAdd(whiteboard, 'arrows', (arrow, arrowId) =>
+        boards.upsertArrow(boardId, {
+          id: String(arrowId),
+          from: arrow.from,
+          to: arrow.to,
+          fromSide: arrow.fromSide as HandleSide,
+          toSide: arrow.toSide as HandleSide,
+        })
+      )
+      $.onRemove(whiteboard, 'arrows', (_arrow, arrowId) =>
+        boards.removeArrow(boardId, String(arrowId))
+      )
+    })
 
     room.onMessage(Message.SEND_ROOM_DATA, () => {})
   }
@@ -215,7 +264,7 @@ class Network {
     this.room?.send(Message.ADD_CHAT_MESSAGE, { content })
   }
 
-  sendEmote(emote: Emote) {
+  sendEmote(emote: Emote | `drink:${Drink}`) {
     this.room?.send(Message.PLAYER_EMOTE, { emote })
   }
 
@@ -235,11 +284,25 @@ class Network {
     this.room?.send(Message.DISCONNECT_FROM_WHITEBOARD, { whiteboardId: id })
   }
 
-  // asks the server for a LiveKit token at my position; null in quiet zones
-  async requestMediaGrant(): Promise<MediaGrant | null> {
+  addNote(message: AddNoteMessage) {
+    this.room?.send(Message.WHITEBOARD_ADD_NOTE, message)
+  }
+
+  updateNote(message: UpdateNoteMessage) {
+    this.room?.send(Message.WHITEBOARD_UPDATE_NOTE, message)
+  }
+
+  deleteNote(message: DeleteNoteMessage) {
+    this.room?.send(Message.WHITEBOARD_DELETE_NOTE, message)
+  }
+
+  // a LiveKit token for the media room at my position or at a computer; null in quiet zones
+  async requestMediaGrant(
+    request: MediaTokenRequest = { kind: 'location' }
+  ): Promise<MediaGrant | null> {
     if (!this.room) throw new Error('Not in a room')
     this.flush()
-    return this.room.request(Message.REQUEST_MEDIA_TOKEN, { kind: 'location' })
+    return this.room.request(Message.REQUEST_MEDIA_TOKEN, request)
   }
 }
 

@@ -1,19 +1,32 @@
-import { useEffect } from 'react'
+import { useEffect, useRef, useState, useSyncExternalStore, type ReactNode } from 'react'
 import { useGame } from '../state/game'
+import { useBoards, NOTE_COLOR_HEX, type Note } from '../state/boards'
 import { network } from '../net/network'
+import ScreenShareSession from '../media/ScreenShareSession'
+import { NOTE_COLORS, NOTE_LIMITS, type NoteColor } from '../../../types/Whiteboard'
+import { DRINKS, type Drink } from '../avatar/motion'
+import { drink } from '../game/actions'
 
 // Dialogs for the computers, whiteboards and the vending machine.
 
-function Modal({ title, children }: { title: string; children: React.ReactNode }) {
-  const close = () => useGame.getState().set({ dialog: null })
+const NO_USERS: string[] = []
+const close = () => useGame.getState().set({ dialog: null })
+
+function Modal({ title, wide, children }: { title: string; wide?: boolean; children: ReactNode }) {
   useEffect(() => {
-    const onKey = (e: KeyboardEvent) => e.key === 'Escape' && close()
+    const onKey = (e: KeyboardEvent) => {
+      // Esc while editing a note only ends the editing
+      if (e.key === 'Escape' && !(document.activeElement instanceof HTMLTextAreaElement)) close()
+    }
     window.addEventListener('keydown', onKey)
     return () => window.removeEventListener('keydown', onKey)
   }, [])
   return (
-    <div className="modal-backdrop" onClick={close}>
-      <div className="modal dialog" onClick={(e) => e.stopPropagation()}>
+    <div className="modal-backdrop" onPointerDown={close}>
+      <div
+        className={`modal dialog ${wide ? 'wide' : ''}`}
+        onPointerDown={(e) => e.stopPropagation()}
+      >
         <h2>{title}</h2>
         {children}
         <button className="secondary close" onClick={close}>
@@ -24,41 +37,254 @@ function Modal({ title, children }: { title: string; children: React.ReactNode }
   )
 }
 
+// ---------- computer: screen sharing through LiveKit ----------
+
+function Video({ stream, muted }: { stream: MediaStream; muted?: boolean }) {
+  const ref = useRef<HTMLVideoElement>(null)
+  useEffect(() => {
+    if (ref.current) ref.current.srcObject = stream
+  }, [stream])
+  return <video ref={ref} autoPlay playsInline muted={muted} />
+}
+
 function ComputerDialog({ id }: { id: string }) {
-  const users = useGame((s) => s.itemUsers[id] ?? [])
+  const users = useGame((s) => s.itemUsers[id]) ?? NO_USERS
   const players = useGame((s) => s.players)
   const me = useGame((s) => s.sessionId)
+  const [session] = useState(() => new ScreenShareSession(network, id))
+  const snapshot = useSyncExternalStore(session.subscribe, session.getSnapshot)
+  const [error, setError] = useState<string>()
+
   useEffect(() => {
     network.connectToComputer(id)
-    return () => network.disconnectFromComputer(id)
-  }, [id])
+    // the server only hands out the computer's media token to its users
+    const timer = window.setTimeout(() => session.open(), 150)
+    return () => {
+      window.clearTimeout(timer)
+      session.close()
+      network.disconnectFromComputer(id)
+    }
+  }, [id, session])
+
+  const share = async () => {
+    setError(undefined)
+    try {
+      await session.startScreenShare()
+    } catch (e) {
+      setError((e as Error).message)
+    }
+  }
+
+  const names = users.map((u) => (u === me ? 'Du' : (players[u]?.name ?? '…')))
   return (
-    <Modal title="💻 Computer">
-      <p>
-        Am Computer:{' '}
-        {users.map((u) => (u === me ? 'Du' : (players[u]?.name ?? '…'))).join(', ') || '—'}
-      </p>
-      <p className="muted">Bildschirmfreigabe folgt (LiveKit).</p>
+    <Modal title="💻 Computer" wide>
+      <p>Hier sitzen: {names.join(', ') || '—'}</p>
+      <div className="toolbar">
+        {snapshot.myStream ? (
+          <button className="secondary" onClick={() => session.stopScreenShare()}>
+            Freigabe beenden
+          </button>
+        ) : (
+          <button className="primary" onClick={share} disabled={!snapshot.connected}>
+            🖥️ Bildschirm teilen
+          </button>
+        )}
+        {!snapshot.connected && !snapshot.error && (
+          <span className="muted">Verbinde mit LiveKit …</span>
+        )}
+        {snapshot.error && <span className="error">{snapshot.error}</span>}
+        {error && <span className="error">{error}</span>}
+      </div>
+      <div className="screens">
+        {snapshot.myStream && <Video stream={snapshot.myStream} muted />}
+        {snapshot.screens.map((screen) => (
+          <Video key={screen.id} stream={screen.stream} />
+        ))}
+        {!snapshot.myStream && !snapshot.screens.length && (
+          <p className="muted">Noch teilt niemand seinen Bildschirm an diesem Computer.</p>
+        )}
+      </div>
     </Modal>
   )
 }
 
+// ---------- whiteboard: the sticky notes of the 2D client ----------
+
+// a note while it is dragged, before the server has the new position
+type Drag = { id: string; dx: number; dy: number; startX: number; startY: number }
+
+function NoteCard({ note, scale, boardId }: { note: Note; scale: number; boardId: string }) {
+  const [editing, setEditing] = useState(false)
+  const [text, setText] = useState(note.text)
+  const [drag, setDrag] = useState<Drag | null>(null)
+  const lastSent = useRef(0)
+
+  const x = note.x + (drag?.dx ?? 0)
+  const y = note.y + (drag?.dy ?? 0)
+
+  const save = () => {
+    setEditing(false)
+    if (text !== note.text)
+      network.updateNote({
+        whiteboardId: boardId,
+        noteId: note.id,
+        changes: { text: text.slice(0, NOTE_LIMITS.maxTextLength) },
+      })
+  }
+
+  return (
+    <div
+      className="note"
+      style={{
+        left: x * scale,
+        top: y * scale,
+        width: note.width * scale,
+        height: note.height * scale,
+        background: NOTE_COLOR_HEX[note.color] ?? NOTE_COLOR_HEX.yellow,
+      }}
+      onPointerDown={(e) => {
+        if (editing) return
+        e.currentTarget.setPointerCapture(e.pointerId)
+        setDrag({ id: note.id, dx: 0, dy: 0, startX: e.clientX, startY: e.clientY })
+      }}
+      onPointerMove={(e) => {
+        if (!drag) return
+        const dx = (e.clientX - drag.startX) / scale
+        const dy = (e.clientY - drag.startY) / scale
+        setDrag({ ...drag, dx, dy })
+        // like the 2D client: send while dragging, at most every 50 ms
+        if (performance.now() - lastSent.current > 50) {
+          lastSent.current = performance.now()
+          network.updateNote({
+            whiteboardId: boardId,
+            noteId: note.id,
+            changes: { x: note.x + dx, y: note.y + dy },
+          })
+        }
+      }}
+      onPointerUp={() => {
+        if (!drag) return
+        if (drag.dx || drag.dy)
+          network.updateNote({
+            whiteboardId: boardId,
+            noteId: note.id,
+            changes: { x: note.x + drag.dx, y: note.y + drag.dy },
+          })
+        setDrag(null)
+      }}
+      onDoubleClick={() => {
+        setText(note.text)
+        setEditing(true)
+      }}
+    >
+      {editing ? (
+        <textarea
+          autoFocus
+          value={text}
+          onChange={(e) => setText(e.target.value)}
+          onBlur={save}
+          onKeyDown={(e) => {
+            e.stopPropagation()
+            if (e.key === 'Escape') save()
+          }}
+        />
+      ) : (
+        <div className="text">
+          {note.text || <span className="muted">Doppelklick zum Schreiben</span>}
+        </div>
+      )}
+      <button
+        className="delete"
+        title="Löschen"
+        onPointerDown={(e) => e.stopPropagation()}
+        onClick={() => network.deleteNote({ whiteboardId: boardId, noteId: note.id })}
+      >
+        ✕
+      </button>
+    </div>
+  )
+}
+
+const BOARD_SCALE = 0.55
+
 function WhiteboardDialog({ id }: { id: string }) {
+  const board = useBoards((s) => s.boards[id])
+  const [color, setColor] = useState<NoteColor>('yellow')
+  const notes = Object.values(board?.notes ?? {})
+  const arrows = Object.values(board?.arrows ?? {})
+
   useEffect(() => {
     network.connectToWhiteboard(id)
     return () => network.disconnectFromWhiteboard(id)
   }, [id])
+
+  const add = () => {
+    // in a grid next to the other notes, so the new one is visible without scrolling
+    const x = 40 + (notes.length % 6) * 220
+    const y = 40 + (Math.floor(notes.length / 6) % 4) * 220
+    network.addNote({ whiteboardId: id, x, y, color })
+  }
+
+  const center = (note: Note) => ({
+    x: (note.x + note.width / 2) * BOARD_SCALE,
+    y: (note.y + note.height / 2) * BOARD_SCALE,
+  })
   return (
-    <Modal title="📝 Whiteboard">
-      <p className="muted">Whiteboard {id}</p>
+    <Modal title="📝 Whiteboard" wide>
+      <div className="toolbar">
+        <button className="primary" onClick={add} disabled={notes.length >= NOTE_LIMITS.maxNotes}>
+          + Zettel
+        </button>
+        {NOTE_COLORS.map((c) => (
+          <button
+            key={c}
+            className={`swatch ${c === color ? 'active' : ''}`}
+            style={{ background: NOTE_COLOR_HEX[c] }}
+            onClick={() => setColor(c)}
+            aria-label={c}
+          />
+        ))}
+        <span className="muted">
+          Ziehen zum Verschieben · Doppelklick zum Schreiben · synchron mit dem 2D-Client
+        </span>
+      </div>
+      <div className="board">
+        <svg className="arrows">
+          {arrows.map((arrow) => {
+            const from = board?.notes[arrow.from]
+            const to = board?.notes[arrow.to]
+            if (!from || !to) return null
+            const a = center(from)
+            const b = center(to)
+            return <line key={arrow.id} x1={a.x} y1={a.y} x2={b.x} y2={b.y} />
+          })}
+        </svg>
+        {notes.map((note) => (
+          <NoteCard key={note.id} note={note} scale={BOARD_SCALE} boardId={id} />
+        ))}
+      </div>
     </Modal>
   )
 }
 
+// ---------- vending machine ----------
+
 function VendingDialog() {
+  const pick = (d: Drink) => {
+    drink(d)
+    close()
+  }
   return (
     <Modal title="🥤 Getränkeautomat">
-      <p>Prost!</p>
+      <p>Was darf’s sein? (geht aufs Haus)</p>
+      <div className="drinks">
+        {(Object.keys(DRINKS) as Drink[]).map((d) => (
+          <button key={d} onClick={() => pick(d)}>
+            <span className="emoji">{DRINKS[d].emoji}</span>
+            {DRINKS[d].label}
+          </button>
+        ))}
+      </div>
     </Modal>
   )
 }
@@ -68,9 +294,9 @@ export default function Dialogs() {
   if (!dialog) return null
   switch (dialog.kind) {
     case 'computer':
-      return <ComputerDialog id={dialog.id} />
+      return <ComputerDialog key={dialog.id} id={dialog.id} />
     case 'whiteboard':
-      return <WhiteboardDialog id={dialog.id} />
+      return <WhiteboardDialog key={dialog.id} id={dialog.id} />
     case 'vending':
       return <VendingDialog />
   }

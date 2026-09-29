@@ -5,7 +5,7 @@ import type { Avatar } from './avatar'
 import { flat, toon } from '../toon/materials'
 import { Hull } from '../toon/outline'
 import { useSettings } from '../state/settings'
-import { EMOTE_DURATION, SIT_LIFT, type Motion } from './motion'
+import { DRINKS, EMOTE_DURATION, SIT_LIFT, type Motion } from './motion'
 import { inView } from '../world/view'
 
 // A chibi built from primitives: big round head, small body, stubby legs.
@@ -34,6 +34,8 @@ const mouthGeometry = new THREE.TorusGeometry(0.034, 0.01, 6, 14, Math.PI)
 const hoodGeometry = new THREE.TorusGeometry(0.17, 0.065, 8, 20)
 const collarGeometry = new THREE.TorusGeometry(0.13, 0.03, 6, 20)
 const shadowGeometry = new THREE.CircleGeometry(0.3, 24)
+const cupGeometry = new THREE.CylinderGeometry(0.055, 0.045, 0.11, 12)
+const cupFillGeometry = new THREE.CylinderGeometry(0.048, 0.048, 0.025, 12)
 
 // the chibis are a bit bigger than a tile, like the 32x48 sprites of the 2D client
 export const CHIBI_SCALE = 1.22
@@ -216,6 +218,8 @@ export default function Chibi({ avatar, motion, seed = 0 }: ChibiProps) {
   const armL = useRef<THREE.Group>(null)
   const armR = useRef<THREE.Group>(null)
   const eyes = useRef<THREE.Group>(null)
+  const cup = useRef<THREE.Group>(null)
+  const cupDrink = useRef<string | null>(null)
   const shadow = useRef<THREE.Mesh>(null)
   const walkPhase = useRef(seed * 10)
   const nextBlink = useRef(2 + seed * 3)
@@ -251,6 +255,7 @@ export default function Chibi({ avatar, motion, seed = 0 }: ChibiProps) {
     let headTilt = Math.sin(t * 0.9 + seed * 6) * 0.05
     let sway = 0
     let legLift = 0
+    let headYaw = 0
 
     if (mo.state === 'walk') {
       walkPhase.current += dt * (7 + 6 * mo.speed)
@@ -269,6 +274,20 @@ export default function Chibi({ avatar, motion, seed = 0 }: ChibiProps) {
       sway = Math.sin(t * 1.4 + seed * 3) * 0.035
       armSwingL = 0.05 * b
       armSwingR = -0.05 * b
+      // standing around for a while: look around now and then, or have a good stretch
+      const idle = t - mo.since
+      if (idle > 5) {
+        const p = (idle + seed * 9) % 9
+        if (p < 1.8) {
+          headYaw = Math.sin((p / 1.8) * Math.PI * 2) * 0.55
+        } else if (p > 5 && p < 6.3 && seed > 0.5) {
+          const k = Math.sin(((p - 5) / 1.3) * Math.PI)
+          armRaiseL = 0.12 + 2.5 * k
+          armRaiseR = -0.12 - 2.5 * k
+          squash *= 1 + 0.07 * k
+          headTilt = -0.1 * k
+        }
+      }
     } else {
       // sitting: the "plumps" drops in from a little hop, squashes and wobbles back
       const s = t - mo.since
@@ -286,6 +305,31 @@ export default function Chibi({ avatar, motion, seed = 0 }: ChibiProps) {
       squash *= 1 + 0.012 * b
       // dangling feet
       legSwing = Math.sin(t * 3 + seed * 4) * 0.12
+    }
+
+    // a drink in the hand, with a sip every few seconds
+    const holding = mo.holding && mo.holding.until > t ? mo.holding : null
+    if (mo.holding && !holding) mo.holding = null
+    if (holding) {
+      armSwingR = -0.5
+      armRaiseR = -0.15
+      const sip = (t + seed * 4) % 4.5
+      if (sip < 0.9) {
+        const k = Math.sin((sip / 0.9) * Math.PI)
+        armSwingR = -0.5 - 1.6 * k
+        armRaiseR = -0.15 + 0.35 * k
+        headTilt = 0
+        headYaw = 0
+      }
+    }
+    if (cup.current) {
+      cup.current.visible = !!holding
+      if (holding && cupDrink.current !== holding.drink) {
+        cupDrink.current = holding.drink
+        const d = DRINKS[holding.drink]
+        ;(cup.current.children[0] as THREE.Mesh).material = toon(d.cup)
+        ;(cup.current.children[1] as THREE.Mesh).material = toon(d.fill)
+      }
     }
 
     // emotes play on top of the base state
@@ -319,6 +363,7 @@ export default function Chibi({ avatar, motion, seed = 0 }: ChibiProps) {
     bounce.current.rotation.z = lerp(bounce.current.rotation.z, sway, 6)
     hips.current.rotation.x = lerp(hips.current.rotation.x, lean, 8)
     head.current.rotation.z = lerp(head.current.rotation.z, headTilt, 8)
+    head.current.rotation.y = lerp(head.current.rotation.y, headYaw, 6)
 
     const legs = [legL.current, legR.current]
     legs.forEach((leg, i) => {
@@ -486,6 +531,17 @@ export default function Chibi({ avatar, motion, seed = 0 }: ChibiProps) {
                 scale={0.058}
                 outline={outline}
               />
+              {side === -1 && (
+                // the cup from the vending machine, shown while holding a drink
+                <group ref={cup} visible={false} position={[0, -0.21, 0.07]}>
+                  <mesh geometry={cupGeometry} material={toon('#fff6ea')} />
+                  <mesh
+                    geometry={cupFillGeometry}
+                    material={toon('#8a5a3c')}
+                    position={[0, 0.045, 0]}
+                  />
+                </group>
+              )}
             </group>
           ))}
           {/* the big head */}

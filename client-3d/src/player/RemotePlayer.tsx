@@ -3,7 +3,7 @@ import { useFrame } from '@react-three/fiber'
 import * as THREE from 'three'
 import Chibi from '../avatar/Chibi'
 import { useTagAnchor } from './TagLayer'
-import { createMotion } from '../avatar/motion'
+import { createMotion, DRINK_DURATION } from '../avatar/motion'
 import type { Avatar } from '../avatar/avatar'
 import { remotes } from '../net/players'
 import { chairs } from '../game/interactables'
@@ -67,6 +67,10 @@ export default function RemotePlayer({ id, avatar }: { id: string; avatar: Avata
     }
     motion.speed = state === 'walk' ? 1 : 0
 
+    if (remote.drink) {
+      motion.holding = { drink: remote.drink, until: now + DRINK_DURATION }
+      remote.drink = null
+    }
     if (remote.emote) {
       motion.emote = remote.emote
       motion.emoteSince = now

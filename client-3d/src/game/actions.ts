@@ -1,4 +1,5 @@
-import { EMOTE_DURATION, type Emote } from '../avatar/motion'
+import { DRINK_DURATION, EMOTE_DURATION, DRINKS, type Drink, type Emote } from '../avatar/motion'
+import { showBubble, useGame } from '../state/game'
 import { me } from '../net/players'
 import { network } from '../net/network'
 
@@ -11,4 +12,14 @@ export function playEmote(emote: Emote) {
   motion.emote = emote
   motion.emoteSince = clock.now
   network.sendEmote(emote)
+}
+
+// a drink from the vending machine: in the hand for a while, others see it too
+export function drink(kind: Drink) {
+  me.motion.holding = { drink: kind, until: clock.now + DRINK_DURATION }
+  me.motion.emote = 'hop'
+  me.motion.emoteSince = clock.now
+  network.sendEmote(`drink:${kind}`)
+  const id = useGame.getState().sessionId
+  if (id) showBubble(id, `${DRINKS[kind].emoji} *schlürf*`)
 }

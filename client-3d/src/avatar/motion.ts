@@ -3,6 +3,17 @@
 
 export type MotionState = 'idle' | 'walk' | 'sit'
 export type Emote = 'wave' | 'cheer' | 'hop'
+export const EMOTES: readonly Emote[] = ['wave', 'cheer', 'hop']
+
+// what the vending machine has; the chibi holds it for a while and takes sips
+export const DRINKS = {
+  coffee: { label: 'Kaffee', emoji: '☕', cup: '#fff6ea', fill: '#8a5a3c' },
+  tea: { label: 'Tee', emoji: '🍵', cup: '#b5e8a3', fill: '#e9c27d' },
+  soda: { label: 'Limo', emoji: '🥤', cup: '#ff9aa2', fill: '#ff9aa2' },
+  water: { label: 'Wasser', emoji: '💧', cup: '#8fd3e8', fill: '#dff3ff' },
+} as const
+export type Drink = keyof typeof DRINKS
+export const DRINK_DURATION = 30
 
 export type Motion = {
   state: MotionState
@@ -12,6 +23,8 @@ export type Motion = {
   since: number
   emote: Emote | null
   emoteSince: number
+  // a drink in the hand, until the clock time `until`
+  holding: { drink: Drink; until: number } | null
 }
 
 export const createMotion = (): Motion => ({
@@ -20,6 +33,7 @@ export const createMotion = (): Motion => ({
   since: 0,
   emote: null,
   emoteSince: 0,
+  holding: null,
 })
 
 // how much higher the hips are while sitting on a chair

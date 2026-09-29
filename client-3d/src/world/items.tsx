@@ -2,6 +2,7 @@ import { useMemo } from 'react'
 import type { ThreeEvent } from '@react-three/fiber'
 import { flat, pastel } from '../toon/materials'
 import { useGame } from '../state/game'
+import { useBoards, NOTE_COLOR_HEX } from '../state/boards'
 import {
   chairs,
   computers,
@@ -176,7 +177,38 @@ export function Computers() {
 
 // ---------- whiteboards: easels in front of the wall ----------
 
-const NOTE_COLORS = ['#ffe08a', '#ff9aa2', '#b5e8a3', '#8fd3e8']
+const noteGeometry = roundedBox(1, 1, 0.015, 0.004)
+const MAX_NOTES_SHOWN = 24
+
+// the real sticky notes of the board, shrunk onto the easel
+function BoardNotes({ id, width, height }: { id: string; width: number; height: number }) {
+  const board = useBoards((s) => s.boards[id])
+  const notes = Object.values(board?.notes ?? {}).slice(0, MAX_NOTES_SHOWN)
+  if (!notes.length) return null
+  const x0 = Math.min(...notes.map((n) => n.x))
+  const y0 = Math.min(...notes.map((n) => n.y))
+  const x1 = Math.max(...notes.map((n) => n.x + n.width))
+  const y1 = Math.max(...notes.map((n) => n.y + n.height))
+  // fit the notes into the board, but don't blow a single note up to full size
+  const scale = Math.min(width / Math.max(x1 - x0, 600), height / Math.max(y1 - y0, 400))
+  return (
+    <group position={[-width / 2, height / 2, 0]}>
+      {notes.map((note) => (
+        <mesh
+          key={note.id}
+          geometry={noteGeometry}
+          material={flat(NOTE_COLOR_HEX[note.color] ?? NOTE_COLOR_HEX.yellow)}
+          position={[
+            (note.x - x0 + note.width / 2) * scale,
+            -(note.y - y0 + note.height / 2) * scale,
+            0,
+          ]}
+          scale={[note.width * scale * 0.92, note.height * scale * 0.92, 1]}
+        />
+      ))}
+    </group>
+  )
+}
 
 export function Whiteboards() {
   const itemUsers = useGame((s) => s.itemUsers)
@@ -207,15 +239,9 @@ export function Whiteboards() {
               material={flat('#fdfcff')}
               position={[0, 0.95, 0.04]}
             />
-            {NOTE_COLORS.map((color, i) => (
-              <mesh
-                key={color}
-                geometry={roundedBox(0.18, 0.18, 0.015, 0.005)}
-                material={flat(color)}
-                position={[-w / 2 + 0.3 + i * 0.28, 1.05 - (i % 2) * 0.22, 0.055]}
-                rotation={[0, 0, (i % 2 ? -1 : 1) * 0.08]}
-              />
-            ))}
+            <group position={[0, 0.95, 0.055]}>
+              <BoardNotes id={board.id} width={w - 0.3} height={0.6} />
+            </group>
             <Box
               size={[w * 0.9, 0.04, 0.12]}
               position={[0, 0.52, 0.06]}
