@@ -84,15 +84,15 @@ or separately with `npm run dev:server`, `npm run dev:client` and `npm run dev:l
 
 ## Scripts
 
-| Command             | Description                                            |
-| ------------------- | ------------------------------------------------------ |
-| `npm run dev`       | Start server, client and LiveKit in watch/dev mode     |
-| `npm run dev3d`     | Start server and the 3D client (see [PoC 3D](#poc-3d)) |
+| Command             | Description                                                                          |
+| ------------------- | ------------------------------------------------------------------------------------ |
+| `npm run dev`       | Start server, client and LiveKit in watch/dev mode                                   |
+| `npm run dev3d`     | Start server and the 3D client (see [PoC 3D](#poc-3d))                               |
 | `npm run build`     | Build server (`server/lib`), client (`client/dist`) and 3D client (`client-3d/dist`) |
-| `npm start`         | Run the built server                                   |
-| `npm run typecheck` | Type-check all workspaces                              |
-| `npm run lint`      | Lint with ESLint                                       |
-| `npm run format`    | Format with Prettier                                   |
+| `npm start`         | Run the built server                                                                 |
+| `npm run typecheck` | Type-check all workspaces                                                            |
+| `npm run lint`      | Lint with ESLint                                                                     |
+| `npm run format`    | Format with Prettier                                                                 |
 
 For production builds of the client, set `VITE_SERVER_URL` to the WebSocket URL of your server (e.g. `wss://my-server.example.com`).
 
@@ -112,24 +112,24 @@ Open http://localhost:3100, enter a name, optionally design your character, and 
 
 If the server runs on another port, pass its URL: `VITE_SERVER_URL=ws://localhost:2667 npm run dev:client3d` (and `PORT=2667 npm run dev:server`).
 
-| Controls                 |                                          |
-| ------------------------ | ---------------------------------------- |
-| `W A S D` / arrow keys   | walk (screen directions)                 |
-| click on the floor       | walk there (path finding around objects) |
-| click a chair / item     | walk there and sit down / use it         |
-| `E`                      | sit down / stand up                      |
-| `R`                      | use computer, whiteboard, vending machine |
-| `Space` / `1` / `2`      | hop / wave / cheer                       |
-| mouse wheel              | zoom                                     |
-| `Enter`                  | chat                                     |
+| Controls               |                                           |
+| ---------------------- | ----------------------------------------- |
+| `W A S D` / arrow keys | walk (screen directions)                  |
+| click on the floor     | walk there (path finding around objects)  |
+| click a chair / item   | walk there and sit down / use it          |
+| `E`                    | sit down / stand up                       |
+| `R`                    | use computer, whiteboard, vending machine |
+| `Space` / `1` / `2`    | hop / wave / cheer                        |
+| mouse wheel            | zoom                                      |
+| `Enter`                | chat                                      |
 
-| Command (in `client-3d/`)                                    | Description                                                        |
-| ------------------------------------------------------------ | ------------------------------------------------------------------ |
-| `npm run extract-map -w client-3d`                           | regenerate `src/map/office.generated.json` from the Tiled map      |
-| `node client-3d/scripts/bots.mjs 40 ws://localhost:2567`     | fill the conference room with 40 bots                              |
-| `node client-3d/scripts/measure.mjs http://localhost:3100/`  | measure FPS and draw calls in headless Chromium (`CHROME_PATH=…`) |
-| `node client-3d/scripts/fake-2d-player.mjs`                  | a player that behaves like the 2D client                           |
-| http://localhost:3100/?gallery                               | all chibi presets side by side                                     |
+| Command (in `client-3d/`)                                   | Description                                                       |
+| ----------------------------------------------------------- | ----------------------------------------------------------------- |
+| `npm run extract-map -w client-3d`                          | regenerate `src/map/office.generated.json` from the Tiled map     |
+| `node client-3d/scripts/bots.mjs 40 ws://localhost:2567`    | fill the conference room with 40 bots                             |
+| `node client-3d/scripts/measure.mjs http://localhost:3100/` | measure FPS and draw calls in headless Chromium (`CHROME_PATH=…`) |
+| `node client-3d/scripts/fake-2d-player.mjs`                 | a player that behaves like the 2D client                          |
+| http://localhost:3100/?gallery                              | all chibi presets side by side                                    |
 
 ## Video chat
 
