@@ -3,6 +3,7 @@ import Phaser from 'phaser'
 // import { debugDraw } from '../utils/debug'
 import { createCharacterAnims } from '../anims/CharacterAnims'
 import { benchmarkAvatars } from '../avatar/benchmark'
+import { removeAvatarTextures } from '../avatar/composeAvatar'
 
 import Item from '../items/Item'
 import Chair from '../items/Chair'
@@ -48,6 +49,9 @@ const SPECIAL_LAYERS = new Set([
 ])
 // decoration layers of the original map that block movement; new layers use a `collides` property
 const LEGACY_COLLIDING_LAYERS = new Set(['ObjectsOnCollide', 'GenericObjectsOnCollide', 'Basement'])
+
+// how often avatar textures nobody wears anymore are removed (each takes 0.7 MB video memory)
+const AVATAR_CLEANUP_INTERVAL = 30 * 1000 // ms
 
 // how often the video chat checks my zone and who is close by
 const MEDIA_UPDATE_INTERVAL = 250 // ms
@@ -223,6 +227,16 @@ export default class Game extends Phaser.Scene {
     this.network.onItemUserAdded(this.handleItemUserAdded, this)
     this.network.onItemUserRemoved(this.handleItemUserRemoved, this)
     this.network.onChatMessageAdded(this.handleChatMessageAdded, this)
+
+    this.time.addEvent({
+      delay: AVATAR_CLEANUP_INTERVAL,
+      loop: true,
+      callback: () => {
+        const inUse = new Set([this.myPlayer.playerTexture])
+        for (const otherPlayer of this.otherPlayerMap.values()) inUse.add(otherPlayer.playerTexture)
+        removeAvatarTextures(this, inUse)
+      },
+    })
   }
 
   private handleItemSelectorOverlap(playerSelector, selectionItem) {

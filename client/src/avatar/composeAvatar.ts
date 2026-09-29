@@ -98,3 +98,14 @@ export function ensureAvatarTexture(scene: Phaser.Scene, avatar: AvatarDescripti
   if (composeTimings.length > 100) composeTimings.shift()
   return key
 }
+
+/** remove the avatar textures (and their animations) that none of the given keys use */
+export function removeAvatarTextures(scene: Phaser.Scene, inUse: Set<string>) {
+  for (const key of scene.textures.getTextureKeys()) {
+    if (!isAvatarTexture(key) || inUse.has(key)) continue
+    for (const state of Object.keys(LPC_ANIMS)) {
+      for (const direction of DIRECTIONS) scene.anims.remove(`${key}_${state}_${direction}`)
+    }
+    scene.textures.remove(key)
+  }
+}
