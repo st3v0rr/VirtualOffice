@@ -2,9 +2,64 @@
 
 Stand: 30.09.2026 · Branch `poc/threejs-r3f` · Pakete `client-3d/`, `packages/media/`, `server/`, `types/`, Map in `assets/map/`
 
-> **Hinweis:** Der 2D-Client (`client/`) und die Whiteboards sind inzwischen entfernt, das Repo ist eine eigenständige 3D-Demo. Alles, was unten 2D und 3D vergleicht (Gesamtempfehlung, die 5 PoC-Fragen, Phase 1), ist die **Historie** der PoC-Auswertung und beschreibt den Stand vor dem Entfernen. Die Befehle unter „So teste ich das“ und die LiveKit-Checkliste sind aktuell.
+> **Hinweis:** Der 2D-Client (`client/`) und die Whiteboards sind entfernt, das Repo ist eine eigenständige 3D-Demo, die per Docker auf einem vServer läuft. Der Abschnitt [Stand: eigenständige 3D-Demo](#stand-eigenständige-3d-demo) beschreibt den aktuellen Stand. Alles, was danach 2D und 3D vergleicht (Gesamtempfehlung, Prio-Stufen, die 5 PoC-Fragen, Phase 1), ist die **Historie** der PoC-Auswertung vor dem Entfernen. „So teste ich das“ und die LiveKit-Checkliste sind aktuell.
 
 ![Konferenzsaal mit 40 Bots im Pixel-Look](docs/poc2/3d-conference-40-pixel.png)
+
+## Stand: eigenständige 3D-Demo
+
+Stand 30.09.2026. Ziel: eine schlanke 3D-Demo ohne 2D-Client und Whiteboards, mit Tests, Docker-Image und CI.
+
+### Was ist raus
+
+- **2D-Client** `client/` (Phaser, React/Redux/MUI, Sprites, Hintergründe): komplett gelöscht, dazu die Skripte `dev:client`, `build:client`, `dev3d`, der 2D-Test-Spieler `fake-2d-player.mjs`, der 2D-Teil von `media-smoke.mjs` und die Auswahl „Figur im 2D-Client“ im Charakter-Editor. Ungenutzte Typen (`BackgroundMode`, `PlayerBehavior`, `Items`, `KeyboardState` mit Phaser-Import) sind weg.
+- **Whiteboards**: Staffeleien, Dialog, Store und CSS im 3D-Client; Notizen/Pfeile im Colyseus-State, die zwei Whiteboard-Commands und die sieben Whiteboard-Messages im Server; `types/Whiteboard.ts`. Geplant ist stattdessen ein externer Dienst wie Miro.
+  - **Messages**: Das Enum hat jetzt feste Nummern (`UPDATE_PLAYER = 0` … `PLAYER_EMOTE = 15`), die Whiteboard-Nummern 4, 5 und 8–12 bleiben frei. Einfach löschen hätte die folgenden Nummern verschoben, und `bots.mjs` sendet sie hart kodiert. Ein Test hält die Nummern fest.
+  - **Map**: Die Whiteboard-Objekte bleiben in `map.json`, der Extraktor ignoriert den Layer. Den Layer samt Tileset zu entfernen, würde die `firstgid` aller folgenden Tilesets verschieben und damit fast jede Kachel-ID der Map ändern. Ignorieren ist eine Zeile und ohne Risiko.
+- **Assets**: Von `client/public/assets` bleiben nur `map.json` und die neun Tilesets, die sie nutzt, jetzt unter `assets/map/` (Bildpfade in `map.json` zeigen auf `tilesets/`, Tiled kann die Map also weiter öffnen). `office.generated.json` ist nach dem Umzug inhaltlich identisch (außer `source` und dem Wegfall von `whiteboards`).
+
+### Was ist drin (neu)
+
+- **Struktur**: `client-3d/`, `server/`, `packages/media/`, `types/`, `assets/map/`, `docs/`. `npm run dev` startet Server (:2567) und 3D-Client (:3100). `bots.mjs` nutzt jetzt `randomAvatar` aus dem Client statt einer Kopie des Avatar-Katalogs (Node ≥ 22.18 wegen Type Stripping).
+- **Server-Eingaben geprüft** (`server/rooms/validation.ts`): Avatar-JSON (Objekt, ≤ 1000 Zeichen), Name (getrimmt, ≤ 24), Chat (getrimmt, ≤ 300, leer wird verworfen), Position (keine `NaN`/`Infinity`), Emotes nur noch aus einer Whitelist (`types/Emotes.ts`: wave/cheer/hop/drink:coffee|tea|soda|water, vorher jeder String bis 20 Zeichen).
+- **Auslieferung**: Mit `STATIC_DIR` liefert der Colyseus-Server den gebauten Client selbst aus (eine Portnummer für Seite und WebSocket). `/config.js` gibt `PUBLIC_SERVER_URL` zur Laufzeit an den Client (leer = Host und Port der Seite), `/healthz` für Healthchecks, der Colyseus-Monitor (ohne Login) ist in Produktion aus.
+- **Tests**: Vitest in `packages/media`, `server` und `client-3d`, zusammen `npm test` mit v8-Coverage (kein Gate). **103 Tests** (media 25, server 39, client-3d 39). Coverage der Logik-Module: **48,5 % Anweisungen, 52,3 % Zweige, 39,6 % Funktionen** (Map-Extraktion 99 %, Kollision/Pfad 98 %, Commands 94 %, Zonen/Medien-Regeln 100 %; `MediaManager`, `ScreenShareSession`, `network.ts` und der Raum selbst 0 %, s. u.).
+  - media: Hysterese 110/170 px (rein, im Spalt bleiben, raus, Vorbeigehen im Spalt), Zonen der echten Map (Bibliothek = keine Medien bis zum Rand, direkt davor wieder Großraum, Meetingraum, Publikum hört, Bühne spricht im selben Raum), Einstellungs-Persistenz, Geräte-Fallbacks.
+  - server: Validierung, alle Commands über den echten `Dispatcher` mit echtem `OfficeState`, LiveKit-Token (Raumname, Rechte, Konfiguration), feste Message-Nummern, Map-Parsing, `/config.js` und Static-Serving.
+  - client-3d: Flood-Fill, Extraktion einer synthetischen Mini-Map (Wände, unerreichbarer Raum, Blocker, Stühle, Zonen, Farben), `office.generated.json` ist aktuell zur `map.json`, Client- und Server-Zonen stimmen überein, Kollision (Wand-Gleiten, kein Tunneln), Pfadsuche und -glättung (gerade Strecke, Umwege um Ecken, alle 79 Stühle erreichbar), Stuhlbelegung, Avatar-Serialisierung und -Persistenz, Anim-Format.
+- **Smoke-Test** `npm run smoke`: startet den gebauten Server mit gebautem Client (oder prüft `SMOKE_URL`), HTTP (Seite, Config, alle Bundles, Health), WebSocket-Beitritt in Node, dann Headless-Chromium: Namen eingeben, beitreten, Canvas, eigenes Namensschild sichtbar, mit der Tastatur laufen (Position ändert sich), keine Seiten- oder Konsolenfehler, Screenshot nach `smoke-artifacts/`.
+- **Docker**: mehrstufiges `Dockerfile` (Build: `npm ci`, Typecheck, Build; Laufzeit: `node:22-alpine`, nur Server-Abhängigkeiten ohne die optionalen Peers von Colyseus, 63 MB `node_modules`, Nutzer `node`, `HEALTHCHECK`), `.dockerignore`, `docker-compose.yml` (Demo + Profil `livekit` im Dev-Modus), `.env.example` ohne Zugangsdaten.
+- **CI** `.github/workflows/ci.yml`: Typecheck, Lint, Format, Build, Tests, Smoke in Chromium (Screenshot als Artefakt); Docker-Build und Test des laufenden Containers mit curl; Push nach Docker Hub (`latest` + kurzer SHA) nur auf `poc/threejs-r3f`/`main` und nur mit den Secrets `DOCKERHUB_USERNAME`/`DOCKERHUB_TOKEN`, sonst übersprungen mit Hinweis. Image-Name aus `DOCKERHUB_IMAGE`, Platzhalter `st3v0rr/virtualoffice-demo`.
+- **Nebenbei gefunden und behoben**: Die Pfadglättung prüfte die Abkürzung nur alle 1/8 Kachel und konnte so eine Wandecke anschneiden (die Box wird jetzt um den halben Schritt vergrößert; gleich viele Wegpunkte, +0,1 % Weglänge). Das fehlende Favicon gab bei jedem Laden einen 404 in der Konsole. Ohne LiveKit schrieb der Server pro Spieler alle 10 s einen Stacktrace ins Log. `DISCONNECT_FROM_COMPUTER` mit unbekannter ID und Chat von bereits gegangenen Spielern warfen Fehler im Server. Positionen mit `NaN` landeten im State.
+
+### Wie testen
+
+```bash
+npm install
+npm run typecheck && npm run lint && npm run format:check
+npm run build
+npm test                     # Unit-Tests + Coverage
+npm run smoke                # gebauter Server + Client, HTTP, WebSocket, Chromium, Screenshot
+npm run dev                  # zum Ausprobieren: http://localhost:3100
+
+docker build -t virtualoffice-demo .
+docker run -p 2567:2567 virtualoffice-demo           # http://localhost:2567
+SMOKE_URL=http://localhost:2567 npm run smoke         # Smoke gegen den Container
+docker compose up -d                                  # bzw. --profile livekit
+```
+
+Für den Browser-Teil des Smoke-Tests: `CHROME_PATH=…`, Playwrights Chromium (`npx playwright-core install chromium`) oder ein System-Chromium.
+
+### Bekannte Grenzen und was NICHT getestet ist
+
+- **Docker mit Docker**: Auf dem Entwicklungsrechner gibt es kein Docker. Das Image wurde stattdessen mit **Podman 5.8 (rootless)** gebaut (`podman build --format docker`, alle Stufen inkl. Typecheck und Build), gestartet (Container „healthy“, läuft als `node`) und mit `npm run smoke` gegen den laufenden Container geprüft (alle 16 Prüfungen ok, echter Chromium). `docker build` mit BuildKit, `docker compose config` und `docker compose up` mit echtem Docker stehen aus und laufen erst in der CI. Die Compose-Datei ist nur mit **podman-compose 1.6** geprüft (`config` für beide Profile, `up` für die Demo); das `livekit`-Profil wurde nie gestartet, die Ports 7880/7881/7882-udp folgen der LiveKit-Doku für `--dev`, nicht einem Test.
+- **GitHub Actions** ist nie auf GitHub gelaufen. Geprüft nur lokal mit `actionlint` (offizielles Image `rhysd/actionlint`, inkl. shellcheck): ohne Befund. Ungetestet: `npx playwright-core install --with-deps chromium` auf dem Runner, der GHA-Build-Cache, der Artefakt-Upload, das Überspringen ohne Secrets und der Push nach Docker Hub (Secrets gibt es noch nicht).
+- **LiveKit**: weiterhin kein Test mit echtem Server (Gespräche, Nähe-Umschaltung, Active Speakers, Screen-Share, Monitor-Textur), siehe Checkliste unten.
+- **HTTPS/Reverse Proxy**: das Caddy-Beispiel im README und `PUBLIC_SERVER_URL` mit einem echten fremden Host sind nicht ausprobiert (`PUBLIC_SERVER_URL` nur per Unit-Test). Kamera/Mikro über HTTPS auf einem vServer: ungetestet.
+- **Browser**: Lokal lief der Smoke-Test mit dem System-Chromium 153 (Fedora), nicht mit Playwrights eigenem Chromium (nicht installiert, `--with-deps` bräuchte sudo). Firefox/Safari: nicht getestet. `media-smoke.mjs` (Video-Chat-Oberfläche mit Fake-Kamera) lief nach dem Entfernen von Whiteboard und 2D-Client grün, `measure.mjs` (FPS) wurde nicht erneut gemessen.
+- **Nicht unit-getestet**: `MediaManager` und `ScreenShareSession` (brauchen einen LiveKit-Raum), die React-Hooks und die ganze UI, `network.ts`, das 3D-Rendering, der Colyseus-Raum selbst (`onJoin`, `onAuth` mit Passwort, Lobby). Davon deckt der Smoke-Test nur Beitreten, Rendern und Laufen im öffentlichen Raum ab.
+- **Node-Version**: `bots.mjs` braucht Node ≥ 22.18 (Type Stripping). Getestet mit Node 26.9 lokal und `node:22` im Docker-Build (dort laufen die Bots nicht).
+- **Sicherheit der Demo**: keine Anmeldung, kein Rate-Limit auf Messages, Räume mit Passwort (bcrypt) wie bisher. Für eine öffentliche Demo reicht das, für mehr nicht.
 
 ## Gesamtempfehlung (Historie)
 
