@@ -30,15 +30,20 @@ for (const r of office.blockers) {
 const cellBlocked = (cx: number, cy: number) =>
   cx < 0 || cy < 0 || cx >= gw || cy >= gh || blocked[cy * gw + cx] === 1
 
-// is the player's feet box free at this position?
-export function isFree(x: number, z: number) {
-  const x0 = Math.floor((x - HALF_W) * SUB)
-  const x1 = Math.ceil((x + HALF_W) * SUB) - 1
-  const z0 = Math.floor((z - HALF_D) * SUB)
-  const z1 = Math.ceil((z + HALF_D) * SUB) - 1
+// is a box with these half extents around the point free?
+function boxFree(x: number, z: number, halfW: number, halfD: number) {
+  const x0 = Math.floor((x - halfW) * SUB)
+  const x1 = Math.ceil((x + halfW) * SUB) - 1
+  const z0 = Math.floor((z - halfD) * SUB)
+  const z1 = Math.ceil((z + halfD) * SUB) - 1
   for (let cy = z0; cy <= z1; cy++)
     for (let cx = x0; cx <= x1; cx++) if (cellBlocked(cx, cy)) return false
   return true
+}
+
+// is the player's feet box free at this position?
+export function isFree(x: number, z: number) {
+  return boxFree(x, z, HALF_W, HALF_D)
 }
 
 // move by (dx, dz) and slide along walls, like arcade physics does
@@ -84,13 +89,18 @@ function nearestClearCell(x: number, z: number, maxRadius = 12) {
   return -1
 }
 
-// is the straight line between two points walkable?
+// is the straight line between two points walkable? The box is checked at steps along
+// the line, grown by half a step, so it also covers the way between two steps and a
+// shortcut never cuts the corner of a wall.
 function lineFree(ax: number, az: number, bx: number, bz: number) {
   const len = Math.hypot(bx - ax, bz - az)
-  const n = Math.ceil(len / (CELL * 0.5))
-  for (let i = 1; i <= n; i++) {
+  const n = Math.max(1, Math.ceil(len / (CELL * 0.5)))
+  const growX = Math.abs(bx - ax) / n / 2
+  const growZ = Math.abs(bz - az) / n / 2
+  for (let i = 0; i <= n; i++) {
     const k = i / n
-    if (!isFree(ax + (bx - ax) * k, az + (bz - az) * k)) return false
+    if (!boxFree(ax + (bx - ax) * k, az + (bz - az) * k, HALF_W + growX, HALF_D + growZ))
+      return false
   }
   return true
 }

@@ -31,12 +31,14 @@
     "extract-map": "npm run extract-map -w client-3d",
     "bots": "node client-3d/scripts/bots.mjs",
     "typecheck": "npm run typecheck --workspaces --if-present",
+    "test": "vitest run --coverage",
     "lint": "eslint .",
     "format": "prettier --write .",
     "format:check": "prettier --check ."
   },
   "devDependencies": {
     "@eslint/js": "^10.0.1",
+    "@vitest/coverage-v8": "^5.0.3",
     "concurrently": "^10.0.5",
     "eslint": "^10.11.0",
     "eslint-config-prettier": "^10.1.8",
@@ -44,6 +46,7 @@
     "globals": "^17.12.0",
     "prettier": "^3.9.9",
     "typescript": "~6.0",
-    "typescript-eslint": "^8.70.1"
+    "typescript-eslint": "^8.70.1",
+    "vitest": "^5.0.3"
   }
 }

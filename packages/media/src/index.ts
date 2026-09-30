@@ -17,3 +17,4 @@ export {
   type SharedScreen,
 } from './ScreenShareSession'
 export * from './mediaDevices'
+export { updateNearby } from './proximity'

@@ -7,26 +7,15 @@ import {
   type MediaTile,
 } from '@skyoffice/media'
 import { getMediaLocation } from '../../../types/Media'
-import type { Zone, ZoneType } from '../../../types/OfficeMap'
-import { office, TILE, toMap } from '../map/office'
+import { toMap } from '../map/office'
+import { zones } from '../map/zones'
 import { remotes } from '../net/players'
 import { network } from '../net/network'
 import { useGame } from '../state/game'
 
-// Video and audio in the 3D client: the MediaManager of the 2D client (packages/media)
-// fed with the same zones, distances and update rate, so both clients agree on who
-// hears whom. Positions are in map pixels, as the server and the 2D client use them.
-
-// the zones of the Tiled map in pixels (the extractor stores them in tiles)
-const zones: Zone[] = office.zones.map((zone) => ({
-  id: zone.id,
-  name: zone.name,
-  type: zone.type as ZoneType,
-  x: zone.x * TILE,
-  y: zone.y * TILE,
-  width: zone.w * TILE,
-  height: zone.h * TILE,
-}))
+// Video and audio in the 3D client: the MediaManager of packages/media fed with the
+// zones of the map, the distances to the others and my position, in map pixels as the
+// server uses them, so client and server agree on who hears whom.
 
 let manager: MediaManager | null = null
 let timer: number | undefined
@@ -68,7 +57,7 @@ export function stopMedia() {
   manager = null
 }
 
-// like Game.updateMediaLocation in the 2D client
+// my media location and the distances to the others, every MEDIA_UPDATE_INTERVAL
 function updateLocation() {
   const game = useGame.getState()
   const position = network.position

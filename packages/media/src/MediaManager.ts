@@ -15,11 +15,9 @@ import {
   getMediaStream,
   loadMediaSettings,
 } from './mediaDevices'
+import { updateNearby } from './proximity'
 
-// in the open office, start listening to someone closer than NEAR and stop beyond FAR
-// (the gap avoids flickering connections at the edge); distances in map pixels
-export const NEAR_DISTANCE = 110
-export const FAR_DISTANCE = 170
+export { FAR_DISTANCE, NEAR_DISTANCE } from './proximity'
 // how often the game reports my location and the distances (see updateLocation)
 export const MEDIA_UPDATE_INTERVAL = 250 // ms
 // wait before connecting again when the video chat server was not reachable
@@ -158,23 +156,7 @@ export default class MediaManager {
     }
 
     // hysteresis for the open office
-    let changed = false
-    for (const [id, distance] of distances) {
-      if (distance <= NEAR_DISTANCE && !this.nearby.has(id)) {
-        this.nearby.add(id)
-        changed = true
-      } else if (distance > FAR_DISTANCE && this.nearby.has(id)) {
-        this.nearby.delete(id)
-        changed = true
-      }
-    }
-    for (const id of this.nearby) {
-      if (!distances.has(id)) {
-        this.nearby.delete(id)
-        changed = true
-      }
-    }
-    if (changed) this.applySubscriptions()
+    if (updateNearby(this.nearby, distances)) this.applySubscriptions()
   }
 
   private async moveTo(location: MediaLocation | null) {

@@ -15,6 +15,7 @@ import {
   ComputerRemoveUserCommand,
 } from './commands/ComputerUpdateArrayCommand.ts'
 import ChatMessageUpdateCommand from './commands/ChatMessageUpdateCommand.ts'
+import { sanitizeChatMessage, validateEmote } from './validation.ts'
 
 export class SkyOffice extends Room<{ state: OfficeState }> {
   state = new OfficeState()
@@ -64,10 +65,10 @@ export class SkyOffice extends Room<{ state: OfficeState }> {
       (client, message: { x: number; y: number; anim: string; rot?: number }) => {
         this.dispatcher.dispatch(new PlayerUpdateCommand(), {
           client,
-          x: message.x,
-          y: message.y,
-          anim: message.anim,
-          rot: message.rot,
+          x: message?.x,
+          y: message?.y,
+          anim: message?.anim,
+          rot: message?.rot,
         })
       }
     )
@@ -76,7 +77,7 @@ export class SkyOffice extends Room<{ state: OfficeState }> {
     this.onMessage(Message.UPDATE_PLAYER_NAME, (client, message: { name: string }) => {
       this.dispatcher.dispatch(new PlayerUpdateNameCommand(), {
         client,
-        name: message.name,
+        name: message?.name,
       })
     })
 
@@ -88,9 +89,9 @@ export class SkyOffice extends Room<{ state: OfficeState }> {
       })
     })
 
-    // emotes (waving, cheering) are only shown, not stored, so just pass them on
+    // emotes (waving, cheering, drinks) are only shown, not stored, so just pass them on
     this.onMessage(Message.PLAYER_EMOTE, (client, message: { emote: string }) => {
-      const emote = String(message?.emote ?? '').slice(0, 20)
+      const emote = validateEmote(message?.emote)
       if (!emote) return
       this.broadcast(
         Message.PLAYER_EMOTE,
@@ -107,16 +108,16 @@ export class SkyOffice extends Room<{ state: OfficeState }> {
 
     // when a player send a chat message, update the message array and broadcast to all connected clients except the sender
     this.onMessage(Message.ADD_CHAT_MESSAGE, (client, message: { content: string }) => {
+      const content = sanitizeChatMessage(message?.content)
+      if (!content) return
+
       // update the message array (so that players join later can also see the message)
-      this.dispatcher.dispatch(new ChatMessageUpdateCommand(), {
-        client,
-        content: message.content,
-      })
+      this.dispatcher.dispatch(new ChatMessageUpdateCommand(), { client, content })
 
       // broadcast to all currently connected clients except the sender (to render in-game dialog on top of the character)
       this.broadcast(
         Message.ADD_CHAT_MESSAGE,
-        { clientId: client.sessionId, content: message.content },
+        { clientId: client.sessionId, content },
         { except: client }
       )
     })

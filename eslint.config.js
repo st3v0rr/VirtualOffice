@@ -17,7 +17,14 @@ export default defineConfig(
     },
   },
   {
-    files: ['server/**/*.ts', 'types/**/*.ts', 'client-3d/scripts/**/*.mjs', 'client-3d/*.ts'],
+    files: [
+      'server/**/*.ts',
+      'types/**/*.ts',
+      'client-3d/scripts/**/*.mjs',
+      'client-3d/*.ts',
+      '*.ts',
+      '**/test/**/*.ts',
+    ],
     languageOptions: { globals: globals.node },
   },
   {

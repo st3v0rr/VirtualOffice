@@ -5,6 +5,7 @@ import { ChatMessage } from '../schema/OfficeState.ts'
 
 type Payload = {
   client: Client
+  // already checked with sanitizeChatMessage
   content: string
 }
 
@@ -14,7 +15,7 @@ export default class ChatMessageUpdateCommand extends Command<SkyOffice, Payload
     const player = this.room.state.players.get(client.sessionId)
     const chatMessages = this.room.state.chatMessages
 
-    if (!chatMessages) return
+    if (!player || !chatMessages) return
 
     /**
      * Only allow server to store a maximum of 100 chat messages:

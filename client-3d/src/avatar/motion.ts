@@ -1,9 +1,10 @@
 // The animation state of a chibi. It is a plain mutable object, written by the
 // player logic / network and read by <Chibi> in useFrame, so moving never re-renders React.
 
+import type { DrinkId, Emote } from '../../../types/Emotes'
+
+export { EMOTES, type Emote } from '../../../types/Emotes'
 export type MotionState = 'idle' | 'walk' | 'sit'
-export type Emote = 'wave' | 'cheer' | 'hop'
-export const EMOTES: readonly Emote[] = ['wave', 'cheer', 'hop']
 
 // what the vending machine has; the chibi holds it for a while and takes sips
 export const DRINKS = {
@@ -11,8 +12,8 @@ export const DRINKS = {
   tea: { label: 'Tee', emoji: '🍵', cup: '#b5e8a3', fill: '#e9c27d' },
   soda: { label: 'Limo', emoji: '🥤', cup: '#ff9aa2', fill: '#ff9aa2' },
   water: { label: 'Wasser', emoji: '💧', cup: '#8fd3e8', fill: '#dff3ff' },
-} as const
-export type Drink = keyof typeof DRINKS
+} as const satisfies Record<DrinkId, unknown>
+export type Drink = DrinkId
 export const DRINK_DURATION = 30
 
 export type Motion = {

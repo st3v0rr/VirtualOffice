@@ -10,7 +10,8 @@
     "./react": "./src/react.ts"
   },
   "scripts": {
-    "typecheck": "tsc --noEmit"
+    "typecheck": "tsc --noEmit && tsc --noEmit -p tsconfig.test.json",
+    "test": "vitest run"
   },
   "dependencies": {
     "livekit-client": "^2.22.3"
@@ -20,6 +21,7 @@
   },
   "devDependencies": {
     "@types/react": "^19.3.0",
-    "typescript": "~6.0"
+    "typescript": "~6.0",
+    "@types/node": "^26.6.3"
   }
 }

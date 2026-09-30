@@ -17,5 +17,5 @@
     "types": ["node"]
   },
   "include": ["."],
-  "exclude": ["lib"]
+  "exclude": ["lib", "test"]
 }
