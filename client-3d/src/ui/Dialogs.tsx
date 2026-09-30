@@ -1,25 +1,20 @@
 import { useEffect, useRef, useState, useSyncExternalStore, type ReactNode } from 'react'
 import { useGame } from '../state/game'
-import { useBoards, NOTE_COLOR_HEX, type Note } from '../state/boards'
 import { network } from '../net/network'
 import { ScreenShareSession } from '@skyoffice/media'
-import { NOTE_COLORS, NOTE_LIMITS, type NoteColor } from '../../../types/Whiteboard'
 import { DRINKS, type Drink } from '../avatar/motion'
 import { drink } from '../game/actions'
 import { computers, distanceTo } from '../game/interactables'
 import { me as myPlayer } from '../net/players'
 
-// Dialogs for the computers, whiteboards and the vending machine.
+// Dialogs for the computers and the vending machine.
 
 const NO_USERS: string[] = []
 const close = () => useGame.getState().set({ dialog: null })
 
 function Modal({ title, wide, children }: { title: string; wide?: boolean; children: ReactNode }) {
   useEffect(() => {
-    const onKey = (e: KeyboardEvent) => {
-      // Esc while editing a note only ends the editing
-      if (e.key === 'Escape' && !(document.activeElement instanceof HTMLTextAreaElement)) close()
-    }
+    const onKey = (e: KeyboardEvent) => e.key === 'Escape' && close()
     window.addEventListener('keydown', onKey)
     return () => window.removeEventListener('keydown', onKey)
   }, [])
@@ -182,165 +177,6 @@ function ComputerDialog({ id, minimized }: { id: string; minimized: boolean }) {
   )
 }
 
-// ---------- whiteboard: the sticky notes of the 2D client ----------
-
-// a note while it is dragged, before the server has the new position
-type Drag = { id: string; dx: number; dy: number; startX: number; startY: number }
-
-function NoteCard({ note, scale, boardId }: { note: Note; scale: number; boardId: string }) {
-  const [editing, setEditing] = useState(false)
-  const [text, setText] = useState(note.text)
-  const [drag, setDrag] = useState<Drag | null>(null)
-  const lastSent = useRef(0)
-
-  const x = note.x + (drag?.dx ?? 0)
-  const y = note.y + (drag?.dy ?? 0)
-
-  const save = () => {
-    setEditing(false)
-    if (text !== note.text)
-      network.updateNote({
-        whiteboardId: boardId,
-        noteId: note.id,
-        changes: { text: text.slice(0, NOTE_LIMITS.maxTextLength) },
-      })
-  }
-
-  return (
-    <div
-      className="note"
-      style={{
-        left: x * scale,
-        top: y * scale,
-        width: note.width * scale,
-        height: note.height * scale,
-        background: NOTE_COLOR_HEX[note.color] ?? NOTE_COLOR_HEX.yellow,
-      }}
-      onPointerDown={(e) => {
-        if (editing) return
-        e.currentTarget.setPointerCapture(e.pointerId)
-        setDrag({ id: note.id, dx: 0, dy: 0, startX: e.clientX, startY: e.clientY })
-      }}
-      onPointerMove={(e) => {
-        if (!drag) return
-        const dx = (e.clientX - drag.startX) / scale
-        const dy = (e.clientY - drag.startY) / scale
-        setDrag({ ...drag, dx, dy })
-        // like the 2D client: send while dragging, at most every 50 ms
-        if (performance.now() - lastSent.current > 50) {
-          lastSent.current = performance.now()
-          network.updateNote({
-            whiteboardId: boardId,
-            noteId: note.id,
-            changes: { x: note.x + dx, y: note.y + dy },
-          })
-        }
-      }}
-      onPointerUp={() => {
-        if (!drag) return
-        if (drag.dx || drag.dy)
-          network.updateNote({
-            whiteboardId: boardId,
-            noteId: note.id,
-            changes: { x: note.x + drag.dx, y: note.y + drag.dy },
-          })
-        setDrag(null)
-      }}
-      onDoubleClick={() => {
-        setText(note.text)
-        setEditing(true)
-      }}
-    >
-      {editing ? (
-        <textarea
-          autoFocus
-          value={text}
-          onChange={(e) => setText(e.target.value)}
-          onBlur={save}
-          onKeyDown={(e) => {
-            e.stopPropagation()
-            if (e.key === 'Escape') save()
-          }}
-        />
-      ) : (
-        <div className="text">
-          {note.text || <span className="muted">Doppelklick zum Schreiben</span>}
-        </div>
-      )}
-      <button
-        className="delete"
-        title="Löschen"
-        onPointerDown={(e) => e.stopPropagation()}
-        onClick={() => network.deleteNote({ whiteboardId: boardId, noteId: note.id })}
-      >
-        ✕
-      </button>
-    </div>
-  )
-}
-
-const BOARD_SCALE = 0.55
-
-function WhiteboardDialog({ id }: { id: string }) {
-  const board = useBoards((s) => s.boards[id])
-  const [color, setColor] = useState<NoteColor>('yellow')
-  const notes = Object.values(board?.notes ?? {})
-  const arrows = Object.values(board?.arrows ?? {})
-
-  useEffect(() => {
-    network.connectToWhiteboard(id)
-    return () => network.disconnectFromWhiteboard(id)
-  }, [id])
-
-  const add = () => {
-    // in a grid next to the other notes, so the new one is visible without scrolling
-    const x = 40 + (notes.length % 6) * 220
-    const y = 40 + (Math.floor(notes.length / 6) % 4) * 220
-    network.addNote({ whiteboardId: id, x, y, color })
-  }
-
-  const center = (note: Note) => ({
-    x: (note.x + note.width / 2) * BOARD_SCALE,
-    y: (note.y + note.height / 2) * BOARD_SCALE,
-  })
-  return (
-    <Modal title="📝 Whiteboard" wide>
-      <div className="toolbar">
-        <button className="primary" onClick={add} disabled={notes.length >= NOTE_LIMITS.maxNotes}>
-          + Zettel
-        </button>
-        {NOTE_COLORS.map((c) => (
-          <button
-            key={c}
-            className={`swatch ${c === color ? 'active' : ''}`}
-            style={{ background: NOTE_COLOR_HEX[c] }}
-            onClick={() => setColor(c)}
-            aria-label={c}
-          />
-        ))}
-        <span className="muted">
-          Ziehen zum Verschieben · Doppelklick zum Schreiben · synchron mit dem 2D-Client
-        </span>
-      </div>
-      <div className="board">
-        <svg className="arrows">
-          {arrows.map((arrow) => {
-            const from = board?.notes[arrow.from]
-            const to = board?.notes[arrow.to]
-            if (!from || !to) return null
-            const a = center(from)
-            const b = center(to)
-            return <line key={arrow.id} x1={a.x} y1={a.y} x2={b.x} y2={b.y} />
-          })}
-        </svg>
-        {notes.map((note) => (
-          <NoteCard key={note.id} note={note} scale={BOARD_SCALE} boardId={id} />
-        ))}
-      </div>
-    </Modal>
-  )
-}
-
 // ---------- vending machine ----------
 
 function VendingDialog() {
@@ -369,8 +205,6 @@ export default function Dialogs() {
   switch (dialog.kind) {
     case 'computer':
       return <ComputerDialog key={dialog.id} id={dialog.id} minimized={!!dialog.minimized} />
-    case 'whiteboard':
-      return <WhiteboardDialog key={dialog.id} id={dialog.id} />
     case 'vending':
       return <VendingDialog />
   }

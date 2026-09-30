@@ -26,7 +26,6 @@ SkyOffice works on all PC browsers (mobile browsers are currently not supported)
 - [Multifunctional Rooms](#multifunctional-rooms)
 - [Text Message Chat](#text-message-chat-with-real-time-dialog-bubbles)
 - [Custom/Private Rooms](#customprivate-rooms)
-- [Whiteboards](#whiteboards) with sticky notes and arrows, synced live (built with [React Flow](https://reactflow.dev))
 
 ### Proximity Chat (distance-based interactive system)
 
@@ -46,7 +45,7 @@ SkyOffice works on all PC browsers (mobile browsers are currently not supported)
 
 ### Whiteboards
 
-Press `R` in front of a whiteboard to open it. Add sticky notes with the toolbar or by double-clicking the board, double-click a note to write, drag from the dots on its edges to connect notes with arrows, and use `Del` to delete the selection. Everyone at the same whiteboard sees the changes live. Boards are kept in the server's memory, so they're reset when the server restarts or a custom room is closed.
+The built-in sticky note whiteboards were removed. Whiteboards are planned as an external service (e.g. Miro) instead. The whiteboard objects in the Tiled map are ignored.
 
 ### Custom/Private Rooms
 
@@ -118,7 +117,7 @@ If the server runs on another port, pass its URL: `VITE_SERVER_URL=ws://localhos
 | click on the floor     | walk there (path finding around objects)  |
 | click a chair / item   | walk there and sit down / use it          |
 | `E`                    | sit down / stand up                       |
-| `R`                    | use computer, whiteboard, vending machine |
+| `R`                    | use computer, vending machine             |
 | `Space` / `1` / `2`    | hop / wave / cheer                        |
 | mouse wheel            | zoom                                      |
 | `Enter`                | chat                                      |

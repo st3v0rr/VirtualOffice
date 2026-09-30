@@ -6,7 +6,7 @@ import { Floor, Walls } from './walls'
 import Furniture from './furniture'
 import Baked from './Baked'
 import { useSettings } from '../state/settings'
-import { Chairs, Computers, VendingMachines, Whiteboards } from './items'
+import { Chairs, Computers, VendingMachines } from './items'
 import { TagProjector } from '../player/TagLayer'
 import LocalPlayer from '../player/LocalPlayer'
 import RemotePlayer from '../player/RemotePlayer'
@@ -88,7 +88,6 @@ export default function Scene() {
       </Baked>
       <Chairs />
       <Computers />
-      <Whiteboards />
       <VendingMachines />
       <TagProjector />
       {connected && (

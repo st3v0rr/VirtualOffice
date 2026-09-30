@@ -11,7 +11,6 @@ export type Bubble = { text: string; until: number }
 export type Dialog =
   // minimized: closed, but still at the computer (the shared screen shows on its monitor)
   | { kind: 'computer'; id: string; minimized?: boolean }
-  | { kind: 'whiteboard'; id: string }
   | { kind: 'vending' }
   | null
 
@@ -55,7 +54,7 @@ type GameState = {
   mediaSetupOpen: boolean
   // the screen shared at a computer I'm using, shown on its monitors, by computer id
   screens: Record<string, MediaStream>
-  // players using a computer / whiteboard, by item id
+  // players using a computer, by computer id
   itemUsers: Record<string, string[]>
   set: (patch: Partial<Omit<GameState, 'set'>>) => void
 }

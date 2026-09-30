@@ -44,7 +44,6 @@ const isTyping = () => {
 const PROMPTS: Record<Interactable['kind'], string> = {
   chair: 'E: Hinsetzen',
   computer: 'R: Computer benutzen',
-  whiteboard: 'R: Whiteboard öffnen',
   vending: 'R: Getränk ziehen',
 }
 

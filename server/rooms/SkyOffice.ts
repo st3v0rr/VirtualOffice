@@ -1,7 +1,7 @@
 import bcrypt from 'bcryptjs'
 import { Room, ServerError, type Client } from 'colyseus'
 import { Dispatcher } from '@colyseus/command'
-import { Player, OfficeState, Computer, Whiteboard } from './schema/OfficeState.ts'
+import { Player, OfficeState, Computer } from './schema/OfficeState.ts'
 import { Message } from '../../types/Messages.ts'
 import type { IRoomData } from '../../types/Rooms.ts'
 import { officeMap } from '../officeMap.ts'
@@ -14,25 +14,7 @@ import {
   ComputerAddUserCommand,
   ComputerRemoveUserCommand,
 } from './commands/ComputerUpdateArrayCommand.ts'
-import {
-  WhiteboardAddUserCommand,
-  WhiteboardRemoveUserCommand,
-} from './commands/WhiteboardUpdateArrayCommand.ts'
 import ChatMessageUpdateCommand from './commands/ChatMessageUpdateCommand.ts'
-import {
-  WhiteboardAddArrowCommand,
-  WhiteboardAddNoteCommand,
-  WhiteboardDeleteArrowCommand,
-  WhiteboardDeleteNoteCommand,
-  WhiteboardUpdateNoteCommand,
-} from './commands/WhiteboardBoardCommands.ts'
-import type {
-  AddArrowMessage,
-  AddNoteMessage,
-  DeleteArrowMessage,
-  DeleteNoteMessage,
-  UpdateNoteMessage,
-} from '../../types/Whiteboard.ts'
 
 export class SkyOffice extends Room<{ state: OfficeState }> {
   state = new OfficeState()
@@ -55,12 +37,9 @@ export class SkyOffice extends Room<{ state: OfficeState }> {
     }
     this.setMetadata({ name, description, hasPassword })
 
-    // one entry per computer and whiteboard placed in the map
+    // one entry per computer placed in the map
     for (const id of officeMap.computerIds) {
       this.state.computers.set(id, new Computer())
-    }
-    for (const id of officeMap.whiteboardIds) {
-      this.state.whiteboards.set(id, new Whiteboard())
     }
 
     // when a player connect to a computer, add to the computer connectedUser array
@@ -77,42 +56,6 @@ export class SkyOffice extends Room<{ state: OfficeState }> {
         client,
         computerId: message.computerId,
       })
-    })
-
-    // when a player connect to a whiteboard, add to the whiteboard connectedUser array
-    this.onMessage(Message.CONNECT_TO_WHITEBOARD, (client, message: { whiteboardId: string }) => {
-      this.dispatcher.dispatch(new WhiteboardAddUserCommand(), {
-        client,
-        whiteboardId: message.whiteboardId,
-      })
-    })
-
-    // when a player disconnect from a whiteboard, remove from the whiteboard connectedUser array
-    this.onMessage(
-      Message.DISCONNECT_FROM_WHITEBOARD,
-      (client, message: { whiteboardId: string }) => {
-        this.dispatcher.dispatch(new WhiteboardRemoveUserCommand(), {
-          client,
-          whiteboardId: message.whiteboardId,
-        })
-      }
-    )
-
-    // sticky notes and arrows on a whiteboard
-    this.onMessage(Message.WHITEBOARD_ADD_NOTE, (client, message: AddNoteMessage) => {
-      this.dispatcher.dispatch(new WhiteboardAddNoteCommand(), { ...message, client })
-    })
-    this.onMessage(Message.WHITEBOARD_UPDATE_NOTE, (client, message: UpdateNoteMessage) => {
-      this.dispatcher.dispatch(new WhiteboardUpdateNoteCommand(), { ...message, client })
-    })
-    this.onMessage(Message.WHITEBOARD_DELETE_NOTE, (client, message: DeleteNoteMessage) => {
-      this.dispatcher.dispatch(new WhiteboardDeleteNoteCommand(), { ...message, client })
-    })
-    this.onMessage(Message.WHITEBOARD_ADD_ARROW, (client, message: AddArrowMessage) => {
-      this.dispatcher.dispatch(new WhiteboardAddArrowCommand(), { ...message, client })
-    })
-    this.onMessage(Message.WHITEBOARD_DELETE_ARROW, (client, message: DeleteArrowMessage) => {
-      this.dispatcher.dispatch(new WhiteboardDeleteArrowCommand(), { ...message, client })
     })
 
     // when receiving updatePlayer message, call the PlayerUpdateCommand
@@ -231,11 +174,6 @@ export class SkyOffice extends Room<{ state: OfficeState }> {
     this.state.computers.forEach((computer) => {
       if (computer.connectedUser.has(client.sessionId)) {
         computer.connectedUser.delete(client.sessionId)
-      }
-    })
-    this.state.whiteboards.forEach((whiteboard) => {
-      if (whiteboard.connectedUser.has(client.sessionId)) {
-        whiteboard.connectedUser.delete(client.sessionId)
       }
     })
   }

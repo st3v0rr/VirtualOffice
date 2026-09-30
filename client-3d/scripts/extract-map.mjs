@@ -27,6 +27,8 @@ const TILE = map.tilewidth
 const W = map.width
 const H = map.height
 
+// Whiteboard: the map still has the whiteboard objects of the 2D client, but the 3D client
+// has no whiteboards (planned as an external service), so they are ignored like a special layer
 const SPECIAL_LAYERS = new Set([
   'Chair',
   'Computer',
@@ -305,7 +307,6 @@ const out = {
   components,
   chairs,
   computers: objectsOf('Computer').map(itemRect),
-  whiteboards: objectsOf('Whiteboard').map(itemRect),
   vendingMachines: objectsOf('VendingMachine').map(itemRect),
   zones,
 }

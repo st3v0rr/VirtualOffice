@@ -15,7 +15,6 @@ export type Zone = {
 
 export type OfficeMap = {
   computerIds: string[]
-  whiteboardIds: string[]
   spawn: { x: number; y: number }
   zones: Zone[]
 }
@@ -76,7 +75,6 @@ export function parseOfficeMap(map: TiledMap): OfficeMap {
   return {
     // items are identified by their Tiled object id, so the ids stay stable when the map changes
     computerIds: getObjects(map, 'Computer').map((object) => String(object.id)),
-    whiteboardIds: getObjects(map, 'Whiteboard').map((object) => String(object.id)),
     spawn: spawn ? { x: spawn.x, y: spawn.y } : DEFAULT_SPAWN,
     zones: getObjects(map, 'Zones')
       .map(toZone)

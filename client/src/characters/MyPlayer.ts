@@ -6,7 +6,6 @@ import Player from './Player'
 import Network from '../services/Network'
 import Chair from '../items/Chair'
 import Computer from '../items/Computer'
-import Whiteboard from '../items/Whiteboard'
 
 import { phaserEvents, Event } from '../events/EventCenter'
 import store from '../stores'
@@ -70,9 +69,6 @@ export default class MyPlayer extends Player {
       switch (item?.itemType) {
         case ItemType.COMPUTER:
           ;(item as Computer).openDialog(network)
-          break
-        case ItemType.WHITEBOARD:
-          ;(item as Whiteboard).openDialog(network)
           break
         case ItemType.VENDINGMACHINE:
           // hacky and hard-coded, but leaving it as is for now

@@ -8,12 +8,11 @@ import {
 } from '../map/office'
 import { remotes, me } from '../net/players'
 
-// Everything the player can use: chairs, computers, whiteboards and the vending machine.
+// Everything the player can use: chairs, computers and the vending machine.
 
 export type Interactable =
   | { kind: 'chair'; id: string; x: number; z: number; rot: number; chair: ChairData }
   | { kind: 'computer'; id: string; x: number; z: number; rect: TileRect }
-  | { kind: 'whiteboard'; id: string; x: number; z: number; rect: TileRect }
   | { kind: 'vending'; id: string; x: number; z: number; rect: TileRect }
 
 export const chairs = office.chairs.map((chair) => {
@@ -39,18 +38,6 @@ export const computers = office.computers.map(
     }) as const
 )
 
-// whiteboards stand as easels in front of the wall they hang on in the 2D map
-export const whiteboards = office.whiteboards.map((rect) => {
-  const z = wallFaceZ(rect) + 0.3
-  return {
-    kind: 'whiteboard',
-    id: rect.id,
-    x: rect.x + rect.w / 2,
-    z,
-    rect: { x: rect.x + 0.1, y: z - 0.15, w: rect.w - 0.2, h: 0.3 },
-  } as const
-})
-
 export const vendingMachines = office.vendingMachines.map((rect) => {
   const face = wallFaceZ(rect)
   const r = { x: rect.x, y: face, w: rect.w, h: Math.max(rect.y + rect.h - face, 0.5) }
@@ -60,7 +47,6 @@ export const vendingMachines = office.vendingMachines.map((rect) => {
 export const allInteractables: Interactable[] = [
   ...chairs,
   ...computers,
-  ...whiteboards,
   ...vendingMachines,
 ]
 
@@ -89,7 +75,7 @@ export function chairOccupant(chairId: string): string | null {
   return null
 }
 
-const REACH = { chair: 0.8, computer: 0.75, whiteboard: 0.9, vending: 0.8 }
+const REACH = { chair: 0.8, computer: 0.75, vending: 0.8 }
 
 // the item in front of the player, preferring what it looks at
 export function findNearby(

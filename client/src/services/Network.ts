@@ -27,16 +27,6 @@ import {
   pushPlayerJoinedMessage,
   pushPlayerLeftMessage,
 } from '../stores/ChatStore'
-import { removeArrow, removeNote, upsertArrow, upsertNote } from '../stores/WhiteboardStore'
-import type {
-  AddArrowMessage,
-  AddNoteMessage,
-  DeleteArrowMessage,
-  DeleteNoteMessage,
-  HandleSide,
-  NoteColor,
-  UpdateNoteMessage,
-} from '../../../types/Whiteboard'
 
 // how often my position is sent while moving (15 times per second)
 const PLAYER_UPDATE_INTERVAL = 66 // ms
@@ -173,59 +163,6 @@ export default class Network {
       })
     })
 
-    // new instance added to the whiteboards MapSchema
-    $.onAdd('whiteboards', (whiteboard, key) => {
-      // mirror the sticky notes and arrows into redux for the whiteboard dialog
-      $.onAdd(whiteboard, 'notes', (note, noteId) => {
-        const sync = () =>
-          store.dispatch(
-            upsertNote({
-              whiteboardId: key,
-              note: {
-                id: noteId,
-                x: note.x,
-                y: note.y,
-                width: note.width,
-                height: note.height,
-                text: note.text,
-                color: note.color as NoteColor,
-                author: note.author,
-              },
-            })
-          )
-        sync()
-        $.onChange(note, sync)
-      })
-      $.onRemove(whiteboard, 'notes', (_note, noteId) => {
-        store.dispatch(removeNote({ whiteboardId: key, noteId }))
-      })
-      $.onAdd(whiteboard, 'arrows', (arrow, arrowId) => {
-        store.dispatch(
-          upsertArrow({
-            whiteboardId: key,
-            arrow: {
-              id: arrowId,
-              from: arrow.from,
-              to: arrow.to,
-              fromSide: arrow.fromSide as HandleSide,
-              toSide: arrow.toSide as HandleSide,
-            },
-          })
-        )
-      })
-      $.onRemove(whiteboard, 'arrows', (_arrow, arrowId) => {
-        store.dispatch(removeArrow({ whiteboardId: key, arrowId }))
-      })
-
-      // track changes on every child object's connectedUser
-      $.onAdd(whiteboard, 'connectedUser', (item) => {
-        phaserEvents.emit(Event.ITEM_USER_ADDED, item, key, ItemType.WHITEBOARD)
-      })
-      $.onRemove(whiteboard, 'connectedUser', (item) => {
-        phaserEvents.emit(Event.ITEM_USER_REMOVED, item, key, ItemType.WHITEBOARD)
-      })
-    })
-
     // new instance added to the chatMessages ArraySchema
     $.onAdd('chatMessages', ({ author, createdAt, content }) => {
       store.dispatch(pushChatMessage({ author, createdAt, content }))
@@ -328,34 +265,6 @@ export default class Network {
 
   disconnectFromComputer(id: string) {
     this.room?.send(Message.DISCONNECT_FROM_COMPUTER, { computerId: id })
-  }
-
-  connectToWhiteboard(id: string) {
-    this.room?.send(Message.CONNECT_TO_WHITEBOARD, { whiteboardId: id })
-  }
-
-  disconnectFromWhiteboard(id: string) {
-    this.room?.send(Message.DISCONNECT_FROM_WHITEBOARD, { whiteboardId: id })
-  }
-
-  addWhiteboardNote(message: AddNoteMessage) {
-    this.room?.send(Message.WHITEBOARD_ADD_NOTE, message)
-  }
-
-  updateWhiteboardNote(message: UpdateNoteMessage) {
-    this.room?.send(Message.WHITEBOARD_UPDATE_NOTE, message)
-  }
-
-  deleteWhiteboardNote(message: DeleteNoteMessage) {
-    this.room?.send(Message.WHITEBOARD_DELETE_NOTE, message)
-  }
-
-  addWhiteboardArrow(message: AddArrowMessage) {
-    this.room?.send(Message.WHITEBOARD_ADD_ARROW, message)
-  }
-
-  deleteWhiteboardArrow(message: DeleteArrowMessage) {
-    this.room?.send(Message.WHITEBOARD_DELETE_ARROW, message)
   }
 
   addChatMessage(content: string) {

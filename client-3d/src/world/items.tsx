@@ -3,11 +3,9 @@ import * as THREE from 'three'
 import type { ThreeEvent } from '@react-three/fiber'
 import { flat, pastel } from '../toon/materials'
 import { useGame } from '../state/game'
-import { useBoards, NOTE_COLOR_HEX } from '../state/boards'
 import {
   chairs,
   computers,
-  whiteboards,
   vendingMachines,
   type Interactable,
 } from '../game/interactables'
@@ -261,86 +259,6 @@ function Desk({ computer, sides, busy, stream }: DeskProps) {
           />
         )
       )}
-    </group>
-  )
-}
-
-// ---------- whiteboards: easels in front of the wall ----------
-
-const noteGeometry = roundedBox(1, 1, 0.015, 0.004)
-const MAX_NOTES_SHOWN = 24
-
-// the real sticky notes of the board, shrunk onto the easel
-function BoardNotes({ id, width, height }: { id: string; width: number; height: number }) {
-  const board = useBoards((s) => s.boards[id])
-  const notes = Object.values(board?.notes ?? {}).slice(0, MAX_NOTES_SHOWN)
-  if (!notes.length) return null
-  const x0 = Math.min(...notes.map((n) => n.x))
-  const y0 = Math.min(...notes.map((n) => n.y))
-  const x1 = Math.max(...notes.map((n) => n.x + n.width))
-  const y1 = Math.max(...notes.map((n) => n.y + n.height))
-  // fit the notes into the board, but don't blow a single note up to full size
-  const scale = Math.min(width / Math.max(x1 - x0, 600), height / Math.max(y1 - y0, 400))
-  return (
-    <group position={[-width / 2, height / 2, 0]}>
-      {notes.map((note) => (
-        <mesh
-          key={note.id}
-          geometry={noteGeometry}
-          material={flat(NOTE_COLOR_HEX[note.color] ?? NOTE_COLOR_HEX.yellow)}
-          position={[
-            (note.x - x0 + note.width / 2) * scale,
-            -(note.y - y0 + note.height / 2) * scale,
-            0,
-          ]}
-          scale={[note.width * scale * 0.92, note.height * scale * 0.92, 1]}
-        />
-      ))}
-    </group>
-  )
-}
-
-export function Whiteboards() {
-  const itemUsers = useGame((s) => s.itemUsers)
-  return (
-    <group>
-      {whiteboards.map((board) => {
-        const w = Math.max(board.rect.w, 1.4)
-        const busy = (itemUsers[board.id]?.length ?? 0) > 0
-        return (
-          <group key={board.id} position={[board.x, 0, board.z]} onClick={use(board)} {...hover}>
-            {[-1, 1].map((side) => (
-              <Box
-                key={side}
-                size={[0.07, 1.25, 0.07]}
-                position={[(side * w) / 2 - side * 0.08, 0.62, -0.02]}
-                color="#b8b2c8"
-                outline={false}
-              />
-            ))}
-            <Box
-              size={[w, 0.85, 0.07]}
-              position={[0, 0.95, 0]}
-              color={busy ? '#ffd48a' : '#c9d6ee'}
-              radius={0.03}
-            />
-            <mesh
-              geometry={roundedBox(w - 0.14, 0.72, 0.02, 0.01)}
-              material={flat('#fdfcff')}
-              position={[0, 0.95, 0.04]}
-            />
-            <group position={[0, 0.95, 0.055]}>
-              <BoardNotes id={board.id} width={w - 0.3} height={0.6} />
-            </group>
-            <Box
-              size={[w * 0.9, 0.04, 0.12]}
-              position={[0, 0.52, 0.06]}
-              color="#b8b2c8"
-              outline={false}
-            />
-          </group>
-        )
-      })}
     </group>
   )
 }

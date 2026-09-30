@@ -6,7 +6,6 @@ import { createCharacterAnims } from '../anims/CharacterAnims'
 import Item from '../items/Item'
 import Chair from '../items/Chair'
 import Computer from '../items/Computer'
-import Whiteboard from '../items/Whiteboard'
 import VendingMachine from '../items/VendingMachine'
 import '../characters/MyPlayer'
 import '../characters/OtherPlayer'
@@ -34,7 +33,6 @@ const TILESET_TEXTURES: Record<string, string> = {
   Classroom_and_library: 'library',
   chair: 'chairs',
   computer: 'computers',
-  whiteboard: 'whiteboards',
   vendingmachine: 'vendingmachines',
 }
 // object layers with their own handling, all others are decoration
@@ -67,7 +65,6 @@ export default class Game extends Phaser.Scene {
   private otherPlayers!: Phaser.Physics.Arcade.Group
   private otherPlayerMap = new Map<string, OtherPlayer>()
   computerMap = new Map<string, Computer>()
-  private whiteboardMap = new Map<string, Whiteboard>()
   officeMap!: OfficeMap
   private inOverview = false
   private mediaUpdateTimer = 0
@@ -172,13 +169,6 @@ export default class Game extends Phaser.Scene {
       this.computerMap.set(item.id, item)
     })
 
-    const whiteboards = this.physics.add.staticGroup({ classType: Whiteboard })
-    this.getObjectLayer('Whiteboard').forEach((obj) => {
-      const item = this.addObjectFromTiled(whiteboards, obj) as Whiteboard
-      item.id = String(obj.id)
-      this.whiteboardMap.set(item.id, item)
-    })
-
     const vendingMachines = this.physics.add.staticGroup({ classType: VendingMachine })
     this.getObjectLayer('VendingMachine').forEach((obj) => {
       this.addObjectFromTiled(vendingMachines, obj)
@@ -204,7 +194,7 @@ export default class Game extends Phaser.Scene {
 
     this.physics.add.overlap(
       this.playerSelector,
-      [chairs, computers, whiteboards, vendingMachines],
+      [chairs, computers, vendingMachines],
       this.handleItemSelectorOverlap,
       undefined,
       this
@@ -308,9 +298,6 @@ export default class Game extends Phaser.Scene {
     if (itemType === ItemType.COMPUTER) {
       const computer = this.computerMap.get(itemId)
       computer?.addCurrentUser(playerId)
-    } else if (itemType === ItemType.WHITEBOARD) {
-      const whiteboard = this.whiteboardMap.get(itemId)
-      whiteboard?.addCurrentUser(playerId)
     }
   }
 
@@ -318,9 +305,6 @@ export default class Game extends Phaser.Scene {
     if (itemType === ItemType.COMPUTER) {
       const computer = this.computerMap.get(itemId)
       computer?.removeCurrentUser(playerId)
-    } else if (itemType === ItemType.WHITEBOARD) {
-      const whiteboard = this.whiteboardMap.get(itemId)
-      whiteboard?.removeCurrentUser(playerId)
     }
   }
 

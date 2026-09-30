@@ -32,7 +32,6 @@ export type OfficeData = {
   components: Component[]
   chairs: ChairData[]
   computers: ItemData[]
-  whiteboards: ItemData[]
   vendingMachines: ItemData[]
   zones: ZoneData[]
 }
