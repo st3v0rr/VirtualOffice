@@ -12,6 +12,7 @@
   "type": "module",
   "workspaces": [
     "types",
+    "packages/media",
     "server",
     "client",
     "client-3d"

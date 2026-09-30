@@ -1,6 +1,6 @@
 import { type VideoHTMLAttributes, useEffect, useRef } from 'react'
 import { useAppSelector } from '../hooks'
-import { setAudioOutput } from '../web/mediaDevices'
+import { setAudioOutput } from '@skyoffice/media'
 
 type PropsType = VideoHTMLAttributes<HTMLVideoElement> & {
   srcObject: MediaStream

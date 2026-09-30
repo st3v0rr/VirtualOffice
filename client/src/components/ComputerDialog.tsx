@@ -9,7 +9,7 @@ import { closeComputerDialog } from '../stores/ComputerStore'
 import { sanitizeId } from '../util'
 
 import Video from './Video'
-import ScreenShareSession from '../web/ScreenShareSession'
+import { ScreenShareSession } from '@skyoffice/media'
 import phaserGame from '../PhaserGame'
 import Game from '../scenes/Game'
 

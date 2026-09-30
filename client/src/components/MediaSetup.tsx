@@ -26,7 +26,7 @@ import {
   loadMediaSettings,
   playTestSound,
   supportsAudioOutputSelection,
-} from '../web/mediaDevices'
+} from '@skyoffice/media'
 
 const emptyDeviceLists: MediaDeviceLists = { videoInputs: [], audioInputs: [], audioOutputs: [] }
 

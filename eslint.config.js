@@ -21,7 +21,7 @@ export default defineConfig(
     languageOptions: { globals: globals.node },
   },
   {
-    files: ['client/**/*.{ts,tsx}', 'client-3d/src/**/*.{ts,tsx}'],
+    files: ['client/**/*.{ts,tsx}', 'client-3d/src/**/*.{ts,tsx}', 'packages/*/src/**/*.ts'],
     languageOptions: { globals: globals.browser },
     extends: [reactHooks.configs.flat.recommended],
   },

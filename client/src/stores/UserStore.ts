@@ -1,7 +1,7 @@
 import { createSlice, PayloadAction } from '@reduxjs/toolkit'
 import { sanitizeId } from '../util'
 import { BackgroundMode } from '../../../types/BackgroundMode'
-import { loadMediaSettings } from '../web/mediaDevices'
+import { loadMediaSettings } from '@skyoffice/media'
 import { getSunTimes } from '../utils/sunTimes'
 
 import phaserGame from '../PhaserGame'

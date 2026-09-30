@@ -5,12 +5,10 @@ import {
   type LocalTrackPublication,
   type RemoteParticipant,
   type RemoteTrackPublication,
+  type RoomConnectOptions,
 } from 'livekit-client'
 
-import type { MediaGrant, MediaLocation } from '../../../types/Media'
-import type Network from '../services/Network'
-import store from '../stores'
-import { setCameraEnabled, setMicrophoneEnabled, setVideoConnected } from '../stores/UserStore'
+import type { MediaGrant, MediaLocation, MediaTokenRequest } from '../../../types/Media'
 import {
   type MediaSettings,
   applyTrackSettings,
@@ -19,9 +17,11 @@ import {
 } from './mediaDevices'
 
 // in the open office, start listening to someone closer than NEAR and stop beyond FAR
-// (the gap avoids flickering connections at the edge)
-const NEAR_DISTANCE = 110
-const FAR_DISTANCE = 170
+// (the gap avoids flickering connections at the edge); distances in map pixels
+export const NEAR_DISTANCE = 110
+export const FAR_DISTANCE = 170
+// how often the game reports my location and the distances (see updateLocation)
+export const MEDIA_UPDATE_INTERVAL = 250 // ms
 // wait before connecting again when the video chat server was not reachable
 const RETRY_DELAY = 10_000 // ms
 
@@ -39,6 +39,21 @@ export type MediaTile = {
 export type MediaStatus = 'off' | 'connecting' | 'connected' | 'unavailable'
 
 type Snapshot = { tiles: MediaTile[]; status: MediaStatus; canPublish: boolean }
+
+// anything that can hand out LiveKit tokens (the network of the 2D and the 3D client)
+export type GrantSource = {
+  requestMediaGrant(request: MediaTokenRequest): Promise<MediaGrant | null>
+}
+
+// how a client plugs the manager into its own state
+export type MediaManagerOptions = {
+  // my camera/microphone stream is acquired (true) and in use for video chat
+  onVideoConnected?: (connected: boolean) => void
+  // state of my own microphone/camera track, null if there is no such device
+  onTrackStateChange?: (microphone: boolean | null, camera: boolean | null) => void
+  // passed to LiveKit's Room.connect, e.g. to fail fast without a server
+  connectOptions?: RoomConnectOptions
+}
 
 /**
  * Video chat via LiveKit. The office is split into media rooms (see getMediaLocation):
@@ -59,8 +74,9 @@ export default class MediaManager {
   private snapshot: Snapshot = { tiles: [], status: 'off', canPublish: false }
 
   constructor(
-    private network: Network,
-    private mySessionId: string
+    private network: GrantSource,
+    private mySessionId: string,
+    private options: MediaManagerOptions = {}
   ) {}
 
   // --- my camera and microphone ---
@@ -79,7 +95,7 @@ export default class MediaManager {
   useMediaStream(stream: MediaStream, settings: MediaSettings) {
     applyTrackSettings(stream, settings)
     this.myStream = stream
-    store.dispatch(setVideoConnected(true))
+    this.options.onVideoConnected?.(true)
     this.syncTrackState()
     this.enqueue(() => this.publishMyTracks())
   }
@@ -121,8 +137,10 @@ export default class MediaManager {
   private syncTrackState() {
     const audioTrack = this.myStream?.getAudioTracks()[0]
     const videoTrack = this.myStream?.getVideoTracks()[0]
-    store.dispatch(setMicrophoneEnabled(audioTrack ? audioTrack.enabled : null))
-    store.dispatch(setCameraEnabled(videoTrack ? videoTrack.enabled : null))
+    this.options.onTrackStateChange?.(
+      audioTrack ? audioTrack.enabled : null,
+      videoTrack ? videoTrack.enabled : null
+    )
     this.emit()
   }
 
@@ -179,7 +197,10 @@ export default class MediaManager {
     const room = new Room({ dynacast: true })
     this.registerRoomEvents(room)
     try {
-      await room.connect(grant.url, grant.token, { autoSubscribe: false })
+      await room.connect(grant.url, grant.token, {
+        ...this.options.connectOptions,
+        autoSubscribe: false,
+      })
     } catch (error) {
       console.warn('Could not connect to the video chat', error)
       this.setStatus('unavailable')

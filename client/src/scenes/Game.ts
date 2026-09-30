@@ -19,6 +19,7 @@ import { PlayerBehavior } from '../../../types/PlayerBehavior'
 import { ItemType } from '../../../types/Items'
 import { findZone, getProperty, parseOfficeMap, type OfficeMap } from '../../../types/OfficeMap'
 import { getMediaLocation } from '../../../types/Media'
+import { MEDIA_UPDATE_INTERVAL } from '@skyoffice/media'
 
 import store from '../stores'
 import { setFocused, setShowChat } from '../stores/ChatStore'
@@ -47,9 +48,6 @@ const SPECIAL_LAYERS = new Set([
 ])
 // decoration layers of the original map that block movement; new layers use a `collides` property
 const LEGACY_COLLIDING_LAYERS = new Set(['ObjectsOnCollide', 'GenericObjectsOnCollide', 'Basement'])
-
-// how often the video chat checks my zone and who is close by
-const MEDIA_UPDATE_INTERVAL = 250 // ms
 
 const PLAYER_ZOOM = 1.5
 const ZOOM_IN_DURATION = 1500 // ms

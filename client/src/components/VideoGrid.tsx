@@ -5,9 +5,7 @@ import MicOffIcon from '@mui/icons-material/MicOff'
 import Video from './Video'
 import { useAppSelector } from '../hooks'
 import { getAvatarString, getColorByString, sanitizeId } from '../util'
-import { setAudioOutput } from '../web/mediaDevices'
-import type MediaManager from '../web/MediaManager'
-import type { MediaTile } from '../web/MediaManager'
+import { setAudioOutput, type MediaManager, type MediaTile } from '@skyoffice/media'
 
 const Grid = styled.div`
   position: fixed;

@@ -11,7 +11,7 @@ import { getAvatarString, getColorByString } from '../util'
 import MediaSetup, { useMediaSetup } from './MediaSetup'
 import AvatarPicker, { randomAvatar } from './AvatarPicker'
 import { loadProfile, saveProfile } from '../utils/profile'
-import { saveMediaSettings } from '../web/mediaDevices'
+import { saveMediaSettings } from '@skyoffice/media'
 
 import phaserGame from '../PhaserGame'
 import Game from '../scenes/Game'

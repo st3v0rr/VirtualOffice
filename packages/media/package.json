@@ -1,0 +1,20 @@
+{
+  "name": "@skyoffice/media",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Video, audio and screen sharing via LiveKit, shared by the 2D and the 3D client",
+  "license": "MIT",
+  "type": "module",
+  "exports": {
+    ".": "./src/index.ts"
+  },
+  "scripts": {
+    "typecheck": "tsc --noEmit"
+  },
+  "dependencies": {
+    "livekit-client": "^2.22.3"
+  },
+  "devDependencies": {
+    "typescript": "~6.0"
+  }
+}

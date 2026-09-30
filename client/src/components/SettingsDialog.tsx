@@ -12,7 +12,7 @@ import MediaSetup, { useMediaSetup } from './MediaSetup'
 import { useAppDispatch, useAppSelector } from '../hooks'
 import { setAudioOutputId } from '../stores/UserStore'
 import { saveProfile } from '../utils/profile'
-import { type MediaSettings, saveMediaSettings } from '../web/mediaDevices'
+import { type MediaSettings, saveMediaSettings } from '@skyoffice/media'
 import phaserGame from '../PhaserGame'
 import Game from '../scenes/Game'
 

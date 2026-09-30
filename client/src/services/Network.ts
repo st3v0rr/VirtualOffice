@@ -3,11 +3,18 @@ import type { IOfficeState, IPlayer } from '../../../types/IOfficeState'
 import { Message } from '../../../types/Messages'
 import { type IRoomData, RoomType } from '../../../types/Rooms'
 import { ItemType } from '../../../types/Items'
-import MediaManager from '../web/MediaManager'
+import { MediaManager } from '@skyoffice/media'
 import type { MediaGrant, MediaTokenRequest } from '../../../types/Media'
 import { phaserEvents, Event } from '../events/EventCenter'
 import store from '../stores'
-import { setSessionId, setPlayerNameMap, removePlayerNameMap } from '../stores/UserStore'
+import {
+  setSessionId,
+  setPlayerNameMap,
+  removePlayerNameMap,
+  setVideoConnected,
+  setMicrophoneEnabled,
+  setCameraEnabled,
+} from '../stores/UserStore'
 import {
   setLobbyJoined,
   setJoinedRoomData,
@@ -117,7 +124,13 @@ export default class Network {
     this.lobby.leave()
     this.mySessionId = this.room.sessionId
     store.dispatch(setSessionId(this.room.sessionId))
-    this.media = new MediaManager(this, this.mySessionId)
+    this.media = new MediaManager(this, this.mySessionId, {
+      onVideoConnected: (connected) => store.dispatch(setVideoConnected(connected)),
+      onTrackStateChange: (microphone, camera) => {
+        store.dispatch(setMicrophoneEnabled(microphone))
+        store.dispatch(setCameraEnabled(camera))
+      },
+    })
 
     const $ = Callbacks.get(this.room)
 
