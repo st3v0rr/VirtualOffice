@@ -72,6 +72,57 @@ More tools in `client-3d/scripts/`:
 | `node client-3d/scripts/media-smoke.mjs`                    | video chat UI smoke test with fake camera/microphone              |
 | http://localhost:3100/?gallery                              | all chibi presets side by side                                    |
 
+## Tests
+
+- `npm test` runs the Vitest unit tests of `packages/media`, `server` and `client-3d` and prints a v8 coverage report (no threshold). They cover the logic: the proximity hysteresis and the media zones (quiet library, meeting room, stage), device settings and avatar persistence, the server's input validation and commands, the LiveKit token, the map extraction (flood fill, and that `office.generated.json` is up to date), collision, path finding and smoothing, chair occupancy and the avatar format.
+- `npm run smoke` (after `npm run build`) starts the built server with the built client on one port, checks HTTP and a WebSocket join, then joins in headless Chromium, walks and takes a screenshot (`smoke-artifacts/smoke.png`). Chromium comes from `CHROME_PATH`, Playwright (`npx playwright-core install chromium`) or the system; without one only the HTTP and WebSocket checks run. `SMOKE_URL=http://host:2567 npm run smoke` tests a running server or container instead.
+
+## Running it on a server (Docker)
+
+The Docker image contains the Colyseus server, which also serves the built 3D client: **one container, one port (2567) for the page and the WebSocket**. LiveKit (video chat) is optional and runs outside of it.
+
+```bash
+docker build -t virtualoffice-demo .
+docker run -d --name virtualoffice -p 2567:2567 --restart unless-stopped virtualoffice-demo
+# -> http://<host>:2567
+```
+
+or with Compose (builds the image, or set `DEMO_IMAGE` to a pulled one; copy `.env.example` to `.env` for the settings):
+
+```bash
+docker compose up -d                     # the demo
+docker compose --profile livekit up -d   # plus LiveKit in dev mode, for trying out video chat
+```
+
+| Variable             | Default           | Description                                                                                                                                                                                   |
+| -------------------- | ----------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `PORT`               | `2567`            | port inside the container                                                                                                                                                                     |
+| `PUBLIC_SERVER_URL`  | (empty)           | WebSocket URL of the server as the browser sees it, e.g. `wss://office.example.com`. Empty: the host and port of the page, which is right when the proxy forwards WebSockets on the same host |
+| `LIVEKIT_URL`        | (empty)           | LiveKit URL as the browser sees it (`wss://…` if the page is HTTPS). Empty: video chat off, the office works without it                                                                       |
+| `LIVEKIT_API_KEY`    | (empty)           | LiveKit API key                                                                                                                                                                               |
+| `LIVEKIT_API_SECRET` | (empty)           | LiveKit API secret                                                                                                                                                                            |
+| `COLYSEUS_MONITOR`   | off in production | `true` enables the Colyseus monitor on `/colyseus` (no login, it shows all rooms and players, so keep it private)                                                                             |
+| `STATIC_DIR`         | `client-3d/dist`  | the built client the server serves; unset = WebSocket server only                                                                                                                             |
+| `OFFICE_MAP_PATH`    | `assets/map/…`    | another Tiled map for the server (the client has the map built in)                                                                                                                            |
+
+`GET /healthz` answers `{"ok":true}` (used by the image's `HEALTHCHECK`); `/config.js` hands `PUBLIC_SERVER_URL` to the client at run time, so the same image works under any host name.
+
+**HTTPS is needed for camera and microphone.** Browsers only allow them in a secure context (HTTPS, or `http://localhost`). On a server, put a reverse proxy with TLS in front, which also has to forward WebSockets, e.g. [Caddy](https://caddyserver.com) (gets the certificate by itself):
+
+```
+office.example.com {
+    reverse_proxy localhost:2567
+}
+```
+
+Then open `https://office.example.com`; the client connects to `wss://office.example.com` without further settings. LiveKit needs its own TLS name (e.g. `livekit.example.com` → port 7880) and its media ports open (7881/tcp, 7882/udp in dev mode, see the [LiveKit deployment docs](https://docs.livekit.io/home/self-hosting/deployment/)); the `livekit` profile runs it with the public dev keys and is only meant for trying it out.
+
+### CI and Docker Hub
+
+`.github/workflows/ci.yml` runs on pushes and pull requests: `npm ci`, typecheck, lint, format check, build, `npm test`, the smoke test in Chromium (screenshot as artifact), then builds the Docker image and tests the running container with curl (health, page, config, bundles, monitor off, health status).
+
+On pushes to `poc/threejs-r3f` and `main` it pushes the image to Docker Hub as `latest` and the short commit sha. This needs the repository secrets `DOCKERHUB_USERNAME` and `DOCKERHUB_TOKEN`; without them the push is skipped with a notice. The image name comes from the repository variable (or secret) `DOCKERHUB_IMAGE`. **Its default `st3v0rr/virtualoffice-demo` is only a placeholder, set the variable to your own repository.**
+
 ## The map
 
 `assets/map/map.json` is a [Tiled](https://www.mapeditor.org) map; its tilesets are in `assets/map/tilesets/`. It is the single source for the layout: `npm run extract-map` turns it into the 3D data (walkable tiles, collision rectangles, furniture blocks with averaged colours, chairs, computers, zones), and the server reads the computers, the spawn point and the media zones from it at start. The whiteboard objects in the map are left over from the 2D client and ignored.
