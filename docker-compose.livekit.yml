@@ -1,0 +1,15 @@
+# LiveKit overlay with the public dev keys, so the demo talks to the bundled LiveKit
+# without extra environment variables. Only for trying things out locally!
+#
+#   docker compose --profile livekit -f docker-compose.yml -f docker-compose.livekit.yml up -d
+#   podman compose --profile livekit -f docker-compose.yml -f docker-compose.livekit.yml up -d
+#
+# For a real deployment set LIVEKIT_URL/API_KEY/SECRET in .env instead and use only the
+# plain docker-compose.yml.
+
+services:
+  demo:
+    environment:
+      LIVEKIT_URL: ${LIVEKIT_URL:-ws://localhost:7880}
+      LIVEKIT_API_KEY: ${LIVEKIT_API_KEY:-devkey}
+      LIVEKIT_API_SECRET: ${LIVEKIT_API_SECRET:-secret}

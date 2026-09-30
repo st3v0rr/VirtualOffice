@@ -94,6 +94,21 @@ docker compose up -d                     # the demo
 docker compose --profile livekit up -d   # plus LiveKit in dev mode, for trying out video chat
 ```
 
+Podman works too (`podman compose` uses podman-compose as its provider). Two differences:
+pull the LiveKit image with its full name first, because Podman enforces registry
+short-name resolution and cannot prompt inside compose, and add the livekit overlay so the
+demo gets the dev keys:
+
+```bash
+podman pull docker.io/livekit/livekit-server:latest
+DEMO_IMAGE=st3v0rr/virtualoffice:latest podman compose --profile livekit \
+  -f docker-compose.yml -f docker-compose.livekit.yml up -d
+# -> http://localhost:2567  (stop again with: podman compose down)
+```
+
+Without `DEMO_IMAGE` compose builds the image from this checkout; with it, the published
+image from Docker Hub runs.
+
 | Variable             | Default           | Description                                                                                                                                                                                   |
 | -------------------- | ----------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | `PORT`               | `2567`            | port inside the container                                                                                                                                                                     |
