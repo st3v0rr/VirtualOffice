@@ -353,6 +353,27 @@ input:focus {
   overflow: hidden;
   text-overflow: ellipsis;
 }
+.tag .name .voice {
+  margin-right: 3px;
+}
+.tag.speaking .name {
+  opacity: 1 !important;
+  background: #eafbe4;
+  box-shadow:
+    0 0 0 3px #7fd67a,
+    0 0 14px 3px rgba(127, 214, 122, 0.7);
+  animation: talk 0.6s ease-in-out infinite alternate;
+}
+.tag.muted .name .voice {
+  font-size: 10px;
+}
+@keyframes talk {
+  to {
+    box-shadow:
+      0 0 0 4px #7fd67a,
+      0 0 20px 6px rgba(127, 214, 122, 0.5);
+  }
+}
 .media-dialog {
   width: min(460px, 94vw);
   display: flex;

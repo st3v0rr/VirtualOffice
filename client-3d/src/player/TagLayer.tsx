@@ -4,6 +4,7 @@ import * as THREE from 'three'
 import { useGame } from '../state/game'
 import { ROOM_LABELS } from '../world/rooms'
 import { me } from '../net/players'
+import { useVoiceState } from '../media/media'
 
 // Name tags, speech bubbles and room signs as DOM on top of the canvas (so the text is
 // crisp and cheap). They are plain elements of the app positioned in one loop, instead
@@ -48,6 +49,21 @@ function Bubble({ id }: { id: string }) {
   )
 }
 
+// name and speech bubble; a green ring around the name while the player talks
+function Tag({ id, name }: { id: string; name: string }) {
+  const voice = useVoiceState(id)
+  return (
+    <div className={`tag ${voice ?? ''}`}>
+      <Bubble id={id} />
+      <div className="name">
+        {voice === 'muted' && <span className="voice">🔇</span>}
+        {voice === 'speaking' && <span className="voice">🔊</span>}
+        {name}
+      </div>
+    </div>
+  )
+}
+
 // the DOM elements of the tags, filled by <TagOverlay>, positioned by <TagProjector>
 const tagElements = new Map<string, HTMLDivElement>()
 const labelElements: (HTMLDivElement | null)[] = []
@@ -87,11 +103,13 @@ export function TagProjector() {
       const p = anchor.getWorldPosition(v)
       // names of people far away fade out, so a full conference room stays readable
       // (speech bubbles always show)
-      const name = el.lastElementChild?.lastElementChild as HTMLElement | null
+      const tag = el.lastElementChild
+      const name = tag?.lastElementChild as HTMLElement | null
       if (name) {
         const d = Math.hypot(p.x - me.x, p.z - me.z)
+        // whoever talks stays visible, e.g. across a meeting room
         const opacity =
-          id === mySessionId
+          id === mySessionId || tag!.classList.contains('speaking')
             ? 1
             : Math.round(clamp(1 - (d - NAME_NEAR) / NAME_FADE, 0, 1) * 10) / 10
         if (name.dataset.opacity !== String(opacity)) {
@@ -132,10 +150,7 @@ export function TagOverlay() {
       ))}
       {entries.map(([id, name]) => (
         <div key={id} className="anchor" ref={setTag(id)}>
-          <div className="tag">
-            <Bubble id={id} />
-            <div className="name">{name}</div>
-          </div>
+          <Tag id={id} name={name} />
         </div>
       ))}
     </div>
