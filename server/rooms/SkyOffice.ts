@@ -5,7 +5,7 @@ import { Player, OfficeState, Computer } from './schema/OfficeState.ts'
 import { Message } from '../../types/Messages.ts'
 import type { IRoomData } from '../../types/Rooms.ts'
 import { officeMap } from '../officeMap.ts'
-import { createMediaGrant } from '../media.ts'
+import { createMediaGrant, mediaEnabled } from '../media.ts'
 import { getMediaLocation, type MediaTokenRequest } from '../../types/Media.ts'
 import PlayerUpdateCommand from './commands/PlayerUpdateCommand.ts'
 import PlayerUpdateNameCommand from './commands/PlayerUpdateNameCommand.ts'
@@ -102,9 +102,12 @@ export class SkyOffice extends Room<{ state: OfficeState }> {
 
     // hand out a LiveKit token for the media room at the player's position or computer;
     // the server decides the room, so private rooms can't be joined from outside
-    this.onMessage(Message.REQUEST_MEDIA_TOKEN, (client, request: MediaTokenRequest) =>
-      this.createMediaGrant(client, request)
-    )
+    this.onMessage(Message.REQUEST_MEDIA_TOKEN, (client, request: MediaTokenRequest, ctx) => {
+      // an expected answer without LiveKit, so reject without an error (and a stack) in the log;
+      // the client shows "video chat not available" and asks again later
+      if (!mediaEnabled) return ctx.reject('Video chat is not configured on this server')
+      return this.createMediaGrant(client, request)
+    })
 
     // when a player send a chat message, update the message array and broadcast to all connected clients except the sender
     this.onMessage(Message.ADD_CHAT_MESSAGE, (client, message: { content: string }) => {

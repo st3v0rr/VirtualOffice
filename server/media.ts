@@ -3,11 +3,12 @@ import type { MediaGrant, MediaLocation } from '../types/Media.ts'
 
 const isProduction = process.env.NODE_ENV === 'production'
 
-// defaults match `livekit-server --dev`
+// defaults match `livekit-server --dev`; empty variables (e.g. from docker compose) count
+// as not set
 const config = {
-  url: process.env.LIVEKIT_URL ?? (isProduction ? undefined : 'ws://localhost:7880'),
-  apiKey: process.env.LIVEKIT_API_KEY ?? (isProduction ? undefined : 'devkey'),
-  apiSecret: process.env.LIVEKIT_API_SECRET ?? (isProduction ? undefined : 'secret'),
+  url: process.env.LIVEKIT_URL || (isProduction ? undefined : 'ws://localhost:7880'),
+  apiKey: process.env.LIVEKIT_API_KEY || (isProduction ? undefined : 'devkey'),
+  apiSecret: process.env.LIVEKIT_API_SECRET || (isProduction ? undefined : 'secret'),
 }
 
 export const mediaEnabled = !!(config.url && config.apiKey && config.apiSecret)

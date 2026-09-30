@@ -66,6 +66,16 @@ describe('createMediaGrant', () => {
     ).rejects.toThrow(/not configured/)
   })
 
+  it('treats empty variables (docker compose without a value) as not set', async () => {
+    const media = await loadMedia({
+      NODE_ENV: 'production',
+      LIVEKIT_URL: '',
+      LIVEKIT_API_KEY: '',
+      LIVEKIT_API_SECRET: '',
+    })
+    expect(media.mediaEnabled).toBe(false)
+  })
+
   it('uses the livekit-server --dev defaults in development', async () => {
     const media = await loadMedia({
       NODE_ENV: 'development',

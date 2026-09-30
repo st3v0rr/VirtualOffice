@@ -28,10 +28,12 @@
     "build:server": "npm run build -w server",
     "build:client3d": "npm run build -w client-3d",
     "start": "npm start -w server",
+    "start:demo": "STATIC_DIR=\"$PWD/client-3d/dist\" npm start",
     "extract-map": "npm run extract-map -w client-3d",
     "bots": "node client-3d/scripts/bots.mjs",
     "typecheck": "npm run typecheck --workspaces --if-present",
     "test": "vitest run --coverage",
+    "smoke": "node client-3d/scripts/smoke.mjs",
     "lint": "eslint .",
     "format": "prettier --write .",
     "format:check": "prettier --check ."

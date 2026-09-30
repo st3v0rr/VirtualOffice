@@ -19,9 +19,20 @@ export type RoomTarget =
   | { kind: 'custom'; roomId: string; password?: string }
   | { kind: 'create'; name: string; description: string; password?: string }
 
+// set at run time by /config.js when the server serves the built client (Docker image)
+declare global {
+  interface Window {
+    __VIRTUALOFFICE_CONFIG__?: { serverUrl?: string }
+  }
+}
+
 function serverEndpoint() {
-  if (import.meta.env.VITE_SERVER_URL) return import.meta.env.VITE_SERVER_URL as string
   const protocol = window.location.protocol.replace('http', 'ws')
+  const config = window.__VIRTUALOFFICE_CONFIG__
+  // served by the Colyseus server: its URL, or else the same host and port as the page
+  if (config) return config.serverUrl || `${protocol}//${window.location.host}`
+  if (import.meta.env.VITE_SERVER_URL) return import.meta.env.VITE_SERVER_URL as string
+  // dev server: the Colyseus server on the same host
   return `${protocol}//${window.location.hostname}:2567`
 }
 
@@ -94,7 +105,7 @@ class Network {
         connection: 'error',
         connectionError:
           target.kind === 'public'
-            ? `Server nicht erreichbar (${serverEndpoint()}). Läuft "npm run dev:server"?`
+            ? `Server nicht erreichbar (${serverEndpoint()}).`
             : `Beitreten fehlgeschlagen: ${message || 'unbekannter Fehler'}`,
       })
       return false
@@ -108,7 +119,7 @@ class Network {
     room.send(Message.UPDATE_PLAYER_NAME, { name })
     this.sendAvatar(avatar)
     this.sendPlayer({ ...spawn, rot: 0 })
-    pushChat({ author: name, content: 'ist beigetreten (3D)', createdAt: Date.now(), system: true })
+    pushChat({ author: name, content: 'ist beigetreten', createdAt: Date.now(), system: true })
 
     room.onLeave(() => {
       useGame
