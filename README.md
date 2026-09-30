@@ -121,7 +121,7 @@ Then open `https://office.example.com`; the client connects to `wss://office.exa
 
 `.github/workflows/ci.yml` runs on pushes and pull requests: `npm ci`, typecheck, lint, format check, build, `npm test`, the smoke test in Chromium (screenshot as artifact), then builds the Docker image and tests the running container with curl (health, page, config, bundles, monitor off, health status).
 
-On pushes to `poc/threejs-r3f` and `main` it pushes the image to Docker Hub as `latest` and the short commit sha. This needs the repository secrets `DOCKERHUB_USERNAME` and `DOCKERHUB_TOKEN`; without them the push is skipped with a notice. The image name comes from the repository variable (or secret) `DOCKERHUB_IMAGE`. **Its default `st3v0rr/virtualoffice-demo` is only a placeholder, set the variable to your own repository.**
+On pushes to `poc/threejs-r3f` and `main` it pushes the image to Docker Hub as `latest` and the short commit sha. This needs the repository secrets `DOCKER_HUB_USERNAME` and `DOCKER_HUB_TOKEN`; without them the push is skipped with a notice. The image name comes from the repository variable (or secret) `DOCKERHUB_IMAGE`, defaulting to `st3v0rr/virtualoffice`.
 
 ## The map
 
