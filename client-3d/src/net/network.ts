@@ -281,6 +281,11 @@ class Network {
     })
   }
 
+  // my position as the server knows it (or is about to), in map pixels
+  get position(): { x: number; y: number } | undefined {
+    return this.pending ?? this.lastSent
+  }
+
   // position in map pixels (sprite centre like the 2D client), anim in the 2D format
   sendPlayer(update: PlayerUpdate) {
     this.pending = update

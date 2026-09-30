@@ -9,6 +9,7 @@ import { StatsProbe } from './ui/Stats'
 import PostFx from './toon/PostFx'
 import { TagOverlay } from './player/TagLayer'
 import Joystick from './ui/Joystick'
+import MediaSetup from './ui/MediaSetup'
 import { useGame } from './state/game'
 import { useSettings } from './state/settings'
 
@@ -18,6 +19,7 @@ const touch = typeof window !== 'undefined' && window.matchMedia('(pointer: coar
 export default function App() {
   const connected = useGame((s) => s.connection === 'connected')
   const editorOpen = useGame((s) => s.editorOpen)
+  const mediaSetupOpen = useGame((s) => s.mediaSetupOpen)
   const stats = useSettings((s) => s.stats)
 
   return (
@@ -41,6 +43,7 @@ export default function App() {
           <Chat />
           <Dialogs />
           {touch && <Joystick />}
+          {mediaSetupOpen && <MediaSetup />}
         </>
       )}
       {editorOpen && <AvatarEditor />}

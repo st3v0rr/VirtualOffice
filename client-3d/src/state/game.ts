@@ -1,6 +1,7 @@
 import { create } from 'zustand'
 import type { Avatar } from '../avatar/avatar'
 import { loadAvatar, DEFAULT_AVATAR } from '../avatar/avatar'
+import { loadMediaSettings } from '@skyoffice/media'
 
 // React state of the 3D client. Positions are NOT in here: they change every frame and
 // live in mutable objects (see net/players.ts) that the scene reads in useFrame.
@@ -18,8 +19,6 @@ export type LobbyRoom = {
   hasPassword: boolean
   clients: number
 }
-
-export type MediaStatus = 'unknown' | 'checking' | 'available' | 'unavailable' | 'quiet'
 
 type GameState = {
   connection: 'offline' | 'connecting' | 'connected' | 'error'
@@ -40,8 +39,18 @@ type GameState = {
   dialog: Dialog
   // hint for the item in front of me, e.g. "E: Hinsetzen"
   prompt: string | null
-  media: MediaStatus
-  mediaDetail?: string
+  // video chat (see media/media.ts): my camera/microphone stream is set up
+  videoConnected: boolean
+  // state of my own microphone/camera track, null if there is no such device
+  microphone: boolean | null
+  camera: boolean | null
+  // I'm in a quiet zone (library): no audio/video there
+  quietZone: boolean
+  // speaker for the voices of the others ('' = system default)
+  audioOutputId: string
+  mediaSetupOpen: boolean
+  // the screen shared at a computer I'm using, shown on its monitors, by computer id
+  screens: Record<string, MediaStream>
   // players using a computer / whiteboard, by item id
   itemUsers: Record<string, string[]>
   set: (patch: Partial<Omit<GameState, 'set'>>) => void
@@ -63,7 +72,13 @@ export const useGame = create<GameState>()((set) => ({
   chatFocused: false,
   dialog: null,
   prompt: null,
-  media: 'unknown',
+  videoConnected: false,
+  microphone: null,
+  camera: null,
+  quietZone: false,
+  audioOutputId: loadMediaSettings().audioOutputId,
+  mediaSetupOpen: false,
+  screens: {},
   itemUsers: {},
   set: (patch) => set(patch),
 }))

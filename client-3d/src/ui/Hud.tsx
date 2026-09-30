@@ -3,7 +3,8 @@ import { useGame } from '../state/game'
 import { useSettings, type PostFx } from '../state/settings'
 import { playEmote } from '../game/actions'
 import { network } from '../net/network'
-import MediaBadge from './MediaBadge'
+import MediaControls from './MediaControls'
+import VideoGrid from './VideoGrid'
 
 function Settings({ onClose }: { onClose: () => void }) {
   const s = useSettings()
@@ -80,7 +81,6 @@ export default function Hud() {
         <span className="pill">
           🏢 {roomName || 'Büro'} · {playerCount} online
         </span>
-        <MediaBadge />
         <button
           className="pill button"
           onClick={() => useGame.getState().set({ editorOpen: true })}
@@ -93,17 +93,21 @@ export default function Hud() {
         <button className="pill button" onClick={() => setHelp((v) => !v)}>
           ❓
         </button>
+        <MediaControls />
       </div>
       {settings && <Settings onClose={() => setSettings(false)} />}
-      {help && (
-        <div className="panel help">
-          <b>Steuerung</b>
-          <div>WASD / Pfeile: laufen · Klick: hinlaufen</div>
-          <div>E: hinsetzen / aufstehen · R: benutzen</div>
-          <div>Leertaste: hüpfen · 1: winken · 2: jubeln</div>
-          <div>Mausrad: zoomen · Enter: Chat</div>
-        </div>
-      )}
+      <div className="hud-right">
+        {help && (
+          <div className="panel help">
+            <b>Steuerung</b>
+            <div>WASD / Pfeile: laufen · Klick: hinlaufen</div>
+            <div>E: hinsetzen / aufstehen · R: benutzen</div>
+            <div>Leertaste: hüpfen · 1: winken · 2: jubeln</div>
+            <div>Mausrad: zoomen · Enter: Chat</div>
+          </div>
+        )}
+        <VideoGrid />
+      </div>
       {prompt && <div className="prompt">{prompt}</div>}
       <div className="emotes">
         <button onClick={() => playEmote('wave')} title="Winken (1)">
