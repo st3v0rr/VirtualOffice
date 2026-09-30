@@ -833,3 +833,13 @@ input:focus {
 .new-room input {
   font-size: 15px;
 }
+.computer-mini {
+  bottom: 90px;
+  left: 50%;
+  transform: translateX(-50%);
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  font-weight: 700;
+  z-index: 30;
+}

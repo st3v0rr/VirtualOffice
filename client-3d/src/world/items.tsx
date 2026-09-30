@@ -1,4 +1,5 @@
-import { useMemo } from 'react'
+import { useEffect, useMemo } from 'react'
+import * as THREE from 'three'
 import type { ThreeEvent } from '@react-three/fiber'
 import { flat, pastel } from '../toon/materials'
 import { useGame } from '../state/game'
@@ -81,7 +82,63 @@ export function Chairs() {
 const screenIdle = flat('#bfe3ff')
 const screenBusy = flat('#fff1a8')
 
-function Monitor({ x, z, rot, busy }: { x: number; z: number; rot: number; busy: boolean }) {
+// a screen shared at the computer as a texture. The monitor is only ~100 px big on
+// screen, so the video is drawn into a small canvas at most SCREEN_FPS times a second
+// instead of uploading every full-size frame; the rest of the scene isn't slowed down.
+const SCREEN_WIDTH = 480
+const SCREEN_HEIGHT = 256
+const SCREEN_FPS = 15
+
+function useScreenTexture(stream: MediaStream | undefined) {
+  const texture = useMemo(() => {
+    if (!stream) return null
+    const canvas = document.createElement('canvas')
+    canvas.width = SCREEN_WIDTH
+    canvas.height = SCREEN_HEIGHT
+    const texture = new THREE.CanvasTexture(canvas)
+    texture.colorSpace = THREE.SRGBColorSpace
+    return texture
+  }, [stream])
+  useEffect(() => {
+    if (!texture || !stream) return
+    const canvas = texture.image as HTMLCanvasElement
+    const context = canvas.getContext('2d')!
+    const video = document.createElement('video')
+    video.muted = true
+    video.playsInline = true
+    video.srcObject = stream
+    video.play().catch(() => {})
+    let last = 0
+    let handle = 0
+    const draw = () => {
+      const now = performance.now()
+      if (now - last >= 1000 / SCREEN_FPS && video.videoWidth) {
+        last = now
+        context.drawImage(video, 0, 0, SCREEN_WIDTH, SCREEN_HEIGHT)
+        texture.needsUpdate = true
+      }
+      handle = video.requestVideoFrameCallback(draw)
+    }
+    handle = video.requestVideoFrameCallback(draw)
+    return () => {
+      video.cancelVideoFrameCallback(handle)
+      video.pause()
+      video.srcObject = null
+      texture.dispose()
+    }
+  }, [texture, stream])
+  return texture
+}
+
+type MonitorProps = {
+  x: number
+  z: number
+  rot: number
+  busy: boolean
+  screen: THREE.Texture | null
+}
+
+function Monitor({ x, z, rot, busy, screen }: MonitorProps) {
   return (
     <group position={[x, 0, z]} rotation={[0, rot, 0]}>
       <Box size={[0.06, 0.22, 0.06]} position={[0, 0.8, -0.02]} color="#9e98b0" outline={false} />
@@ -92,6 +149,12 @@ function Monitor({ x, z, rot, busy }: { x: number; z: number; rot: number; busy:
         material={busy ? screenBusy : screenIdle}
         position={[0, 1.1, 0.04]}
       />
+      {screen && (
+        <mesh position={[0, 1.1, 0.052]}>
+          <planeGeometry args={[0.82, 0.43]} />
+          <meshBasicMaterial map={screen} toneMapped={false} />
+        </mesh>
+      )}
       <Box
         size={[0.7, 0.03, 0.22]}
         position={[0, 0.7, 0.42]}
@@ -105,6 +168,7 @@ function Monitor({ x, z, rot, busy }: { x: number; z: number; rot: number; busy:
 
 export function Computers() {
   const itemUsers = useGame((s) => s.itemUsers)
+  const screens = useGame((s) => s.screens)
   const layout = useMemo(
     () =>
       computers.map((computer) => {
@@ -126,51 +190,77 @@ export function Computers() {
 
   return (
     <group>
-      {layout.map(({ computer, sides }) => {
-        const { rect } = computer
-        const busy = (itemUsers[computer.id]?.length ?? 0) > 0
-        const w = rect.w - 0.15
-        const d = rect.h - 0.25
-        return (
-          <group key={computer.id} onClick={use(computer)} {...hover}>
-            <group position={[computer.x, 0, computer.z]}>
-              <Box size={[w, 0.08, d]} position={[0, 0.64, 0]} color="#f7e3c4" radius={0.03} />
-              <Box
-                size={[0.08, 0.6, d - 0.1]}
-                position={[-w / 2 + 0.1, 0.3, 0]}
-                color="#e6e1ee"
-                outline={false}
-              />
-              <Box
-                size={[0.08, 0.6, d - 0.1]}
-                position={[w / 2 - 0.1, 0.3, 0]}
-                color="#e6e1ee"
-                outline={false}
-              />
-              {/* a small pastel divider between the desks */}
-              <Box
-                size={[0.06, 0.35, d]}
-                position={[w / 2 + 0.05, 0.85, 0]}
-                color="#cfe0f5"
-                outline={false}
-              />
-            </group>
-            {sides.map((side) =>
-              side === 'south' ? (
-                <Monitor key={side} x={computer.x} z={computer.z - 0.12} rot={0} busy={busy} />
-              ) : (
-                <Monitor
-                  key={side}
-                  x={computer.x}
-                  z={computer.z + 0.12}
-                  rot={Math.PI}
-                  busy={busy}
-                />
-              )
-            )}
-          </group>
+      {layout.map(({ computer, sides }) => (
+        <Desk
+          key={computer.id}
+          computer={computer}
+          sides={sides}
+          busy={(itemUsers[computer.id]?.length ?? 0) > 0}
+          stream={screens[computer.id]}
+        />
+      ))}
+    </group>
+  )
+}
+
+type DeskProps = {
+  computer: (typeof computers)[number]
+  sides: ('north' | 'south')[]
+  busy: boolean
+  stream: MediaStream | undefined
+}
+
+function Desk({ computer, sides, busy, stream }: DeskProps) {
+  const screen = useScreenTexture(stream)
+  const { rect } = computer
+  const w = rect.w - 0.15
+  const d = rect.h - 0.25
+  return (
+    <group onClick={use(computer)} {...hover}>
+      <group position={[computer.x, 0, computer.z]}>
+        <Box size={[w, 0.08, d]} position={[0, 0.64, 0]} color="#f7e3c4" radius={0.03} />
+        <Box
+          size={[0.08, 0.6, d - 0.1]}
+          position={[-w / 2 + 0.1, 0.3, 0]}
+          color="#e6e1ee"
+          outline={false}
+        />
+        <Box
+          size={[0.08, 0.6, d - 0.1]}
+          position={[w / 2 - 0.1, 0.3, 0]}
+          color="#e6e1ee"
+          outline={false}
+        />
+        {/* a small pastel divider between the desks */}
+        <Box
+          size={[0.06, 0.35, d]}
+          position={[w / 2 + 0.05, 0.85, 0]}
+          color="#cfe0f5"
+          outline={false}
+        />
+      </group>
+      {/* back to back, so the screens of both sides can be seen */}
+      {sides.map((side) =>
+        side === 'south' ? (
+          <Monitor
+            key={side}
+            x={computer.x}
+            z={computer.z + 0.12}
+            rot={0}
+            busy={busy}
+            screen={screen}
+          />
+        ) : (
+          <Monitor
+            key={side}
+            x={computer.x}
+            z={computer.z - 0.12}
+            rot={Math.PI}
+            busy={busy}
+            screen={screen}
+          />
         )
-      })}
+      )}
     </group>
   )
 }

@@ -6,6 +6,8 @@ import { ScreenShareSession } from '@skyoffice/media'
 import { NOTE_COLORS, NOTE_LIMITS, type NoteColor } from '../../../types/Whiteboard'
 import { DRINKS, type Drink } from '../avatar/motion'
 import { drink } from '../game/actions'
+import { computers, distanceTo } from '../game/interactables'
+import { me as myPlayer } from '../net/players'
 
 // Dialogs for the computers, whiteboards and the vending machine.
 
@@ -56,6 +58,8 @@ const SCREEN_SHARE_OPTIONS = {
 const NO_SESSION: ReturnType<ScreenShareSession['getSnapshot']> = { screens: [] }
 const noSession = () => NO_SESSION
 const noSubscribe = () => () => {}
+// walking further away than this from a computer while its dialog is minimized leaves it
+const COMPUTER_LEAVE_DISTANCE = 1.5
 
 function ComputerDialog({ id }: { id: string }) {
   const users = useGame((s) => s.itemUsers[id]) ?? NO_USERS
@@ -67,6 +71,33 @@ function ComputerDialog({ id }: { id: string }) {
     session?.getSnapshot ?? noSession
   )
   const [error, setError] = useState<string>()
+  // minimized: the dialog is closed, but I stay at the computer and see the shared
+  // screen on its monitor
+  const [minimized, setMinimized] = useState(false)
+
+  // the screen to show on the monitor: someone else's, or else my own
+  const shown = snapshot.screens[0]?.stream ?? snapshot.myStream
+  useEffect(() => {
+    if (!shown) return
+    const set = useGame.getState().set
+    set({ screens: { ...useGame.getState().screens, [id]: shown } })
+    return () => {
+      const screens = { ...useGame.getState().screens }
+      delete screens[id]
+      set({ screens })
+    }
+  }, [id, shown])
+
+  // leave the computer when walking away from it while minimized
+  useEffect(() => {
+    if (!minimized) return
+    const computer = computers.find((c) => c.id === id)
+    const timer = window.setInterval(() => {
+      if (computer && distanceTo(computer, myPlayer.x, myPlayer.z) > COMPUTER_LEAVE_DISTANCE)
+        close()
+    }, 300)
+    return () => window.clearInterval(timer)
+  }, [id, minimized])
 
   useEffect(() => {
     network.connectToComputer(id)
@@ -94,6 +125,23 @@ function ComputerDialog({ id }: { id: string }) {
   }
 
   const names = users.map((u) => (u === me ? 'Du' : (players[u]?.name ?? '…')))
+  if (minimized)
+    return (
+      <div className="panel computer-mini">
+        <span>
+          💻{' '}
+          {snapshot.myStream
+            ? 'Du teilst deinen Bildschirm'
+            : shown
+              ? 'Freigabe auf dem Monitor'
+              : 'Am Computer'}
+        </span>
+        <button onClick={() => setMinimized(false)}>Öffnen</button>
+        <button className="secondary" onClick={close}>
+          Verlassen
+        </button>
+      </div>
+    )
   return (
     <Modal title="💻 Computer" wide>
       <p>Hier sitzen: {names.join(', ') || '—'}</p>
@@ -112,6 +160,13 @@ function ComputerDialog({ id }: { id: string }) {
         )}
         {snapshot.error && <span className="error">{snapshot.error}</span>}
         {error && <span className="error">{error}</span>}
+        <button
+          className="secondary"
+          title="Dialog schließen, am Computer bleiben und die Freigabe auf dem Monitor sehen"
+          onClick={() => setMinimized(true)}
+        >
+          📺 Auf dem Monitor zeigen
+        </button>
       </div>
       <div className="screens">
         {snapshot.myStream && <Video stream={snapshot.myStream} muted />}
