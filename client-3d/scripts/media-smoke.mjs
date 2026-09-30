@@ -68,7 +68,17 @@ await toggles[1].click()
 check((await page.$$('.video-grid .video-tile')).length >= 1, '3D: own video tile shown')
 
 // without LiveKit the video chat gives up after a few seconds and the office keeps working
-await page.waitForTimeout(7000)
+// (it retries every 10 s and shows "verbinde …" for a moment then, so wait for the result)
+await page
+  .waitForFunction(
+    () =>
+      [...document.querySelectorAll('.hud-top .pill')].some((p) =>
+        /Video-Chat|Publikum/.test(p.textContent ?? '')
+      ),
+    null,
+    { timeout: 12000 }
+  )
+  .catch(() => null)
 const pills = await pillText(page)
 console.log('     HUD:', pills.join(' | '))
 check(

@@ -206,7 +206,7 @@ Importe von `../web/…` auf `@skyoffice/media` bzw. `@skyoffice/media/react`; `
 
 - `npm install`, `npm run typecheck`, `npm run build`, `npm run build:client3d`, `npm run lint`, `npm run format:check`: grün.
 - Server, 2D- und 3D-Dev-Server: HTTP 200 auf :3000 und :3100.
-- `node client-3d/scripts/media-smoke.mjs` (Chromium mit Fake-Kamera/-Mikro), 12/12 ok: beitreten, Mikro/Kamera werden übernommen, Mikro aus/an, Kamera aus, eigene Kachel, „Video-Chat nicht verfügbar" nach wenigen Sekunden, Geräte-Dialog, Ruhezone in der Bibliothek an und wieder aus, Computer-Dialog antwortet, keine Seitenfehler; 2D-Client lädt ohne Fehler.
+- `node client-3d/scripts/media-smoke.mjs` (Chromium mit Fake-Kamera/-Mikro), alle 14 Prüfungen ok (dreimal hintereinander, dazu ein Lauf mit `FRESH=1`): beitreten, Mikro/Kamera werden übernommen, Mikro aus/an, Kamera aus, eigene Kachel, „Video-Chat nicht verfügbar" nach wenigen Sekunden, Geräte-Dialog, Ruhezone in der Bibliothek an und wieder aus, Computer-Dialog antwortet, keine Seitenfehler; 2D-Client lädt ohne Fehler.
 - Monitor-Textur mit künstlichem Stream (Messung oben), Minimieren und Verlassen durch Weglaufen.
 - Sprech-Ring nur optisch (Klasse von Hand gesetzt), weil es ohne LiveKit keine Active Speakers gibt.
 
