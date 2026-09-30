@@ -9,7 +9,11 @@ import { loadMediaSettings } from '@skyoffice/media'
 export type ChatLine = { author: string; content: string; createdAt: number; system?: boolean }
 export type Bubble = { text: string; until: number }
 export type Dialog =
-  { kind: 'computer'; id: string } | { kind: 'whiteboard'; id: string } | { kind: 'vending' } | null
+  // minimized: closed, but still at the computer (the shared screen shows on its monitor)
+  | { kind: 'computer'; id: string; minimized?: boolean }
+  | { kind: 'whiteboard'; id: string }
+  | { kind: 'vending' }
+  | null
 
 // a custom room from the lobby
 export type LobbyRoom = {

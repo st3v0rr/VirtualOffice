@@ -61,7 +61,7 @@ const noSubscribe = () => () => {}
 // walking further away than this from a computer while its dialog is minimized leaves it
 const COMPUTER_LEAVE_DISTANCE = 1.5
 
-function ComputerDialog({ id }: { id: string }) {
+function ComputerDialog({ id, minimized }: { id: string; minimized: boolean }) {
   const users = useGame((s) => s.itemUsers[id]) ?? NO_USERS
   const players = useGame((s) => s.players)
   const me = useGame((s) => s.sessionId)
@@ -72,8 +72,9 @@ function ComputerDialog({ id }: { id: string }) {
   )
   const [error, setError] = useState<string>()
   // minimized: the dialog is closed, but I stay at the computer and see the shared
-  // screen on its monitor
-  const [minimized, setMinimized] = useState(false)
+  // screen on its monitor; using the computer again opens it
+  const setMinimized = (minimized: boolean) =>
+    useGame.getState().set({ dialog: { kind: 'computer', id, minimized } })
 
   // the screen to show on the monitor: someone else's, or else my own
   const shown = snapshot.screens[0]?.stream ?? snapshot.myStream
@@ -367,7 +368,7 @@ export default function Dialogs() {
   if (!dialog) return null
   switch (dialog.kind) {
     case 'computer':
-      return <ComputerDialog key={dialog.id} id={dialog.id} />
+      return <ComputerDialog key={dialog.id} id={dialog.id} minimized={!!dialog.minimized} />
     case 'whiteboard':
       return <WhiteboardDialog key={dialog.id} id={dialog.id} />
     case 'vending':
