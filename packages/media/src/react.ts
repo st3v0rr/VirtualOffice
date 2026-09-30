@@ -9,7 +9,7 @@ import {
   loadMediaSettings,
 } from './mediaDevices'
 
-// React hooks for the camera/microphone setup, shared by the 2D and the 3D client
+// React hooks for the camera/microphone setup
 // (import from '@skyoffice/media/react', the rest of the package works without React).
 
 const emptyDeviceLists: MediaDeviceLists = { videoInputs: [], audioInputs: [], audioOutputs: [] }

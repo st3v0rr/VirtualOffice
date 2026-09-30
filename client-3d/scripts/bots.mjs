@@ -5,6 +5,8 @@
 import fs from 'node:fs'
 import path from 'node:path'
 import { Client } from '@colyseus/sdk'
+// plain TypeScript without enums, so Node runs it directly (type stripping, Node >= 22.18)
+import { randomAvatar } from '../src/avatar/avatar.ts'
 
 const count = Number(process.argv[2] ?? 40)
 const endpoint = process.argv[3] ?? 'ws://localhost:2567'
@@ -16,34 +18,14 @@ const office = JSON.parse(
     'utf8'
   )
 )
+const any = (list) => list[Math.floor(Math.random() * list.length)]
+
 // message numbers of types/Messages.ts
 const UPDATE_PLAYER = 0
 const UPDATE_PLAYER_NAME = 1
 const ADD_CHAT_MESSAGE = 6
 const UPDATE_PLAYER_AVATAR = 14
 const PLAYER_EMOTE = 15
-
-const any = (list) => list[Math.floor(Math.random() * list.length)]
-const COLORS = [
-  '#ff9aa2',
-  '#ffb870',
-  '#ffe08a',
-  '#b5e8a3',
-  '#8fd3e8',
-  '#9fb2ff',
-  '#c9a7f5',
-  '#f5f0e6',
-]
-const randomAvatar = () => ({
-  skin: any(['#ffe3d3', '#f9d0b4', '#eab48f', '#c98d66', '#9a6446', '#7a4c36']),
-  hair: any(['bob', 'spiky', 'pigtails', 'bun']),
-  hairColor: any(['#4a3a35', '#8a5a3c', '#e9c27d', '#d9735b', '#f4a6c0', '#9fb8f0']),
-  top: any(['tshirt', 'hoodie', 'sweater']),
-  topColor: any(COLORS),
-  bottom: any(['pants', 'shorts', 'skirt']),
-  bottomColor: any(COLORS),
-  texture: any(['adam', 'ash', 'lucy', 'nancy']),
-})
 
 // the chairs of the conference room (the "auditorium" zone), in rows towards the stage
 const hall = office.zones.find((z) => z.type === 'auditorium')

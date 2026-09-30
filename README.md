@@ -1,160 +1,103 @@
-# SkyOffice ![License](https://img.shields.io/badge/license-MIT-blue) ![PRs Welcome](https://img.shields.io/badge/PRs-welcome-green.svg)
+# VirtualOffice 3D ![License](https://img.shields.io/badge/license-MIT-blue)
 
-<img alt="Logo" align="right" src="https://user-images.githubusercontent.com/11501902/139942585-a6b044ce-3695-460a-91bd-dd9f1d4611c8.png" width="20%" />
+A virtual office in the browser as an isometric toy diorama: toon shading, pastel colours and procedural chibi characters you design yourself. Walk around, sit down, chat, wave, grab a drink, and talk to the people close to you with video and audio.
 
-An immersive virtual office - Winner of [2021 Monte Jade Innovation Competition](https://www.montejadese.org/innovation-competition)
-
-- Come try it out - [Official Website](https://skyoffice.netlify.app)
-- Why we built this - [Concept Video](https://www.youtube.com/watch?v=BpDqGTPh8pc)
-- 🙌 Get latest updates? Follow our [Twitter](https://twitter.com/SkyOfficeApp).
-- 💕 Love this project? Consider [buy me a coffee](https://www.buymeacoffee.com/skyoffice).
-
-SkyOffice works on all PC browsers (mobile browsers are currently not supported)
+It started as a fork of [SkyOffice](https://github.com/kevinshen56714/SkyOffice) (Phaser 2D). The 2D client and the whiteboards are gone; what is left is a lean 3D demo. See [POC2_NOTIZ.md](POC2_NOTIZ.md) (German) for the findings, measurements and the status of every feature.
 
 ## Built with
 
-- [Phaser3](https://github.com/photonstorm/phaser) - Game engine
-- [Colyseus](https://github.com/colyseus/colyseus) - WebSocket-based server framework
-- [React/Redux](https://github.com/facebook/react) - Front-end framework
-- [LiveKit](https://livekit.io) - WebRTC media server for video, audio and screen sharing
-- [TypeScript](https://github.com/microsoft/TypeScript) and [ES6](https://github.com/eslint/eslint) - for both client and server sides
+- [React Three Fiber](https://r3f.docs.pmnd.rs) and [three.js](https://threejs.org) - 3D client (`client-3d/`)
+- [Colyseus](https://github.com/colyseus/colyseus) - WebSocket server for rooms and state sync (`server/`)
+- [LiveKit](https://livekit.io) - WebRTC media server for video, audio and screen sharing (`packages/media/`)
+- [Tiled](https://www.mapeditor.org) - the office map (`assets/map/`)
 
-## Features
+## Repository
 
-- [Proximity Chat](#proximity-chat-distance-based-interactive-system)
-- [Flexible Screen Sharing](#flexible--immediate-screen-sharing)
-- [Multifunctional Rooms](#multifunctional-rooms)
-- [Text Message Chat](#text-message-chat-with-real-time-dialog-bubbles)
-- [Custom/Private Rooms](#customprivate-rooms)
+| Path              | What                                                                                    |
+| ----------------- | --------------------------------------------------------------------------------------- |
+| `client-3d/`      | the 3D client (Vite, React 19, R3F 9, zustand)                                          |
+| `server/`         | the Colyseus server (rooms, chat, avatars, LiveKit tokens)                              |
+| `packages/media/` | video/audio/screen sharing via LiveKit (`MediaManager`, `ScreenShareSession`, hooks)    |
+| `types/`          | types shared by client and server (messages, state, map zones, media rooms)             |
+| `assets/map/`     | the Tiled map (`map.json`) and its tilesets; source for the 3D map and the server zones |
+| `docs/`           | screenshots                                                                             |
 
-### Proximity Chat (distance-based interactive system)
+## Getting started
 
-![image](https://user-images.githubusercontent.com/11501902/139960852-cf0e0883-8fbe-459d-bb11-3707d0ae1360.png)
-
-### Multifunctional Rooms
-
-![image](https://user-images.githubusercontent.com/11501902/139961091-1801bd4d-fbd6-4400-8503-85ece744e979.png)
-
-### Flexible & Immediate Screen Sharing
-
-![image](https://user-images.githubusercontent.com/11501902/139961155-44a85cd9-ac25-4563-9d82-6537ed7435f6.png)
-
-### Text Message Chat (with real time dialog bubbles)
-
-![image](https://user-images.githubusercontent.com/11501902/145925423-3b5b9026-d3b9-429d-920b-98b0bcd6300a.png)
-
-### Whiteboards
-
-The built-in sticky note whiteboards were removed. Whiteboards are planned as an external service (e.g. Miro) instead. The whiteboard objects in the Tiled map are ignored.
-
-### Custom/Private Rooms
-
-![image](https://user-images.githubusercontent.com/11501902/147784118-15ef50bf-0f67-4704-89d7-81b2fa7f8ceb.png)
-
-## Controls
-
-- `W, A, S, D, or arrow keys` to move (video chat will start if you are close to someone else)
-- `E` to sit down
-- `R` to use computer (for screen sharing)
-- `Enter` to open chat
-- `ESC` to close chat
-
-## Prerequisites
-
-You'll need [Node.js](https://nodejs.org/en/) 22.12 or newer (npm is included) and the [LiveKit server](https://docs.livekit.io/home/self-hosting/local/) for video chat, e.g. `brew install livekit` on macOS.
-
-## Getting Started
-
-Clone this repository and install all dependencies (the repo is an npm workspace with `server`, `client` and `types`):
-
-```bash
-git clone https://github.com/kevinshen56714/SkyOffice.git
-cd SkyOffice
-npm install
-```
-
-Start server (`ws://localhost:2567`), client (`http://localhost:3000`) and a local LiveKit server (`ws://localhost:7880`) together:
-
-```bash
-npm run dev
-```
-
-or separately with `npm run dev:server`, `npm run dev:client` and `npm run dev:livekit`.
-
-## Scripts
-
-| Command             | Description                                                                          |
-| ------------------- | ------------------------------------------------------------------------------------ |
-| `npm run dev`       | Start server, client and LiveKit in watch/dev mode                                   |
-| `npm run dev3d`     | Start server and the 3D client (see [PoC 3D](#poc-3d))                               |
-| `npm run build`     | Build server (`server/lib`), client (`client/dist`) and 3D client (`client-3d/dist`) |
-| `npm start`         | Run the built server                                                                 |
-| `npm run typecheck` | Type-check all workspaces                                                            |
-| `npm run lint`      | Lint with ESLint                                                                     |
-| `npm run format`    | Format with Prettier                                                                 |
-
-For production builds of the client, set `VITE_SERVER_URL` to the WebSocket URL of your server (e.g. `wss://my-server.example.com`).
-
-## PoC 3D
-
-`client-3d/` is a proof of concept of the office in 3D with [React Three Fiber](https://r3f.docs.pmnd.rs): an isometric toy diorama with toon shading, pastel colours, outlines and procedural chibi characters with a character editor. It talks to the same Colyseus server as the 2D client, so players of both clients meet in the same rooms, and it uses the same video chat code (`packages/media`), so they can also talk to each other. See [POC2_NOTIZ.md](POC2_NOTIZ.md) for the findings, measurements and the status of every feature.
+You'll need [Node.js](https://nodejs.org/en/) 22.18 or newer. The [LiveKit server](https://docs.livekit.io/home/self-hosting/local/) is optional (only for video chat and screen sharing).
 
 ```bash
 npm install
-npm run dev3d              # server (ws://localhost:2567) + 3D client (http://localhost:3100)
-# or separately:
-npm run dev:server
-npm run dev:client3d
+npm run dev            # server (ws://localhost:2567) + 3D client (http://localhost:3100)
 ```
 
-Open http://localhost:3100, enter a name, optionally design your character, and join. The 2D client (`npm run dev:client`, http://localhost:3000) can run at the same time for comparison. LiveKit is optional: without it the office works, the HUD shows "Video-Chat nicht verfügbar" and screen sharing says it is not available. With `npm run dev:livekit` (or the variables below) you talk to the people close to you, as in the 2D client.
+or separately with `npm run dev:server` and `npm run dev:client3d`. Open http://localhost:3100, enter a name, optionally design your character, and join.
+
+LiveKit is optional: without it the office works, the HUD shows "Video-Chat nicht verfügbar" and screen sharing says it is not available. Start `npm run dev:livekit` (needs `livekit-server` installed) to talk to the people close to you.
 
 If the server runs on another port, pass its URL: `VITE_SERVER_URL=ws://localhost:2667 npm run dev:client3d` (and `PORT=2667 npm run dev:server`).
 
-| Controls               |                                           |
-| ---------------------- | ----------------------------------------- |
-| `W A S D` / arrow keys | walk (screen directions)                  |
-| click on the floor     | walk there (path finding around objects)  |
-| click a chair / item   | walk there and sit down / use it          |
-| `E`                    | sit down / stand up                       |
-| `R`                    | use computer, vending machine             |
-| `Space` / `1` / `2`    | hop / wave / cheer                        |
-| mouse wheel            | zoom                                      |
-| `Enter`                | chat                                      |
+## Controls
 
-| Command (in `client-3d/`)                                   | Description                                                       |
+| Key / mouse            |                                          |
+| ---------------------- | ---------------------------------------- |
+| `W A S D` / arrow keys | walk (screen directions)                 |
+| click on the floor     | walk there (path finding around objects) |
+| click a chair / item   | walk there and sit down / use it         |
+| `E`                    | sit down / stand up                      |
+| `R`                    | use computer, vending machine            |
+| `Space` / `1` / `2`    | hop / wave / cheer                       |
+| mouse wheel            | zoom                                     |
+| `Enter`                | chat                                     |
+
+## Scripts
+
+| Command               | Description                                                             |
+| --------------------- | ----------------------------------------------------------------------- |
+| `npm run dev`         | server and 3D client in watch/dev mode                                  |
+| `npm run dev:livekit` | a local LiveKit server (`livekit-server --dev`)                         |
+| `npm run build`       | build the server (`server/lib`) and the 3D client (`client-3d/dist`)    |
+| `npm start`           | run the built server                                                    |
+| `npm run typecheck`   | type-check all workspaces                                               |
+| `npm run lint`        | lint with ESLint                                                        |
+| `npm run format`      | format with Prettier                                                    |
+| `npm run extract-map` | regenerate `client-3d/src/map/office.generated.json` from the Tiled map |
+| `npm run bots -- 40`  | fill the conference room with 40 bots (`ws://localhost:2567`)           |
+
+More tools in `client-3d/scripts/`:
+
+| Command                                                     | Description                                                       |
 | ----------------------------------------------------------- | ----------------------------------------------------------------- |
-| `npm run extract-map -w client-3d`                          | regenerate `src/map/office.generated.json` from the Tiled map     |
-| `node client-3d/scripts/bots.mjs 40 ws://localhost:2567`    | fill the conference room with 40 bots                             |
 | `node client-3d/scripts/measure.mjs http://localhost:3100/` | measure FPS and draw calls in headless Chromium (`CHROME_PATH=…`) |
-| `node client-3d/scripts/fake-2d-player.mjs`                 | a player that behaves like the 2D client                          |
 | `node client-3d/scripts/media-smoke.mjs`                    | video chat UI smoke test with fake camera/microphone              |
 | http://localhost:3100/?gallery                              | all chibi presets side by side                                    |
 
+## The map
+
+`assets/map/map.json` is a [Tiled](https://www.mapeditor.org) map; its tilesets are in `assets/map/tilesets/`. It is the single source for the layout: `npm run extract-map` turns it into the 3D data (walkable tiles, collision rectangles, furniture blocks with averaged colours, chairs, computers, zones), and the server reads the computers, the spawn point and the media zones from it at start. The whiteboard objects in the map are left over from the 2D client and ignored.
+
 ## Video chat
 
-Video, audio and screen sharing run through [LiveKit](https://livekit.io). The office is split into media rooms by the `Zones` layer of the map: in the open space you hear the people close to you, in meeting rooms and focus booths everyone in the room (and nobody outside), in the auditorium only the people on the stage speak, and quiet zones have no video at all. The server hands out a LiveKit token only for the room at the player's position.
+Video, audio and screen sharing run through [LiveKit](https://livekit.io). The office is split into media rooms by the `Zones` layer of the map: in the open space you hear the people close to you, in meeting rooms and focus booths everyone in the room (and nobody outside), in the auditorium only the people on the stage speak, and quiet zones (the library) have no video at all. The server hands out a LiveKit token only for the room at the player's position.
 
-For production, run a [LiveKit server](https://docs.livekit.io/home/self-hosting/deployment/) or use [LiveKit Cloud](https://livekit.io/cloud) and set these environment variables for the SkyOffice server:
+For production, run a [LiveKit server](https://docs.livekit.io/home/self-hosting/deployment/) or use [LiveKit Cloud](https://livekit.io/cloud) and set these environment variables for the server:
 
-| Variable             | Description                                           |
-| -------------------- | ----------------------------------------------------- |
-| `LIVEKIT_URL`        | WebSocket URL of LiveKit, e.g. `wss://lk.example.com` |
-| `LIVEKIT_API_KEY`    | LiveKit API key                                       |
-| `LIVEKIT_API_SECRET` | LiveKit API secret                                    |
+| Variable             | Description                                                                      |
+| -------------------- | -------------------------------------------------------------------------------- |
+| `LIVEKIT_URL`        | WebSocket URL of LiveKit **as the browser sees it**, e.g. `wss://lk.example.com` |
+| `LIVEKIT_API_KEY`    | LiveKit API key                                                                  |
+| `LIVEKIT_API_SECRET` | LiveKit API secret                                                               |
 
-Without them in development, the server uses the defaults of `livekit-server --dev`.
+Without them in development, the server uses the defaults of `livekit-server --dev`. With `NODE_ENV=production` and missing variables, video chat is off.
 
-The day/night background follows sunrise and sunset. It uses the center of Germany by default; set `VITE_OFFICE_LATITUDE` and `VITE_OFFICE_LONGITUDE` to use the location of your office instead.
+## Whiteboards
 
-## Credits 🎉
+The built-in sticky note whiteboards were removed. Whiteboards are planned as an external service (e.g. Miro) instead.
 
-Big thanks to this great repo - [ourcade/phaser3-typescript-parcel-template](https://github.com/ourcade/phaser3-typescript-parcel-template)
+## Credits
 
-Big thanks to pixel artist - [LimeZu](https://limezu.itch.io/)
+Based on [SkyOffice](https://github.com/kevinshen56714/SkyOffice) by kevinshen56714. The map uses the pixel art of [LimeZu](https://limezu.itch.io/) (the 3D client only uses its layout and averaged colours).
 
 ## License
 
 This project is licensed under MIT.
-
-If you're using SkyOffice to power your virtual office or using our code in other projects, please consider [buy me a coffee](https://www.buymeacoffee.com/skyoffice). Thank you :)

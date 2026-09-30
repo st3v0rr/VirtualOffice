@@ -44,11 +44,7 @@ export const vendingMachines = office.vendingMachines.map((rect) => {
   return { kind: 'vending', id: rect.id, x: r.x + r.w / 2, z: r.y + r.h / 2, rect: r } as const
 })
 
-export const allInteractables: Interactable[] = [
-  ...chairs,
-  ...computers,
-  ...vendingMachines,
-]
+export const allInteractables: Interactable[] = [...chairs, ...computers, ...vendingMachines]
 
 const distToRect = (x: number, z: number, r: TileRect) => {
   const dx = Math.max(r.x - x, 0, x - (r.x + r.w))

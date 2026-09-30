@@ -224,14 +224,6 @@ export default function AvatarEditor() {
               onChange={(bottomColor) => patch({ bottomColor })}
             />
           </div>
-          <div className="row">
-            <span title="So sehen dich Leute im 2D-Client">Figur im 2D-Client</span>
-            <Choice
-              options={PRESET_TEXTURES}
-              value={avatar.texture}
-              onChange={(texture) => patch({ texture })}
-            />
-          </div>
           <div className="editor-buttons">
             <button className="secondary" onClick={close}>
               Abbrechen

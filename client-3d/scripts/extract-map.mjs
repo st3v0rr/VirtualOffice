@@ -1,12 +1,12 @@
-// Converts the Tiled map of the 2D client into the data the 3D diorama needs.
+// Converts the Tiled map of the office into the data the 3D diorama needs.
 //
 //   npm run extract-map -w client-3d
 //
-// Input:  client/public/assets/map/map.json (+ the tileset PNGs it references)
+// Input:  assets/map/map.json (+ the tileset PNGs it references, assets/map/tilesets/)
 // Output: client-3d/src/map/office.generated.json
 //
-// The Tiled map stays the single source of truth for both clients:
-// - walkability/collision is taken from the same rules the Phaser client uses
+// The Tiled map stays the single source of truth for the client and the server:
+// - walkability/collision is taken from the rules of the original Phaser client
 //   (tiles with a `collides` property, object layers with `collides` or the legacy
 //   *OnCollide/Basement layers, the vending machine)
 // - every decoration object is grouped with its neighbours into a "component" with a
@@ -18,8 +18,7 @@ import path from 'node:path'
 import { PNG } from 'pngjs'
 
 const root = path.resolve(import.meta.dirname, '..', '..')
-const assetDir = path.join(root, 'client', 'public', 'assets')
-const mapFile = path.join(assetDir, 'map', 'map.json')
+const mapFile = path.join(root, 'assets', 'map', 'map.json')
 const outFile = path.join(root, 'client-3d', 'src', 'map', 'office.generated.json')
 
 const map = JSON.parse(fs.readFileSync(mapFile, 'utf8'))
@@ -27,7 +26,7 @@ const TILE = map.tilewidth
 const W = map.width
 const H = map.height
 
-// Whiteboard: the map still has the whiteboard objects of the 2D client, but the 3D client
+// Whiteboard: the map still has the whiteboard objects of the old 2D client, but the 3D client
 // has no whiteboards (planned as an external service), so they are ignored like a special layer
 const SPECIAL_LAYERS = new Set([
   'Chair',
@@ -50,14 +49,8 @@ const prop = (obj, name) => {
 const images = new Map()
 function tilesetImage(ts) {
   if (!images.has(ts.name)) {
-    // the map references some tilesets from ../items although they live in ../tileset
-    const candidates = [
-      path.join(assetDir, 'map', ts.image),
-      path.join(assetDir, 'tileset', path.basename(ts.image)),
-      path.join(assetDir, 'items', path.basename(ts.image)),
-    ]
-    const file = candidates.find((c) => fs.existsSync(c))
-    if (!file) throw new Error(`Tileset image for ${ts.name} not found`)
+    const file = path.join(path.dirname(mapFile), ts.image)
+    if (!fs.existsSync(file)) throw new Error(`Tileset image for ${ts.name} not found: ${file}`)
     images.set(ts.name, PNG.sync.read(fs.readFileSync(file)))
   }
   return images.get(ts.name)
@@ -295,7 +288,7 @@ const zones = objectsOf('Zones').map((o) => ({
 }))
 
 const out = {
-  source: 'client/public/assets/map/map.json',
+  source: 'assets/map/map.json',
   tileSize: TILE,
   width: W,
   height: H,

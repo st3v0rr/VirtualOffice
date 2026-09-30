@@ -1,5 +1,5 @@
-// Video/audio via LiveKit, shared by the 2D (Phaser) and the 3D (React Three Fiber) client.
-// Framework-free: each client plugs it into its own state through callbacks.
+// Video/audio via LiveKit for the 3D client (React Three Fiber).
+// Framework-free: the client plugs it into its own state through callbacks.
 
 export {
   default as MediaManager,

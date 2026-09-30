@@ -10,9 +10,7 @@ export type ChatLine = { author: string; content: string; createdAt: number; sys
 export type Bubble = { text: string; until: number }
 export type Dialog =
   // minimized: closed, but still at the computer (the shared screen shows on its monitor)
-  | { kind: 'computer'; id: string; minimized?: boolean }
-  | { kind: 'vending' }
-  | null
+  { kind: 'computer'; id: string; minimized?: boolean } | { kind: 'vending' } | null
 
 // a custom room from the lobby
 export type LobbyRoom = {

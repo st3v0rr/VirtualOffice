@@ -1,15 +1,13 @@
 // Smoke test of the video chat UI in a headless Chromium with fake camera/microphone:
 // join, set up the devices, toggle the microphone and camera, walk into the library.
 // Works without a LiveKit server (then the HUD says the video chat is unavailable).
-// Needs the Colyseus server and the 3D dev server (npm run dev3d); optionally the
-// 2D client on :3000, which is loaded to check it still starts without errors.
+// Needs the Colyseus server and the 3D dev server (npm run dev).
 //
-//   CHROME_PATH=/usr/bin/chromium node client-3d/scripts/media-smoke.mjs [url3d] [url2d]
+//   CHROME_PATH=/usr/bin/chromium node client-3d/scripts/media-smoke.mjs [url]
 /* global document, __game -- used inside page.evaluate(), which runs in the browser */
 import { chromium } from 'playwright-core'
 
 const url3d = process.argv[2] ?? 'http://localhost:3100/'
-const url2d = process.argv[3] ?? 'http://localhost:3000/'
 const browser = await chromium.launch({
   executablePath: process.env.CHROME_PATH ?? '/usr/bin/chromium-browser',
   args: ['--use-fake-ui-for-media-stream', '--use-fake-device-for-media-stream'],
@@ -123,20 +121,6 @@ await page.keyboard.press('Escape')
 
 await page.screenshot({ path: process.env.SCREENSHOT ?? '/tmp/media-smoke-3d.png' })
 check(errors3d.length === 0, `3D: no page errors ${errors3d.join('; ')}`)
-
-// ---- 2D client still starts ----
-if (url2d !== '-') {
-  const page2d = await context.newPage()
-  const errors2d = watch(page2d, '2D')
-  const response = await page2d.goto(url2d).catch(() => null)
-  if (response) {
-    await page2d.waitForTimeout(4000)
-    check(response.ok(), `2D: loads (HTTP ${response.status()})`)
-    check(errors2d.length === 0, `2D: no page errors ${errors2d.join('; ')}`)
-  } else {
-    console.log('skip 2D client (not running)')
-  }
-}
 
 await browser.close()
 process.exit(failed ? 1 : 0)

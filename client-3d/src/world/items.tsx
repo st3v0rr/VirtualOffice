@@ -3,12 +3,7 @@ import * as THREE from 'three'
 import type { ThreeEvent } from '@react-three/fiber'
 import { flat, pastel } from '../toon/materials'
 import { useGame } from '../state/game'
-import {
-  chairs,
-  computers,
-  vendingMachines,
-  type Interactable,
-} from '../game/interactables'
+import { chairs, computers, vendingMachines, type Interactable } from '../game/interactables'
 import { intent } from '../game/intent'
 import { Box, Cyl, Instanced, cylinder, roundedBox, type Instance } from './parts'
 

@@ -14,24 +14,22 @@
     "types",
     "packages/media",
     "server",
-    "client",
     "client-3d"
   ],
   "engines": {
-    "node": ">=22.12"
+    "node": ">=22.18"
   },
   "scripts": {
-    "dev": "concurrently -n server,client,livekit -c blue,magenta,green \"npm run dev -w server\" \"npm run dev -w client\" \"npm run dev:livekit\"",
+    "dev": "concurrently -n server,client -c blue,magenta \"npm run dev -w server\" \"npm run dev -w client-3d\"",
     "dev:server": "npm run dev -w server",
-    "dev:client": "npm run dev -w client",
     "dev:client3d": "npm run dev -w client-3d",
     "dev:livekit": "livekit-server --dev",
-    "dev3d": "concurrently -n server,client3d -c blue,magenta \"npm run dev -w server\" \"npm run dev -w client-3d\"",
-    "build": "npm run build -w server && npm run build -w client && npm run build -w client-3d",
+    "build": "npm run build -w server && npm run build -w client-3d",
     "build:server": "npm run build -w server",
-    "build:client": "npm run build -w client",
     "build:client3d": "npm run build -w client-3d",
     "start": "npm start -w server",
+    "extract-map": "npm run extract-map -w client-3d",
+    "bots": "node client-3d/scripts/bots.mjs",
     "typecheck": "npm run typecheck --workspaces --if-present",
     "lint": "eslint .",
     "format": "prettier --write .",

@@ -40,7 +40,7 @@ export type MediaStatus = 'off' | 'connecting' | 'connected' | 'unavailable'
 
 type Snapshot = { tiles: MediaTile[]; status: MediaStatus; canPublish: boolean }
 
-// anything that can hand out LiveKit tokens (the network of the 2D and the 3D client)
+// anything that can hand out LiveKit tokens (the network of the client)
 export type GrantSource = {
   requestMediaGrant(request: MediaTokenRequest): Promise<MediaGrant | null>
 }
