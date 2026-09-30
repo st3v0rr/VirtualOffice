@@ -2,7 +2,7 @@ import { useEffect, useRef, useState, useSyncExternalStore, type ReactNode } fro
 import { useGame } from '../state/game'
 import { useBoards, NOTE_COLOR_HEX, type Note } from '../state/boards'
 import { network } from '../net/network'
-import ScreenShareSession from '../media/ScreenShareSession'
+import { ScreenShareSession } from '@skyoffice/media'
 import { NOTE_COLORS, NOTE_LIMITS, type NoteColor } from '../../../types/Whiteboard'
 import { DRINKS, type Drink } from '../avatar/motion'
 import { drink } from '../game/actions'
@@ -47,29 +47,47 @@ function Video({ stream, muted }: { stream: MediaStream; muted?: boolean }) {
   return <video ref={ref} autoPlay playsInline muted={muted} />
 }
 
+const SCREEN_SHARE_OPTIONS = {
+  // fail fast without a LiveKit server instead of retrying for a long time
+  connectOptions: { maxRetries: 0, websocketTimeout: 4000 },
+  unavailableMessage: 'Bildschirmfreigabe nicht verfügbar (kein LiveKit-Server erreichbar).',
+  noGrantMessage: 'An diesem Ort gibt es keine Medien.',
+}
+const NO_SESSION: ReturnType<ScreenShareSession['getSnapshot']> = { screens: [] }
+const noSession = () => NO_SESSION
+const noSubscribe = () => () => {}
+
 function ComputerDialog({ id }: { id: string }) {
   const users = useGame((s) => s.itemUsers[id]) ?? NO_USERS
   const players = useGame((s) => s.players)
   const me = useGame((s) => s.sessionId)
-  const [session] = useState(() => new ScreenShareSession(network, id))
-  const snapshot = useSyncExternalStore(session.subscribe, session.getSnapshot)
+  const [session, setSession] = useState<ScreenShareSession>()
+  const snapshot = useSyncExternalStore(
+    session?.subscribe ?? noSubscribe,
+    session?.getSnapshot ?? noSession
+  )
   const [error, setError] = useState<string>()
 
   useEffect(() => {
     network.connectToComputer(id)
+    // a new session per mount: a closed session can't be opened again (React StrictMode)
+    const session = new ScreenShareSession(network, id, SCREEN_SHARE_OPTIONS)
     // the server only hands out the computer's media token to its users
-    const timer = window.setTimeout(() => session.open(), 150)
+    const timer = window.setTimeout(() => {
+      setSession(session)
+      session.open()
+    }, 150)
     return () => {
       window.clearTimeout(timer)
       session.close()
       network.disconnectFromComputer(id)
     }
-  }, [id, session])
+  }, [id])
 
   const share = async () => {
     setError(undefined)
     try {
-      await session.startScreenShare()
+      await session?.startScreenShare()
     } catch (e) {
       setError((e as Error).message)
     }
@@ -81,7 +99,7 @@ function ComputerDialog({ id }: { id: string }) {
       <p>Hier sitzen: {names.join(', ') || '—'}</p>
       <div className="toolbar">
         {snapshot.myStream ? (
-          <button className="secondary" onClick={() => session.stopScreenShare()}>
+          <button className="secondary" onClick={() => session?.stopScreenShare()}>
             Freigabe beenden
           </button>
         ) : (
