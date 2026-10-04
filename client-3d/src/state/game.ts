@@ -32,6 +32,8 @@ type GameState = {
   // leaves, renames or changes clothes
   players: Record<string, { name: string; avatar: Avatar }>
   rooms: LobbyRoom[]
+  // the room list is only loaded when the join screen asks for it
+  lobby: 'idle' | 'loading' | 'ready' | 'error'
   roomName: string
   chat: ChatLine[]
   bubbles: Record<string, Bubble>
@@ -66,6 +68,7 @@ export const useGame = create<GameState>()((set) => ({
   hasSavedAvatar: saved !== null,
   players: {},
   rooms: [],
+  lobby: 'idle',
   roomName: '',
   chat: [],
   bubbles: {},

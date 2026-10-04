@@ -13,6 +13,7 @@ export default defineConfig({
         'server/**/*.ts',
         'types/**/*.ts',
         'client-3d/src/{avatar,game,map,net}/**/*.ts',
+        'client-3d/src/ui/joinFlow.ts',
         'client-3d/scripts/lib/**/*.mjs',
       ],
       exclude: ['**/test/**', 'server/lib/**', '**/*.d.ts'],

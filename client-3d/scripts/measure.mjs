@@ -73,7 +73,9 @@ await page.waitForTimeout(1500)
 await sample('overview (not joined, whole office)')
 
 await page.fill('.join input', 'Messung')
-await page.click('button.primary')
+// the join screen: name, room (public office), camera/microphone (off), then Beitreten
+for (const label of ['Weiter', 'Weiter', 'Beitreten'])
+  await page.click(`.join button.primary:has-text("${label}")`)
 await page.waitForTimeout(1500)
 await sample('joined, corridor')
 

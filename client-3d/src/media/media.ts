@@ -75,13 +75,30 @@ function updateLocation() {
   if (quietZone !== game.quietZone) game.set({ quietZone })
 }
 
-// use the camera/microphone stream from the setup dialog (first time or new devices)
+// use the camera/microphone stream from the join screen or the setup dialog
+// (first time or new devices)
 export function setMyMedia(stream: MediaStream, settings: MediaSettings) {
-  const first = !myMedia
+  const previous = myMedia
   myMedia = { stream, settings }
-  if (!manager) return
-  if (first) manager.useMediaStream(stream, settings)
+  if (!manager) {
+    // not in the office yet (e.g. joining failed and the user tries again with other devices)
+    if (previous && previous.stream !== stream) stopTracks(previous.stream)
+    return
+  }
+  if (!previous) manager.useMediaStream(stream, settings)
   else manager.replaceMediaStream(stream, settings)
+}
+
+// join without camera and microphone: stop a stream left over from an earlier visit of the office
+export function clearMyMedia() {
+  if (manager || !myMedia) return
+  stopTracks(myMedia.stream)
+  myMedia = null
+  useGame.getState().set({ videoConnected: false, microphone: null, camera: null })
+}
+
+function stopTracks(stream: MediaStream) {
+  stream.getTracks().forEach((track) => track.stop())
 }
 
 export function setMicrophoneEnabled(enabled: boolean) {

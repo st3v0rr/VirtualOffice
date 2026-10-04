@@ -147,7 +147,9 @@ if (!executablePath) {
     // ?debug exposes window.__game with the player position
     await page.goto(`${base}/?debug`)
     await page.fill('.join input', 'Rauchtest')
-    await page.click('.join button.primary')
+    // the join screen: name, room (public office), camera/microphone (off), then Beitreten
+    for (const label of ['Weiter', 'Weiter', 'Beitreten'])
+      await page.click(`.join button.primary:has-text("${label}")`)
     await page.waitForSelector('.hud-top', { timeout: 15000 })
     check(true, 'Browser: joined the office')
     check(

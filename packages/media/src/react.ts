@@ -29,6 +29,12 @@ export function describeMediaError(error: unknown) {
   return error instanceof Error ? error.message : 'Could not access camera or microphone.'
 }
 
+export type MediaSetupOptions = {
+  // start the preview right away if access was granted on an earlier visit (default true);
+  // with false the stream is only requested by requestAccess(), i.e. a click of the user
+  autoStart?: boolean
+}
+
 /**
  * Manages the camera/microphone preview stream and the device settings of the join screen.
  * Call `release()` to take over the stream, otherwise it is stopped on unmount.
@@ -37,7 +43,8 @@ export function describeMediaError(error: unknown) {
 export function useMediaSetup(
   initialSettings?: Partial<MediaSettings>,
   // turns an error of getUserMedia into a message for the user
-  describeError: (error: unknown) => string = describeMediaError
+  describeError: (error: unknown) => string = describeMediaError,
+  { autoStart = true }: MediaSetupOptions = {}
 ) {
   const [settings, setSettings] = useState<MediaSettings>(() => ({
     ...loadMediaSettings(),
@@ -47,13 +54,23 @@ export function useMediaSetup(
   const [stream, setStream] = useState<MediaStream | null>(null)
   const [error, setError] = useState<string | null>(null)
   const [requested, setRequested] = useState(false)
-  const releasedRef = useRef(false)
+  // counts the calls of requestAccess(), so another click retries after an error
+  const [attempt, setAttempt] = useState(0)
+  // the stream handed over by release(), its owner stops it now
+  const releasedRef = useRef<MediaStream | null>(null)
 
   // skip the extra click if the user already granted access on an earlier visit
   useEffect(() => {
+    if (!autoStart) return
+    let cancelled = false
     hasMediaPermission().then((granted) => {
-      if (granted) setRequested(true)
+      if (granted && !cancelled) setRequested(true)
     })
+    return () => {
+      cancelled = true
+    }
+    // only decided when the setup opens
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [])
 
   const { videoInputId, audioInputId } = settings
@@ -77,11 +94,11 @@ export function useMediaSetup(
 
     return () => {
       cancelled = true
-      if (acquired && !releasedRef.current) stopStream(acquired)
+      if (acquired && acquired !== releasedRef.current) stopStream(acquired)
     }
     // settings other than the device ids are applied without requesting a new stream
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [requested, videoInputId, audioInputId])
+  }, [requested, attempt, videoInputId, audioInputId])
 
   // refresh the device lists when a device gets plugged in or removed
   useEffect(() => {
@@ -100,9 +117,23 @@ export function useMediaSetup(
   }, [])
 
   const release = useCallback(() => {
-    releasedRef.current = true
+    releasedRef.current = stream
     return stream
   }, [stream])
+
+  // ask for camera/microphone access (again, e.g. after the user fixed a denied permission)
+  const requestAccess = useCallback(() => {
+    setError(null)
+    setRequested(true)
+    setAttempt((n) => n + 1)
+  }, [])
+
+  // end the preview and free the camera/microphone (a released stream keeps running)
+  const stop = useCallback(() => {
+    setRequested(false)
+    setStream(null)
+    setError(null)
+  }, [])
 
   return {
     settings,
@@ -110,9 +141,10 @@ export function useMediaSetup(
     stream,
     error,
     requested,
-    requestAccess: () => setRequested(true),
+    requestAccess,
     updateSettings,
     release,
+    stop,
   }
 }
 

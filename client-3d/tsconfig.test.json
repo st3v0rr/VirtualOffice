@@ -5,7 +5,7 @@
     "lib": ["es2023", "dom", "dom.iterable"],
     "module": "esnext",
     "moduleResolution": "bundler",
-    "types": ["node"],
+    "types": ["node", "vite/client"],
     "skipLibCheck": true,
     "isolatedModules": true,
     "moduleDetection": "force",

@@ -34,7 +34,9 @@ const page = await context.newPage()
 const errors3d = watch(page, '3D')
 await page.goto(url3d)
 await page.fill('.join input', 'Rauchtest')
-await page.click('.join button.primary')
+// the join screen: name, room (public office), camera/microphone (off), then Beitreten
+for (const label of ['Weiter', 'Weiter', 'Beitreten'])
+  await page.click(`.join button.primary:has-text("${label}")`)
 await page.waitForSelector('.hud-top', { timeout: 10000 })
 check(true, '3D: joined the office')
 

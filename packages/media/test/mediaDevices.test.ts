@@ -22,13 +22,13 @@ describe('media settings persistence', () => {
   beforeEach(() => vi.stubGlobal('localStorage', memoryStorage()))
   afterEach(() => vi.unstubAllGlobals())
 
-  it('defaults to the system devices with camera and microphone on', () => {
+  it('defaults to the system devices with camera and microphone off (first visit)', () => {
     expect(loadMediaSettings()).toEqual({
       videoInputId: '',
       audioInputId: '',
       audioOutputId: '',
-      videoEnabled: true,
-      audioEnabled: true,
+      videoEnabled: false,
+      audioEnabled: false,
     })
   })
 
@@ -39,17 +39,17 @@ describe('media settings persistence', () => {
   })
 
   it('fills in settings missing in older stored data', () => {
-    localStorage.setItem(KEY, JSON.stringify({ videoEnabled: false }))
+    localStorage.setItem(KEY, JSON.stringify({ videoEnabled: true }))
     expect(loadMediaSettings()).toMatchObject({
-      videoEnabled: false,
-      audioEnabled: true,
+      videoEnabled: true,
+      audioEnabled: false,
       audioOutputId: '',
     })
   })
 
   it('falls back to the defaults on broken data', () => {
     localStorage.setItem(KEY, '{not json')
-    expect(loadMediaSettings().videoEnabled).toBe(true)
+    expect(loadMediaSettings().videoEnabled).toBe(false)
   })
 
   it('works without usable storage (private mode)', () => {
@@ -63,13 +63,13 @@ describe('media settings persistence', () => {
     }
     vi.stubGlobal('localStorage', broken)
     expect(() => saveMediaSettings(settings)).not.toThrow()
-    expect(loadMediaSettings().audioEnabled).toBe(true)
+    expect(loadMediaSettings().audioEnabled).toBe(false)
   })
 
   it('returns a fresh object each time, so callers can change it', () => {
     const a = loadMediaSettings()
-    a.videoEnabled = false
-    expect(loadMediaSettings().videoEnabled).toBe(true)
+    a.videoEnabled = true
+    expect(loadMediaSettings().videoEnabled).toBe(false)
   })
 })
 

@@ -14,12 +14,13 @@ export type MediaDeviceLists = {
 
 const STORAGE_KEY = 'skyoffice:media-settings'
 
+// on a first visit camera and microphone stay off until the user switches them on
 const defaultSettings: MediaSettings = {
   videoInputId: '',
   audioInputId: '',
   audioOutputId: '',
-  videoEnabled: true,
-  audioEnabled: true,
+  videoEnabled: false,
+  audioEnabled: false,
 }
 
 // speaker selection is not supported by every browser (e.g. Firefox without flag, Safari on iOS)

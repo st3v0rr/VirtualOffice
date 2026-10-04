@@ -145,6 +145,15 @@ export function avatarForTexture(texture: string | undefined): Avatar {
   return PRESETS[texture as PresetTexture] ?? DEFAULT_AVATAR
 }
 
+// the preset the avatar is exactly, null for a look of one's own
+export function presetOf(avatar: Avatar): PresetTexture | null {
+  const same = (preset: Avatar) =>
+    (Object.keys(preset) as (keyof Avatar)[]).every(
+      (key) => preset[key].toLowerCase() === avatar[key].toLowerCase()
+    )
+  return PRESET_TEXTURES.find((texture) => same(PRESETS[texture])) ?? null
+}
+
 export function randomAvatar(): Avatar {
   const any = <T>(list: readonly T[]) => list[Math.floor(Math.random() * list.length)]
   return {

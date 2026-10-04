@@ -1,12 +1,7 @@
 import { useEffect, useRef } from 'react'
-import {
-  getMediaStream,
-  hasMediaPermission,
-  loadMediaSettings,
-  setAudioOutput,
-} from '@skyoffice/media'
+import { setAudioOutput } from '@skyoffice/media'
 import { useGame } from '../state/game'
-import { setMyMedia, startMedia, stopMedia, useMedia, type MediaTile } from '../media/media'
+import { startMedia, stopMedia, useMedia, type MediaTile } from '../media/media'
 
 // The faces and voices of the people I hear, like the VideoGrid of the 2D client.
 
@@ -68,25 +63,10 @@ export default function VideoGrid() {
 
   useEffect(() => {
     if (!sessionId) return
+    // uses the camera/microphone chosen on the join screen, if any (see setMyMedia);
+    // without, the HUD offers to set them up later
     startMedia(sessionId)
-    // skip the setup if the user already allowed camera/microphone on an earlier visit
-    // (the 2D client does the same on its join screen)
-    let cancelled = false
-    if (!useGame.getState().videoConnected) {
-      hasMediaPermission().then(async (granted) => {
-        if (!granted || cancelled) return
-        const settings = loadMediaSettings()
-        const stream = await getMediaStream(settings).catch(() => null)
-        if (!stream) return
-        if (cancelled || useGame.getState().videoConnected)
-          stream.getTracks().forEach((t) => t.stop())
-        else setMyMedia(stream, settings)
-      })
-    }
-    return () => {
-      cancelled = true
-      stopMedia()
-    }
+    return () => stopMedia()
   }, [sessionId])
 
   return (

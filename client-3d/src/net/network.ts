@@ -53,11 +53,13 @@ class Network {
 
   // the list of custom rooms, kept up to date by Colyseus' lobby room
   async joinLobby() {
-    if (this.lobby) return
+    const game = useGame.getState()
+    if (this.lobby || game.lobby === 'loading') return
+    game.set({ lobby: 'loading' })
     try {
       const lobby = await this.client.joinOrCreate(RoomType.LOBBY)
       this.lobby = lobby
-      const set = (rooms: LobbyRoom[]) => useGame.getState().set({ rooms })
+      const set = (rooms: LobbyRoom[]) => useGame.getState().set({ rooms, lobby: 'ready' })
       const toRoom = (roomId: string, room: any): LobbyRoom => ({
         roomId,
         name: room.metadata?.name ?? roomId,
@@ -74,6 +76,7 @@ class Network {
       )
     } catch (error) {
       console.warn('Lobby not available', error)
+      useGame.getState().set({ lobby: 'error' })
     }
   }
 
@@ -113,7 +116,7 @@ class Network {
     this.lobby?.leave()
     this.lobby = undefined
     const room = this.room
-    game.set({ connection: 'connected', sessionId: room.sessionId })
+    game.set({ connection: 'connected', sessionId: room.sessionId, lobby: 'idle' })
     this.listen(room)
 
     room.send(Message.UPDATE_PLAYER_NAME, { name })
