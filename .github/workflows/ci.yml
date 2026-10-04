@@ -89,10 +89,15 @@ jobs:
           for asset in $(curl -fsS http://localhost:2567/ | grep -o '/assets/[^"]*\.js'); do
             curl -fsS -o /dev/null "http://localhost:2567$asset"
           done
-          # the container reports itself healthy
-          for _ in $(seq 1 30); do
-            status=$(docker inspect -f '{{.State.Health.Status}}' demo)
+          # Docker Desktop/Engine exposes the Dockerfile HEALTHCHECK through inspect.
+          # Fail clearly if the image ever loses its health check.
+          test "$(docker inspect -f '{{if .Config.Healthcheck}}configured{{end}}' demo)" = configured
+          # GitHub-hosted Docker supports the health status field. Retry long enough for
+          # the image's 10s start period and first 30s health-check interval.
+          for _ in $(seq 1 40); do
+            status=$(docker inspect -f '{{if .State.Health}}{{.State.Health.Status}}{{else}}missing{{end}}' demo)
             [ "$status" = healthy ] && break
+            [ "$status" != missing ] || { echo 'container health status is missing'; exit 1; }
             sleep 2
           done
           echo "health: $status"
