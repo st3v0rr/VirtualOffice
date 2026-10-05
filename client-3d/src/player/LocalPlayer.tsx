@@ -11,7 +11,8 @@ import { findPathInWorker } from '../map/pathWorkerTransport'
 import { me, toAnim } from '../net/players'
 import { network } from '../net/network'
 import { intent } from '../game/intent'
-import { clock, playEmote } from '../game/actions'
+import { clock, playEmote, toggleHand } from '../game/actions'
+import { emoteForKey, HAND_KEY } from '../game/emotes'
 import {
   chairs,
   findNearby,
@@ -90,12 +91,9 @@ export default function LocalPlayer() {
       if (e.repeat) return
       if (e.code === 'KeyE') actions.current.push('sit')
       if (e.code === 'KeyR') actions.current.push('use')
-      if (e.code === 'Space') {
-        e.preventDefault()
-        playEmote('hop')
-      }
-      if (e.code === 'Digit1') playEmote('wave')
-      if (e.code === 'Digit2') playEmote('cheer')
+      const emote = emoteForKey(e.code)
+      if (emote) playEmote(emote)
+      if (e.code === HAND_KEY) toggleHand()
       if (e.code === 'Enter') {
         e.preventDefault()
         useGame.getState().set({ chatFocused: true })

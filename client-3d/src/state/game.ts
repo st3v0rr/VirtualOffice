@@ -1,5 +1,7 @@
 import { create } from 'zustand'
 import type { Avatar } from '../avatar/avatar'
+import type { Emote } from '../avatar/motion'
+import { EMOTE_FX } from '../game/emotes'
 import { loadAvatar, DEFAULT_AVATAR } from '../avatar/avatar'
 import { loadMediaSettings } from '@skyoffice/media'
 
@@ -8,6 +10,7 @@ import { loadMediaSettings } from '@skyoffice/media'
 
 export type ChatLine = { author: string; content: string; createdAt: number; system?: boolean }
 export type Bubble = { text: string; until: number }
+export type Effect = { kind: Emote; n: number; until: number }
 export type Dialog =
   // minimized: closed, but still at the computer (the shared screen shows on its monitor)
   { kind: 'computer'; id: string; minimized?: boolean } | { kind: 'vending' } | null
@@ -37,6 +40,11 @@ type GameState = {
   roomName: string
   chat: ChatLine[]
   bubbles: Record<string, Bubble>
+  // the effect of the last emote above each player (confetti, clapping hands, hearts);
+  // `n` counts up, so the same emote twice restarts it
+  effects: Record<string, Effect>
+  // players with a raised hand (me included), from the player state of the server
+  handsUp: Record<string, true>
   editorOpen: boolean
   // the HUD's settings & controls dialog
   settingsOpen: boolean
@@ -74,6 +82,8 @@ export const useGame = create<GameState>()((set) => ({
   roomName: '',
   chat: [],
   bubbles: {},
+  effects: {},
+  handsUp: {},
   editorOpen: false,
   settingsOpen: false,
   chatFocused: false,
@@ -97,6 +107,32 @@ export function showBubble(playerId: string, text: string) {
   useGame.setState((s) => ({
     bubbles: { ...s.bubbles, [playerId]: { text: content, until: Date.now() + BUBBLE_DURATION } },
   }))
+}
+
+// the symbols of an emote above a player, for everyone who sees the player
+export function showEffect(playerId: string, kind: Emote) {
+  // waving is the arm alone
+  if (!EMOTE_FX[kind].duration) return
+  useGame.setState((s) => ({
+    effects: {
+      ...s.effects,
+      [playerId]: {
+        kind,
+        n: (s.effects[playerId]?.n ?? 0) + 1,
+        until: Date.now() + EMOTE_FX[kind].duration,
+      },
+    },
+  }))
+}
+
+export function setHandUp(playerId: string, raised: boolean) {
+  useGame.setState((s) => {
+    if (!!s.handsUp[playerId] === raised) return s
+    const handsUp = { ...s.handsUp }
+    if (raised) handsUp[playerId] = true
+    else delete handsUp[playerId]
+    return { handsUp }
+  })
 }
 
 export function pushChat(line: ChatLine) {

@@ -1,10 +1,11 @@
-import { useEffect, useState, type RefObject } from 'react'
+import { useEffect, useState, type CSSProperties, type RefObject } from 'react'
 import { useFrame, useThree } from '@react-three/fiber'
 import * as THREE from 'three'
 import { useGame } from '../state/game'
 import { ROOM_LABELS } from '../world/rooms'
 import { me } from '../net/players'
 import { useVoiceState } from '../media/media'
+import { EMOTE_FX } from '../game/emotes'
 
 // Name tags, speech bubbles and room signs as DOM on top of the canvas (so the text is
 // crisp and cheap). They are plain elements of the app positioned in one loop, instead
@@ -49,12 +50,64 @@ function Bubble({ id }: { id: string }) {
   )
 }
 
-// name and speech bubble; a green ring around the name while the player talks
+// confetti, clapping hands or hearts rising above the head after an emote
+function Effect({ id }: { id: string }) {
+  const effect = useGame((s) => s.effects[id])
+  const [expired, setExpired] = useState(0)
+  useEffect(() => {
+    if (!effect) return
+    const timer = window.setTimeout(
+      () => setExpired(effect.n),
+      Math.max(0, effect.until - Date.now())
+    )
+    return () => window.clearTimeout(timer)
+  }, [effect])
+  if (!effect || effect.n === expired) return null
+  const { duration, particles } = EMOTE_FX[effect.kind]
+  return (
+    <div key={effect.n} className={`fx fx-${effect.kind}`} data-fx={effect.kind} aria-hidden>
+      {particles.map((p, i) => (
+        <span
+          key={i}
+          className={p.symbol ? 'fx-symbol' : 'fx-confetti'}
+          style={
+            {
+              '--x': `${p.x}px`,
+              '--rise': `${p.rise}px`,
+              '--turn': `${p.turn}deg`,
+              background: p.color,
+              animationDelay: `${p.delay}s`,
+              animationDuration: `${duration / 1000 - p.delay}s`,
+            } as CSSProperties
+          }
+        >
+          {p.symbol}
+        </span>
+      ))}
+    </div>
+  )
+}
+
+// a raised hand stays above the head until it is lowered
+function HandMarker({ id }: { id: string }) {
+  const up = useGame((s) => !!s.handsUp[id])
+  if (!up) return null
+  return (
+    <div className="hand-up" role="img" aria-label="Hand gehoben">
+      ✋
+    </div>
+  )
+}
+
+// name and speech bubble; a green ring around the name while the player talks.
+// The name has to stay the last element, <TagProjector> fades it with the distance.
 function Tag({ id, name }: { id: string; name: string }) {
   const voice = useVoiceState(id)
   return (
     <div className={`tag ${voice ?? ''}`}>
+      <Effect id={id} />
       <Bubble id={id} />
+      <HandMarker id={id} />
       <div className="name">
         {voice === 'muted' && <span className="voice">🔇</span>}
         {voice === 'speaking' && <span className="voice">🔊</span>}

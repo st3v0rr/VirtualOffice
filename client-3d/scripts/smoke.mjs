@@ -259,15 +259,21 @@ if (!executablePath) {
       'Klick',
       'Hinsetzen / Aufstehen',
       'Benutzen',
-      'Leertaste',
       'Winken',
       'Jubeln',
+      'Klatschen',
+      'Herzen',
+      'Hand heben / senken',
       'Mausrad',
       'Enter',
       'Chat',
     ]
     const missing = expected.filter((text) => !dialogText.includes(text))
     check(missing.length === 0, `Browser: the dialog has all settings and controls ${missing}`)
+    check(
+      !dialogText.includes('Leertaste') && !dialogText.includes('Hüpfen'),
+      'Browser: the dialog no longer lists Leertaste / Hüpfen'
+    )
     check(
       (await dialog.locator('input[type=checkbox]').count()) === 3 &&
         (await dialog.locator('select').count()) === 1,
@@ -318,6 +324,76 @@ if (!executablePath) {
     await settingsButton.click()
     await page.mouse.click(8, 8)
     check(!(await dialog.isVisible()), 'Browser: a click on the backdrop closes the dialog')
+
+    // emotes: the five HUD buttons; with reduced motion, so the checks rely on the
+    // data-fx DOM nodes alone and not on animation timing
+    await page.emulateMedia({ reducedMotion: 'reduce' })
+    const emoteBar = page.locator('.hud-self .emotes')
+    const emoteLabels = ['Winken', 'Jubeln', 'Klatschen', 'Herzen', 'Hand heben']
+    const presentLabels = []
+    for (const label of emoteLabels)
+      if ((await emoteBar.getByRole('button', { name: label, exact: true }).count()) === 1)
+        presentLabels.push(label)
+    check(
+      presentLabels.length === emoteLabels.length &&
+        (await emoteBar.locator('button').count()) === emoteLabels.length,
+      `Browser: the HUD has the five action buttons (${presentLabels.join(', ')})`
+    )
+    const hand = emoteBar.getByRole('button', { name: 'Hand heben', exact: true })
+    const handMarker = page
+      .locator('.tag', { has: page.locator('.name', { hasText: 'Rauchtest2' }) })
+      .getByRole('img', { name: 'Hand gehoben' })
+    const pressedBefore = await hand.getAttribute('aria-pressed')
+    await hand.click()
+    await handMarker.waitFor({ state: 'attached', timeout: 2000 }).catch(() => {})
+    const pressedOn = await hand.getAttribute('aria-pressed')
+    const markerOn = await handMarker.count()
+    await hand.click()
+    await handMarker.waitFor({ state: 'detached', timeout: 2000 }).catch(() => {})
+    const pressedOff = await hand.getAttribute('aria-pressed')
+    const markerOff = await handMarker.count()
+    check(
+      pressedBefore === 'false' &&
+        pressedOn === 'true' &&
+        markerOn === 1 &&
+        pressedOff === 'false' &&
+        markerOff === 0,
+      `Browser: raise hand toggles on then off (aria-pressed ${pressedBefore} → ${pressedOn} → ${pressedOff}, marker ${markerOn} → ${markerOff})`
+    )
+    // waving is the arm alone (no data-fx); the other finite emotes rise above the name tag
+    for (const [label, kind] of [
+      ['Jubeln', 'cheer'],
+      ['Klatschen', 'clap'],
+      ['Herzen', 'hearts'],
+    ]) {
+      await page.waitForTimeout(1200) // past the emote cooldown (half an emote's duration)
+      await emoteBar.getByRole('button', { name: label, exact: true }).click()
+      const fx = await page
+        .waitForFunction(
+          ({ kind, name }) => {
+            const tag = [...document.querySelectorAll('.tag')].find((t) =>
+              t.querySelector('.name')?.textContent?.includes(name)
+            )
+            const node = tag?.querySelector(`[data-fx="${kind}"]`)
+            if (!node) return null
+            const nameBox = tag.querySelector('.name').getBoundingClientRect()
+            return {
+              particles: node.children.length,
+              aboveName: node.getBoundingClientRect().bottom < nameBox.bottom,
+              beforeName: !!(node.compareDocumentPosition(tag.querySelector('.name')) & 4),
+            }
+          },
+          { kind, name: 'Rauchtest2' },
+          { timeout: 2000 }
+        )
+        .then((handle) => handle.jsonValue())
+        .catch(() => null)
+      check(
+        !!fx && fx.particles > 0 && fx.aboveName && fx.beforeName,
+        `Browser: ${label} shows data-fx="${kind}" above my name tag (${JSON.stringify(fx)})`
+      )
+    }
+    await page.emulateMedia({ reducedMotion: null })
 
     mkdirSync(path.dirname(screenshot), { recursive: true })
     await page.screenshot({ path: screenshot })

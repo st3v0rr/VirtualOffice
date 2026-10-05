@@ -39,13 +39,17 @@ describe('combined settings & controls dialog', () => {
       "'Klick'",
       'Hinsetzen / Aufstehen',
       'Benutzen',
-      'Leertaste',
       'Winken',
       'Jubeln',
+      'Klatschen',
+      'Herzen',
+      'Hand heben / senken',
       'Mausrad',
       "'Enter'], 'Chat'",
     ])
       expect(modal).toContain(text)
+    expect(modal).not.toContain('Leertaste')
+    expect(modal).not.toContain('Hüpfen')
   })
 
   it('blocks the keyboard shortcuts of the local player while open', () => {

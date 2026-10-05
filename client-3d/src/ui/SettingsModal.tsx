@@ -11,9 +11,11 @@ const CONTROLS: [keys: string[], action: string][] = [
   [['Klick'], 'Hinlaufen (mobil: Tippen)'],
   [['E'], 'Hinsetzen / Aufstehen'],
   [['R'], 'Benutzen'],
-  [['Leertaste'], 'Hüpfen'],
   [['1'], 'Winken'],
   [['2'], 'Jubeln'],
+  [['3'], 'Klatschen'],
+  [['4'], 'Herzen'],
+  [['5'], 'Hand heben / senken'],
   [['Mausrad'], 'Zoomen'],
   [['Enter'], 'Chat'],
 ]

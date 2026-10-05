@@ -22,11 +22,16 @@ export type Motion = {
   speed: number
   // seconds (clock time) when the current state began, for the "plumps" when sitting down
   since: number
-  emote: Emote | null
+  emote: MotionEmote | null
   emoteSince: number
   // a drink in the hand, until the clock time `until`
   holding: { drink: Drink; until: number } | null
+  // the hand is up (like at school) until lowered again
+  handRaised: boolean
 }
+
+// the emotes, plus the little hop when taking a drink (not an action of its own)
+export type MotionEmote = Emote | 'gulp'
 
 export const createMotion = (): Motion => ({
   state: 'idle',
@@ -35,8 +40,15 @@ export const createMotion = (): Motion => ({
   emote: null,
   emoteSince: 0,
   holding: null,
+  handRaised: false,
 })
 
 // how much higher the hips are while sitting on a chair
 export const SIT_LIFT = 0.13
-export const EMOTE_DURATION: Record<Emote, number> = { wave: 2.2, cheer: 1.6, hop: 0.5 }
+export const EMOTE_DURATION: Record<MotionEmote, number> = {
+  wave: 2.2,
+  cheer: 1.6,
+  clap: 2,
+  hearts: 2,
+  gulp: 0.5,
+}

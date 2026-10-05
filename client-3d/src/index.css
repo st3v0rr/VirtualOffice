@@ -483,6 +483,98 @@ button.link:hover {
     opacity: 0;
   }
 }
+/* a raised hand: a little badge above the name that sways like a waiting pupil */
+.tag .hand-up {
+  font-size: 22px;
+  line-height: 1;
+  background: #fff3c4;
+  border: 2px solid #f2c94c;
+  border-radius: 999px;
+  padding: 3px 5px;
+  box-shadow: 0 2px 6px rgba(74, 63, 85, 0.25);
+  transform-origin: 50% 100%;
+  animation:
+    pop 0.25s cubic-bezier(0.3, 1.6, 0.6, 1),
+    hand-sway 1.6s ease-in-out 0.25s infinite alternate;
+}
+@keyframes hand-sway {
+  from {
+    transform: rotate(-9deg);
+  }
+  to {
+    transform: rotate(9deg);
+  }
+}
+/* emote effects: confetti, clapping hands and hearts rising above the head */
+.tag {
+  position: relative;
+}
+.tag .fx {
+  position: absolute;
+  left: 50%;
+  bottom: 14px;
+  width: 0;
+  height: 0;
+}
+.fx span {
+  position: absolute;
+  left: 0;
+  top: 0;
+  opacity: 0;
+  animation-fill-mode: both;
+  animation-timing-function: cubic-bezier(0.2, 0.7, 0.4, 1);
+}
+.fx-symbol {
+  font-size: 20px;
+  line-height: 1;
+  margin: -10px 0 0 -10px;
+  animation-name: fx-rise;
+}
+.fx-confetti {
+  width: 7px;
+  height: 11px;
+  margin: -5px 0 0 -3px;
+  border-radius: 2px;
+  animation-name: fx-confetti;
+}
+@keyframes fx-rise {
+  0% {
+    opacity: 0;
+    transform: translate(0, 0) scale(0.4);
+  }
+  15% {
+    opacity: 1;
+    transform: translate(calc(var(--x) * 0.4), calc(var(--rise) * -0.3)) scale(1.1)
+      rotate(var(--turn));
+  }
+  75% {
+    opacity: 1;
+  }
+  100% {
+    opacity: 0;
+    transform: translate(var(--x), calc(var(--rise) * -1)) scale(0.9) rotate(calc(var(--turn) * -1));
+  }
+}
+@keyframes fx-confetti {
+  0% {
+    opacity: 1;
+    transform: translate(0, 0) rotate(0deg) scale(0.6);
+  }
+  40% {
+    opacity: 1;
+    transform: translate(var(--x), calc(var(--rise) * -1)) rotate(var(--turn)) scale(1);
+  }
+  100% {
+    opacity: 0;
+    transform: translate(calc(var(--x) * 1.3), calc(var(--rise) * -0.35))
+      rotate(calc(var(--turn) * 2.5)) scale(0.9);
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .tag .hand-up {
+    animation: none;
+  }
+}
 .room-label {
   transform: translate(-50%, -50%);
   white-space: nowrap;
@@ -843,8 +935,21 @@ button.link:hover {
     width: 96px;
     height: 72px;
   }
+  /* five buttons in a row would run into the chat: two rows of big touch targets */
+  .emotes {
+    display: grid;
+    grid-template-columns: repeat(3, 44px);
+    gap: 6px;
+    direction: rtl;
+  }
+  .emotes button {
+    width: 44px;
+    height: 44px;
+    font-size: 20px;
+    direction: ltr;
+  }
   .hud-right {
-    max-height: max(0px, calc(100% - 340px));
+    max-height: max(0px, calc(100% - 390px));
   }
   .video-grid {
     width: min(324px, calc(100vw - 24px));

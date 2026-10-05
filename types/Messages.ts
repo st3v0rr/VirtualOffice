@@ -11,4 +11,6 @@ export enum Message {
   REQUEST_MEDIA_TOKEN = 13,
   UPDATE_PLAYER_AVATAR = 14,
   PLAYER_EMOTE = 15,
+  // raise / lower the hand: { raised: boolean }, kept in the player state
+  PLAYER_HAND = 16,
 }

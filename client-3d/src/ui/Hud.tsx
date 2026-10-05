@@ -1,6 +1,7 @@
 import { useEffect } from 'react'
 import { useGame } from '../state/game'
-import { playEmote } from '../game/actions'
+import { playEmote, toggleHand } from '../game/actions'
+import { EMOTE_BUTTONS } from '../game/emotes'
 import MediaControls, { Status } from './MediaControls'
 import VideoGrid, { SelfPreview } from './VideoGrid'
 import SettingsModal from './SettingsModal'
@@ -10,6 +11,7 @@ export default function Hud() {
   const roomName = useGame((s) => s.roomName)
   const playerCount = useGame((s) => Object.keys(s.players).length + 1)
   const settingsOpen = useGame((s) => s.settingsOpen)
+  const handUp = useGame((s) => !!s.sessionId && !!s.handsUp[s.sessionId])
 
   // leaving the office while the dialog is open must not keep the keyboard blocked
   useEffect(() => () => useGame.getState().set({ settingsOpen: false }), [])
@@ -49,14 +51,24 @@ export default function Hud() {
         </div>
         <SelfPreview />
         <div className="emotes">
-          <button onClick={() => playEmote('wave')} title="Winken (1)">
-            👋
-          </button>
-          <button onClick={() => playEmote('cheer')} title="Jubeln (2)">
-            🎉
-          </button>
-          <button onClick={() => playEmote('hop')} title="Hüpfen (Leertaste)">
-            ⤴️
+          {EMOTE_BUTTONS.map((b, i) => (
+            <button
+              key={b.emote}
+              onClick={() => playEmote(b.emote)}
+              title={`${b.label} (${i + 1})`}
+              aria-label={b.label}
+            >
+              {b.icon}
+            </button>
+          ))}
+          <button
+            className={handUp ? 'active' : undefined}
+            onClick={toggleHand}
+            title={handUp ? 'Hand senken (5)' : 'Hand heben (5)'}
+            aria-label="Hand heben"
+            aria-pressed={handUp}
+          >
+            ✋
           </button>
         </div>
       </div>

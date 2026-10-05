@@ -162,11 +162,36 @@ export default function Chibi({ avatar, motion, seed = 0 }: ChibiProps) {
       }
     }
 
+    // the raised hand (left, so waving and drinking still work with the right one)
+    if (mo.handRaised) {
+      armRaiseL = 2.85 + Math.sin(t * 2.6 + seed * 3) * 0.08
+      armSwingL = -0.12
+      headTilt = -0.08
+    }
+
     // emotes play on top of the base state
+    let armSpeed = 12
     if (mo.emote) {
       const e = t - mo.emoteSince
       if (e > EMOTE_DURATION[mo.emote]) {
         mo.emote = null
+      } else if (mo.emote === 'clap') {
+        // both hands in front of the chest, meeting about three times a second
+        const open = Math.abs(Math.sin(e * Math.PI * 2.8))
+        armSwingL = armSwingR = -1.15
+        armRaiseL = -0.78 + 0.5 * open
+        armRaiseR = 0.78 - 0.5 * open
+        armSpeed = 40
+        headTilt = 0.06 * Math.sin(e * 6)
+        squash *= 1 + 0.025 * (1 - open)
+      } else if (mo.emote === 'hearts') {
+        // hands folded at the chest, swaying happily from side to side
+        armSwingL = armSwingR = -0.95
+        armRaiseL = -0.62
+        armRaiseR = 0.62
+        sway = Math.sin(e * 5) * 0.09
+        headTilt = 0.18 * Math.sin(e * 5)
+        squash *= 1 + 0.04 * Math.sin(e * 10)
       } else if (mo.emote === 'wave') {
         armRaiseR = -1.85 + Math.sin(e * 14) * 0.3
         armSwingR = 0
@@ -177,8 +202,8 @@ export default function Chibi({ avatar, motion, seed = 0 }: ChibiProps) {
         armSwingL = armSwingR = 0
         if (mo.state !== 'sit') y += Math.abs(Math.sin(e * 8)) * 0.22
         squash *= 1 + 0.06 * Math.sin(e * 16)
-      } else if (mo.emote === 'hop' && mo.state !== 'sit') {
-        const k = e / EMOTE_DURATION.hop
+      } else if (mo.emote === 'gulp' && mo.state !== 'sit') {
+        const k = e / EMOTE_DURATION.gulp
         y += Math.sin(k * Math.PI) * 0.25
         squash *= 1 + 0.12 * Math.sin(k * Math.PI * 2)
       }
@@ -204,8 +229,8 @@ export default function Chibi({ avatar, motion, seed = 0 }: ChibiProps) {
     if (armL.current && armR.current) {
       armL.current.rotation.x = lerp(armL.current.rotation.x, armSwingL, 14)
       armR.current.rotation.x = lerp(armR.current.rotation.x, armSwingR, 14)
-      armL.current.rotation.z = lerp(armL.current.rotation.z, armRaiseL, 12)
-      armR.current.rotation.z = lerp(armR.current.rotation.z, armRaiseR, 12)
+      armL.current.rotation.z = lerp(armL.current.rotation.z, armRaiseL, armSpeed)
+      armR.current.rotation.z = lerp(armR.current.rotation.z, armRaiseR, armSpeed)
     }
 
     // blink every few seconds

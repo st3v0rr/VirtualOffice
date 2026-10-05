@@ -8,6 +8,8 @@ export interface IPlayer extends Schema {
   // the avatar as JSON (see client-3d/src/avatar/avatar.ts) and the facing angle in radians
   avatar: string
   rot: number
+  // the hand is up (to say something) until the player lowers it again
+  handRaised: boolean
 }
 
 export interface IComputer extends Schema {

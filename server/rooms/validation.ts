@@ -36,6 +36,13 @@ export function validateEmote(emote: unknown): EmoteMessage | null {
   return isEmoteMessage(emote) ? emote : null
 }
 
+// raising or lowering the hand: { raised: true | false }, nothing else
+export function validateHandRaised(message: unknown): boolean | null {
+  if (typeof message !== 'object' || message === null) return null
+  const { raised } = message as Record<string, unknown>
+  return typeof raised === 'boolean' ? raised : null
+}
+
 export type PlayerUpdate = { x: number; y: number; anim: string; rot?: number }
 
 // a position in map pixels and the animation key ("adam_run_left")

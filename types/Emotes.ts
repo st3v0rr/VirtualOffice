@@ -1,6 +1,7 @@
 // Emotes are only passed on, not stored; the server lets through only these.
+// (The raised hand is no emote: it stays up until lowered, so it is player state.)
 
-export const EMOTES = ['wave', 'cheer', 'hop'] as const
+export const EMOTES = ['wave', 'cheer', 'clap', 'hearts'] as const
 export type Emote = (typeof EMOTES)[number]
 
 // what the vending machine has, sent as "drink:<id>"

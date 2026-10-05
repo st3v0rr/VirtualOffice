@@ -5,6 +5,7 @@ import { OfficeState, Player, Computer } from '../rooms/schema/OfficeState.ts'
 import type { SkyOffice } from '../rooms/SkyOffice.ts'
 import PlayerUpdateAvatarCommand from '../rooms/commands/PlayerUpdateAvatarCommand.ts'
 import PlayerUpdateCommand from '../rooms/commands/PlayerUpdateCommand.ts'
+import PlayerUpdateHandCommand from '../rooms/commands/PlayerUpdateHandCommand.ts'
 import PlayerUpdateNameCommand from '../rooms/commands/PlayerUpdateNameCommand.ts'
 import ChatMessageUpdateCommand from '../rooms/commands/ChatMessageUpdateCommand.ts'
 import {
@@ -65,6 +66,45 @@ describe('PlayerUpdateCommand', () => {
     dispatcher.dispatch(new PlayerUpdateCommand(), { client: alice, x: NaN, y: 1, anim: 'a' })
     dispatcher.dispatch(new PlayerUpdateCommand(), { client: alice, x: 1, y: 1, anim: 5 })
     expect([player.x, player.y, player.anim]).toEqual(before)
+  })
+})
+
+describe('PlayerUpdateHandCommand', () => {
+  it('raises the hand until it is lowered again', () => {
+    const player = state.players.get('alice')!
+    expect(player.handRaised).toBe(false)
+    dispatcher.dispatch(new PlayerUpdateHandCommand(), { client: alice, message: { raised: true } })
+    expect(player.handRaised).toBe(true)
+    // another raise keeps it up (a toggle on the client, an absolute state on the wire)
+    dispatcher.dispatch(new PlayerUpdateHandCommand(), { client: alice, message: { raised: true } })
+    expect(player.handRaised).toBe(true)
+    dispatcher.dispatch(new PlayerUpdateHandCommand(), {
+      client: alice,
+      message: { raised: false },
+    })
+    expect(player.handRaised).toBe(false)
+  })
+
+  it('ignores anything that is not a boolean', () => {
+    const player = state.players.get('alice')!
+    player.handRaised = true
+    for (const message of [null, 'up', { raised: 'false' }, { raised: 0 }, {}])
+      dispatcher.dispatch(new PlayerUpdateHandCommand(), { client: alice, message })
+    expect(player.handRaised).toBe(true)
+  })
+
+  it('ignores unknown players', () => {
+    dispatcher.dispatch(new PlayerUpdateHandCommand(), {
+      client: client('ghost'),
+      message: { raised: true },
+    })
+    expect(state.players.has('ghost')).toBe(false)
+  })
+
+  it('is part of the synchronised player state, so late joiners see it', () => {
+    const player = new Player()
+    player.handRaised = true
+    expect(player.toJSON()).toMatchObject({ handRaised: true })
   })
 })
 

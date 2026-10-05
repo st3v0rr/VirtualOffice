@@ -1,4 +1,4 @@
-import { createMotion, type MotionState, type Emote, type Drink } from '../avatar/motion'
+import { createMotion, type MotionState, type MotionEmote, type Drink } from '../avatar/motion'
 
 // Mutable per-player data written by the network and read by the scene every frame.
 
@@ -11,9 +11,11 @@ export type RemoteState = {
   // set when the player just got added, so it appears at its position without sliding
   fresh: boolean
   // an emote to play, set by the network, consumed by the scene
-  emote: Emote | null
+  emote: MotionEmote | null
   // a drink the player just took from the vending machine
   drink: Drink | null
+  // the hand is up, from the player state (so also for players who raised it before I came)
+  handRaised: boolean
 }
 
 export const remotes = new Map<string, RemoteState>()

@@ -16,6 +16,7 @@ describe('Message numbers', () => {
       REQUEST_MEDIA_TOKEN: 13,
       UPDATE_PLAYER_AVATAR: 14,
       PLAYER_EMOTE: 15,
+      PLAYER_HAND: 16,
     })
   })
 

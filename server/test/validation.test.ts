@@ -7,6 +7,7 @@ import {
   sanitizeName,
   validateAvatar,
   validateEmote,
+  validateHandRaised,
   validatePlayerUpdate,
 } from '../rooms/validation.ts'
 import { DRINK_IDS, EMOTES } from '../../types/Emotes.ts'
@@ -69,10 +70,20 @@ describe('validateEmote (whitelist)', () => {
     for (const drink of DRINK_IDS) expect(validateEmote(`drink:${drink}`)).toBe(`drink:${drink}`)
   })
 
+  it('has the clapping and the hearts, and no more hop', () => {
+    expect([...EMOTES]).toEqual(['wave', 'cheer', 'clap', 'hearts'])
+    expect(validateEmote('clap')).toBe('clap')
+    expect(validateEmote('hearts')).toBe('hearts')
+    expect(validateEmote('hop')).toBeNull()
+  })
+
   it('blocks everything else', () => {
     for (const bad of [
       '',
       'dance',
+      'hop',
+      'hand',
+      'CLAP',
       'WAVE',
       'wave ',
       'drink',
@@ -86,6 +97,18 @@ describe('validateEmote (whitelist)', () => {
     ]) {
       expect(validateEmote(bad)).toBeNull()
     }
+  })
+})
+
+describe('validateHandRaised', () => {
+  it('takes a raised flag', () => {
+    expect(validateHandRaised({ raised: true })).toBe(true)
+    expect(validateHandRaised({ raised: false })).toBe(false)
+  })
+
+  it('rejects anything that is not a boolean flag', () => {
+    for (const bad of [null, undefined, true, 'up', {}, { raised: 1 }, { raised: 'true' }])
+      expect(validateHandRaised(bad)).toBeNull()
   })
 })
 

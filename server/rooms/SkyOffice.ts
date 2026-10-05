@@ -10,6 +10,7 @@ import { getMediaLocation, type MediaTokenRequest } from '../../types/Media.ts'
 import PlayerUpdateCommand from './commands/PlayerUpdateCommand.ts'
 import PlayerUpdateNameCommand from './commands/PlayerUpdateNameCommand.ts'
 import PlayerUpdateAvatarCommand from './commands/PlayerUpdateAvatarCommand.ts'
+import PlayerUpdateHandCommand from './commands/PlayerUpdateHandCommand.ts'
 import {
   ComputerAddUserCommand,
   ComputerRemoveUserCommand,
@@ -89,7 +90,12 @@ export class SkyOffice extends Room<{ state: OfficeState }> {
       })
     })
 
-    // emotes (waving, cheering, drinks) are only shown, not stored, so just pass them on
+    // the raised hand stays up until lowered, so it is stored: players joining later see it too
+    this.onMessage(Message.PLAYER_HAND, (client, message: { raised: boolean }) => {
+      this.dispatcher.dispatch(new PlayerUpdateHandCommand(), { client, message })
+    })
+
+    // emotes (waving, cheering, clapping, hearts, drinks) are only shown, not stored, so just pass them on
     this.onMessage(Message.PLAYER_EMOTE, (client, message: { emote: string }) => {
       const emote = validateEmote(message?.emote)
       if (!emote) return

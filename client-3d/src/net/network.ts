@@ -6,8 +6,8 @@ import type { MediaGrant, MediaTokenRequest } from '../../../types/Media'
 import { avatarForTexture, parseAvatar, type Avatar } from '../avatar/avatar'
 import { DRINKS, EMOTES, type Drink, type Emote } from '../avatar/motion'
 import { toWorld } from '../map/office'
-import { useGame, pushChat, showBubble, type LobbyRoom } from '../state/game'
-import { remotes, parseAnim, DIRECTION_ANGLE } from './players'
+import { useGame, pushChat, setHandUp, showBubble, showEffect, type LobbyRoom } from '../state/game'
+import { me, remotes, parseAnim, DIRECTION_ANGLE } from './players'
 
 // how often my position is sent while moving, same as the 2D client (15 per second)
 const PLAYER_UPDATE_INTERVAL = 66
@@ -116,7 +116,15 @@ class Network {
     this.lobby?.leave()
     this.lobby = undefined
     const room = this.room
-    game.set({ connection: 'connected', sessionId: room.sessionId, lobby: 'idle' })
+    // a new room: my hand starts down, like everybody's
+    me.motion.handRaised = false
+    game.set({
+      connection: 'connected',
+      sessionId: room.sessionId,
+      lobby: 'idle',
+      handsUp: {},
+      effects: {},
+    })
     this.listen(room)
 
     room.send(Message.UPDATE_PLAYER_NAME, { name })
@@ -152,6 +160,7 @@ class Network {
         fresh: true,
         emote: null,
         drink: null,
+        handRaised: false,
       })
       let announced = false
       const syncLook = () => {
@@ -185,6 +194,12 @@ class Network {
       $.listen(player, 'x', syncMove)
       $.listen(player, 'y', syncMove)
       $.listen(player, 'rot', syncMove)
+      // the current value comes right away, so a hand raised before I joined shows too
+      $.listen(player, 'handRaised', (raised: boolean) => {
+        const remote = remotes.get(id)
+        if (remote) remote.handRaised = !!raised
+        setHandUp(id, !!raised)
+      })
       // a 2D player changing its character changes the texture in the anim
       $.listen(player, 'anim', (value: string, previous: string) => {
         syncMove()
@@ -198,6 +213,7 @@ class Network {
       setPlayers((players) => {
         delete players[id]
       })
+      setHandUp(id, false)
       if (player.name)
         pushChat({
           author: player.name,
@@ -226,9 +242,10 @@ class Network {
         const [kind, arg] = String(emote).split(':')
         if (kind === 'drink' && arg in DRINKS) {
           remote.drink = arg as Drink
-          remote.emote = 'hop'
+          remote.emote = 'gulp'
         } else if (EMOTES.includes(kind as Emote)) {
           remote.emote = kind as Emote
+          showEffect(clientId, kind as Emote)
         }
       }
     )
@@ -295,6 +312,10 @@ class Network {
 
   sendEmote(emote: Emote | `drink:${Drink}`) {
     this.room?.send(Message.PLAYER_EMOTE, { emote })
+  }
+
+  sendHand(raised: boolean) {
+    this.room?.send(Message.PLAYER_HAND, { raised })
   }
 
   connectToComputer(id: string) {

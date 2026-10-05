@@ -11,6 +11,7 @@ const remote = (patch: Partial<RemoteState>): RemoteState => ({
   fresh: false,
   emote: null,
   drink: null,
+  handRaised: false,
   ...patch,
 })
 

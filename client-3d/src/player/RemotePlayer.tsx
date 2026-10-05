@@ -71,6 +71,7 @@ export default function RemotePlayer({ id, avatar }: { id: string; avatar: Avata
       motion.holding = { drink: remote.drink, until: now + DRINK_DURATION }
       remote.drink = null
     }
+    motion.handRaised = remote.handRaised
     if (remote.emote) {
       motion.emote = remote.emote
       motion.emoteSince = now

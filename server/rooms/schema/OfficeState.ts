@@ -8,6 +8,7 @@ export class Player extends Schema implements IPlayer {
   @type('string') anim = 'adam_idle_down'
   @type('string') avatar = ''
   @type('number') rot = 0
+  @type('boolean') handRaised = false
 }
 
 export class Computer extends Schema implements IComputer {
