@@ -1,4 +1,5 @@
 import { useEffect, useRef, useState, type FormEvent, type RefObject } from 'react'
+import { Canvas } from '@react-three/fiber'
 import {
   loadMediaSettings,
   playTestSound,
@@ -9,13 +10,9 @@ import {
 import { useMediaSetup } from '@skyoffice/media/react'
 import { useGame } from '../state/game'
 import { network } from '../net/network'
-import {
-  PRESETS,
-  PRESET_TEXTURES,
-  presetOf,
-  saveAvatar,
-  type PresetTexture,
-} from '../avatar/avatar'
+import Chibi from '../avatar/Chibi'
+import { createMotion } from '../avatar/motion'
+import type { Avatar } from '../avatar/avatar'
 import { office } from '../map/office'
 import { toAnim } from '../net/players'
 import { clearMyMedia, setMyMedia } from '../media/media'
@@ -261,6 +258,26 @@ function StepHeading({ headingRef, children }: { headingRef: HeadingRef; childre
   )
 }
 
+// a static idle pose is enough for the small live preview; no per-frame state changes needed
+function AvatarMiniPreview({ avatar }: { avatar: Avatar }) {
+  const [motion] = useState(createMotion)
+  return (
+    <div
+      className="avatar-preview-mini"
+      role="img"
+      aria-label="Charakter-Vorschau: Dein Avatar im Büro"
+    >
+      <Canvas flat dpr={[1, 2]} camera={{ position: [0, 0.9, 4.4], fov: 30 }}>
+        <hemisphereLight args={['#fff4fb', '#cbb8e0', 1.4]} />
+        <directionalLight position={[3, 5, 4]} intensity={1.6} color="#fff3e2" />
+        <group position={[0, -0.55, 0]}>
+          <Chibi avatar={avatar} motion={motion} />
+        </group>
+      </Canvas>
+    </div>
+  )
+}
+
 function ProfileStep({
   headingRef,
   name,
@@ -271,14 +288,6 @@ function ProfileStep({
   onName: (name: string) => void
 }) {
   const avatar = useGame((s) => s.avatar)
-  const hasSavedAvatar = useGame((s) => s.hasSavedAvatar)
-  const current = presetOf(avatar)
-  // a preset is taken over right away, like saving it in the editor
-  const choosePreset = (texture: PresetTexture) => {
-    const chosen = PRESETS[texture]
-    saveAvatar(chosen)
-    useGame.getState().set({ avatar: chosen, hasSavedAvatar: true })
-  }
   return (
     <>
       <StepHeading headingRef={headingRef}>Wer bist du?</StepHeading>
@@ -293,53 +302,14 @@ function ProfileStep({
           onChange={(e) => onName(e.target.value)}
         />
       </label>
-      <div className="avatar-presets" role="group" aria-label="Schnellauswahl Charakter">
-        {PRESET_TEXTURES.map((texture) => {
-          const preset = PRESETS[texture]
-          const label = texture[0].toUpperCase() + texture.slice(1)
-          return (
-            <button
-              key={texture}
-              type="button"
-              className={`avatar-preset ${current === texture ? 'active' : ''}`}
-              aria-pressed={current === texture}
-              aria-label={`Vorlage ${label}`}
-              onClick={() => choosePreset(texture)}
-            >
-              <span className="avatar-colors" aria-hidden>
-                {[preset.skin, preset.hairColor, preset.topColor, preset.bottomColor].map(
-                  (c, i) => (
-                    <span key={i} style={{ background: c }} />
-                  )
-                )}
-              </span>
-              <span aria-hidden>{label}</span>
-            </button>
-          )
-        })}
-      </div>
       <div className="avatar-card">
-        <div className="avatar-colors" aria-hidden>
-          {[avatar.skin, avatar.hairColor, avatar.topColor, avatar.bottomColor].map((c, i) => (
-            <span key={i} style={{ background: c }} />
-          ))}
-        </div>
-        <div className="avatar-text">
-          <strong>Dein Charakter</strong>
-          <span className="muted">
-            {!hasSavedAvatar
-              ? 'Wähle oben eine Vorlage oder gestalte, wie du aussiehst.'
-              : current
-                ? `Vorlage ${current[0].toUpperCase() + current.slice(1)}. So sehen dich die anderen im Büro.`
-                : 'Eigener Look. So sehen dich die anderen im Büro.'}
-          </span>
-        </div>
+        <AvatarMiniPreview avatar={avatar} />
         <button
           type="button"
           className="secondary"
           onClick={() => useGame.getState().set({ editorOpen: true })}
         >
-          {hasSavedAvatar ? '✏️ Ändern' : '✨ Gestalten'}
+          Ändern
         </button>
       </div>
     </>

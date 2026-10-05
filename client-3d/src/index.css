@@ -248,11 +248,24 @@ input:focus {
 .avatar-card {
   display: flex;
   align-items: center;
-  gap: 12px;
+  justify-content: space-between;
   padding: 10px 12px;
   border-radius: 18px;
   background: white;
   border: 2px solid var(--line);
+}
+.avatar-preview-mini {
+  width: 76px;
+  height: 92px;
+  flex: none;
+  overflow: hidden;
+  border-radius: 14px;
+  background: #efe7f7;
+}
+.avatar-preview-mini canvas {
+  display: block;
+  width: 100% !important;
+  height: 100% !important;
 }
 .avatar-colors {
   display: grid;
@@ -265,12 +278,6 @@ input:focus {
   height: 16px;
   border-radius: 50%;
   box-shadow: inset 0 0 0 2px rgba(255, 255, 255, 0.7);
-}
-.avatar-text {
-  flex: 1;
-  display: flex;
-  flex-direction: column;
-  font-size: 14px;
 }
 .join .preview {
   position: relative;
