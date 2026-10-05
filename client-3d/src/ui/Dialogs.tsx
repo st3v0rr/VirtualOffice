@@ -1,10 +1,10 @@
 import { useEffect, useRef, useState, useSyncExternalStore, type ReactNode } from 'react'
 import { useGame } from '../state/game'
 import { network } from '../net/network'
-import { ScreenShareSession } from '@skyoffice/media'
+import { ScreenShareSession } from '@virtualoffice/media'
 import { DRINKS, type Drink } from '../avatar/motion'
 import { drink } from '../game/actions'
-import { computers, distanceTo } from '../game/interactables'
+import { distanceTo, interactablesOf } from '../game/interactables'
 import { me as myPlayer } from '../net/players'
 
 // Dialogs for the computers and the vending machine.
@@ -87,7 +87,7 @@ function ComputerDialog({ id, minimized }: { id: string; minimized: boolean }) {
   // leave the computer when walking away from it while minimized
   useEffect(() => {
     if (!minimized) return
-    const computer = computers.find((c) => c.id === id)
+    const computer = interactablesOf().computers.find((c) => c.id === id)
     const timer = window.setInterval(() => {
       if (computer && distanceTo(computer, myPlayer.x, myPlayer.z) > COMPUTER_LEAVE_DISTANCE)
         close()

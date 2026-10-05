@@ -1,8 +1,9 @@
 import { describe, expect, it } from 'vitest'
-import { findPath, isFree, move } from '../src/map/collision'
-import { office, tileAt, toWorld } from '../src/map/office'
+import { findPath, isFree, move } from '../src/map/walk'
+import { bundledOffice as office, tileAt, toWorld } from '../src/map/office'
 
-const spawn = toWorld(office.spawn.x, office.spawn.y)
+// the spawn on the wire (as the server sends it) is where the feet are in the world
+const spawn = toWorld(office.spawnPx.x, office.spawnPx.y)
 
 // every point along the line is walkable (finer than the collision grid)
 const segmentFree = (a: { x: number; z: number }, b: { x: number; z: number }) => {
@@ -15,10 +16,11 @@ const segmentFree = (a: { x: number; z: number }, b: { x: number; z: number }) =
 
 describe('isFree', () => {
   it('the spawn is free, walls and the void are not', () => {
-    expect(tileAt(Math.floor(spawn.x), Math.floor(spawn.z))).toBe('f')
+    expect(spawn).toEqual(office.spawn)
+    expect(tileAt(office, Math.floor(spawn.x), Math.floor(spawn.z))).toBe('f')
     expect(isFree(spawn.x, spawn.z)).toBe(true)
     // the corridor wall left of the spawn (row 16, column 33)
-    expect(tileAt(33, 16)).toBe('#')
+    expect(tileAt(office, 33, 16)).toBe('#')
     expect(isFree(33.5, 16.5)).toBe(false)
     expect(isFree(-5, -5)).toBe(false)
     expect(isFree(office.width + 1, 3)).toBe(false)
@@ -73,7 +75,7 @@ describe('findPath (click to walk)', () => {
 
   it('finds a walkable way to every chair', () => {
     for (const chair of office.chairs) {
-      const target = { x: chair.x / office.tileSize, z: (chair.y + 16) / office.tileSize }
+      const target = { x: chair.x, z: chair.z }
       const path = findPath(spawn.x, spawn.z, target.x, target.z)
       expect(path, `chair ${chair.id}`).not.toBeNull()
       let from = spawn

@@ -1,0 +1,523 @@
+/* ---------- the map editor (/?editor), on top of the variables of index.css ---------- */
+
+.map-editor {
+  position: absolute;
+  inset: 0;
+  display: grid;
+  grid-template-columns: 250px minmax(0, 1fr) 310px;
+  grid-template-rows: auto minmax(0, 1fr) auto;
+  grid-template-areas:
+    'head head head'
+    'palette main inspector'
+    'status status status';
+  background: radial-gradient(circle at 30% 20%, #fdf1f7 0%, #e9eefc 55%, #dfe7f7 100%);
+  font-size: 14px;
+}
+.map-editor.loading {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+.map-editor h1 {
+  margin: 0;
+  font-size: 18px;
+  white-space: nowrap;
+}
+.map-editor h1 span {
+  color: #a98ae0;
+}
+.map-editor h2 {
+  margin: 0 0 8px;
+  font-size: 13px;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  color: var(--muted);
+}
+.map-editor h3 {
+  margin: 10px 0 6px;
+  font-size: 12px;
+  color: var(--muted);
+}
+.map-editor button {
+  padding: 4px 10px;
+  font-size: 13px;
+}
+.map-editor button:disabled {
+  opacity: 0.45;
+  cursor: default;
+  transform: none;
+}
+.map-editor button.danger {
+  border-color: #f4b8bf;
+  color: #c2414f;
+}
+.map-editor .muted {
+  color: var(--muted);
+}
+.map-editor .center {
+  text-align: center;
+  margin-top: 40px;
+}
+.map-editor code {
+  font-size: 12px;
+  background: rgba(201, 167, 245, 0.18);
+  border-radius: 6px;
+  padding: 0 4px;
+}
+
+.map-editor-head {
+  grid-area: head;
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px 16px;
+  padding: 8px 14px;
+  background: rgba(255, 250, 245, 0.92);
+  border-bottom: 2px solid var(--line);
+}
+.map-editor-head .map-name {
+  font-weight: 700;
+  max-width: 260px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.map-editor-toolbar {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+.map-editor-head .back {
+  margin-left: auto;
+  color: var(--ink);
+  font-weight: 700;
+}
+
+.map-editor-panel {
+  overflow-y: auto;
+  padding: 12px;
+  background: rgba(255, 250, 245, 0.75);
+}
+.map-editor-panel section {
+  margin-bottom: 16px;
+}
+.map-editor-palette {
+  grid-area: palette;
+  border-right: 2px solid var(--line);
+}
+.map-editor-inspector {
+  grid-area: inspector;
+  border-left: 2px solid var(--line);
+}
+
+.tool-grid,
+.asset-list {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 6px;
+}
+.tool-grid button,
+.asset-list button,
+.tile-list button {
+  border-radius: 12px;
+  text-align: left;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  min-width: 0;
+}
+.asset-list button {
+  padding: 4px 6px;
+}
+.asset-icon {
+  font-size: 18px;
+}
+.asset-name {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  font-size: 12px;
+}
+.tile-list {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+.tile-swatch {
+  display: inline-block;
+  width: 18px;
+  height: 18px;
+  flex: none;
+  border-radius: 5px;
+  border: 1px solid rgba(74, 63, 85, 0.25);
+}
+.tile-swatch.wall {
+  background-image: repeating-linear-gradient(
+    45deg,
+    rgba(74, 63, 85, 0.18) 0 3px,
+    transparent 3px 6px
+  ) !important;
+  background-color: inherit;
+}
+.tile-swatch.void {
+  background: repeating-conic-gradient(#e8e2ef 0 25%, #fbf9fd 0 50%) 50% / 8px 8px;
+}
+.catalog input[type='search'] {
+  width: 100%;
+  border: 2px solid var(--line);
+  border-radius: 12px;
+  padding: 5px 10px;
+}
+
+.map-editor-main {
+  grid-area: main;
+  position: relative;
+  overflow: auto;
+}
+.canvas-controls {
+  position: sticky;
+  left: 12px;
+  bottom: 12px;
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  margin: 0 12px 12px;
+  padding: 6px 10px;
+  background: rgba(255, 250, 245, 0.92);
+  border: 2px solid var(--line);
+  border-radius: 999px;
+}
+.preview3d {
+  position: absolute;
+  inset: 0;
+}
+
+.map-editor-status {
+  grid-area: status;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px 16px;
+  align-items: center;
+  padding: 6px 14px;
+  background: rgba(255, 250, 245, 0.92);
+  border-top: 2px solid var(--line);
+}
+.map-editor-status .good {
+  color: #3c8a4f;
+  font-weight: 700;
+}
+.map-editor-status .warn {
+  color: #b7791f;
+  font-weight: 700;
+}
+.map-editor-status .bad,
+.map-editor-status .message.error {
+  color: #c2414f;
+  font-weight: 700;
+}
+
+/* ---------- inspector ---------- */
+
+.map-editor .field {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  margin-bottom: 8px;
+  font-size: 12px;
+  color: var(--muted);
+  min-width: 0;
+}
+.map-editor .field input,
+.map-editor .field select {
+  font-size: 14px;
+  color: var(--ink);
+  padding: 5px 8px;
+  border-radius: 10px;
+  width: 100%;
+}
+.map-editor .field input[type='number'] {
+  border: 2px solid var(--line);
+  background: white;
+}
+.map-editor .field.color input {
+  padding: 0;
+  height: 30px;
+}
+.map-editor .field-row {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 8px;
+}
+.map-editor .field-row.rotate {
+  display: flex;
+  align-items: center;
+  margin-bottom: 8px;
+}
+.map-editor .field-row.rotate span {
+  flex: 1;
+}
+.map-editor .check {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  margin-bottom: 8px;
+}
+.map-editor .buttons {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin-top: 6px;
+}
+.mask {
+  font-size: 12px;
+  color: var(--muted);
+  margin-bottom: 8px;
+}
+.mask-grid {
+  display: grid;
+  gap: 3px;
+  margin-top: 4px;
+}
+.mask-grid button {
+  width: 1.4em;
+  height: 1.4em;
+  padding: 0;
+  border-radius: 4px;
+}
+.mask-grid button.solid {
+  background: #c9a7f5;
+  border-color: #a98ae0;
+}
+.tile-types,
+.item-list,
+.problems {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+.tile-types li {
+  display: grid;
+  grid-template-columns: 34px minmax(0, 1fr) auto;
+  align-items: end;
+  gap: 6px;
+}
+.tile-types input[type='color'] {
+  width: 32px;
+  height: 30px;
+  padding: 0;
+  margin-bottom: 8px;
+  border: none;
+  background: none;
+}
+.tile-types .tile-swatch {
+  margin: 0 7px 14px;
+}
+.tile-types button {
+  margin-bottom: 8px;
+}
+.item-list button {
+  width: 100%;
+  text-align: left;
+  border-radius: 10px;
+  margin-bottom: 4px;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+.item-list .dot {
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  flex: none;
+}
+.problems li {
+  padding: 6px 8px;
+  border-radius: 10px;
+  margin-bottom: 6px;
+  font-size: 12px;
+}
+.problems .error {
+  background: #ffe3e6;
+}
+.problems .warning {
+  background: #fff1d6;
+}
+.map-editor .ok {
+  color: #3c8a4f;
+  margin: 0;
+}
+.import-errors {
+  max-width: min(560px, 92vw);
+  max-height: 80vh;
+  overflow-y: auto;
+}
+
+/* ---------- the 2D map ---------- */
+
+.grid2d {
+  display: block;
+  margin: 20px;
+  touch-action: none;
+  user-select: none;
+  -webkit-user-select: none;
+  filter: drop-shadow(0 6px 16px rgba(90, 70, 120, 0.15));
+}
+.grid2d .void {
+  fill: #f7f3fb;
+}
+.grid2d .grid {
+  pointer-events: none;
+}
+.grid2d .grid-line {
+  fill: none;
+  stroke: rgba(74, 63, 85, 0.13);
+  stroke-width: 0.03;
+}
+.grid2d .wall-stripe {
+  fill: rgba(74, 63, 85, 0.16);
+}
+.grid2d .collision-overlay {
+  pointer-events: none;
+}
+.grid2d .collision-overlay .blocked {
+  fill: rgba(232, 72, 96, 0.3);
+}
+.grid2d .collision-overlay .unreachable {
+  fill: rgba(255, 170, 40, 0.5);
+}
+.grid2d .zone {
+  fill-opacity: 0.16;
+  stroke-width: 0.08;
+  stroke-dasharray: 0.3 0.2;
+  pointer-events: none;
+}
+.grid2d .zone-tag {
+  cursor: pointer;
+}
+.grid2d .zone-tag rect {
+  fill-opacity: 0.92;
+}
+.grid2d .zone-tag text {
+  fill: var(--ink);
+  font-weight: 700;
+  dominant-baseline: middle;
+}
+.grid2d .placement {
+  cursor: grab;
+}
+.grid2d .placement rect.solid {
+  stroke: rgba(74, 63, 85, 0.6);
+  stroke-width: 0.06;
+}
+.grid2d .placement rect.passable {
+  stroke: rgba(74, 63, 85, 0.5);
+  stroke-width: 0.05;
+  stroke-dasharray: 0.15 0.1;
+}
+.grid2d .placement.wall-mounted rect {
+  stroke-dasharray: 0.08 0.08;
+}
+.grid2d .placement .free-cell {
+  fill: rgba(255, 255, 255, 0.7);
+  stroke: rgba(74, 63, 85, 0.3);
+  stroke-width: 0.03;
+}
+.grid2d .placement .icon {
+  text-anchor: middle;
+  dominant-baseline: central;
+  pointer-events: none;
+}
+.grid2d .placement .front {
+  fill: rgba(74, 63, 85, 0.65);
+  pointer-events: none;
+}
+.grid2d .placement.selected > rect:first-child {
+  stroke: #8b5cf6;
+  stroke-width: 0.12;
+  stroke-dasharray: none;
+}
+.grid2d .selection > rect:first-child {
+  fill: none;
+  stroke: #a98ae0;
+  stroke-width: 0.08;
+  stroke-dasharray: 0.2 0.12;
+  pointer-events: none;
+}
+.grid2d .handle {
+  fill: white;
+  stroke: #8b5cf6;
+  stroke-width: 0.08;
+  cursor: nwse-resize;
+}
+.grid2d .label {
+  cursor: grab;
+}
+.grid2d .label rect {
+  fill: rgba(255, 255, 255, 0.9);
+  stroke: rgba(74, 63, 85, 0.35);
+  stroke-width: 0.04;
+}
+.grid2d .label.selected rect {
+  stroke: #8b5cf6;
+  stroke-width: 0.1;
+}
+.grid2d .label text {
+  text-anchor: middle;
+  dominant-baseline: central;
+  font-weight: 700;
+  fill: var(--ink);
+  pointer-events: none;
+}
+.grid2d .spawn {
+  cursor: grab;
+}
+.grid2d .spawn circle {
+  fill: white;
+  stroke: #f07f8a;
+  stroke-width: 0.1;
+}
+.grid2d .spawn.selected circle {
+  stroke: #8b5cf6;
+  stroke-width: 0.14;
+}
+.grid2d .spawn text {
+  text-anchor: middle;
+  dominant-baseline: central;
+  pointer-events: none;
+}
+.grid2d .hatch-bg {
+  fill: rgba(255, 154, 162, 0.3);
+}
+.grid2d .hatch-stripe {
+  fill: rgba(240, 127, 138, 0.65);
+}
+.grid2d .ghost {
+  fill: rgba(201, 167, 245, 0.35);
+  stroke: #a98ae0;
+  stroke-width: 0.06;
+  stroke-dasharray: 0.15 0.1;
+  pointer-events: none;
+}
+.grid2d .drawing {
+  fill: rgba(143, 211, 232, 0.25);
+  stroke: #5aaecb;
+  stroke-width: 0.08;
+  stroke-dasharray: 0.2 0.12;
+  pointer-events: none;
+}
+
+@media (max-width: 1000px) {
+  .map-editor {
+    grid-template-columns: 200px minmax(0, 1fr);
+    grid-template-rows: auto minmax(0, 1fr) minmax(0, 35vh) auto;
+    grid-template-areas:
+      'head head'
+      'palette main'
+      'inspector inspector'
+      'status status';
+  }
+  .map-editor-inspector {
+    border-left: none;
+    border-top: 2px solid var(--line);
+  }
+}

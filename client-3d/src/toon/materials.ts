@@ -47,19 +47,3 @@ export function flat(color: string, opacity = 1) {
 }
 
 export const OUTLINE_COLOR = '#4a3f55'
-
-// Makes a colour softer: mix with white and lower the saturation. Used for colours
-// sampled from the pixel art tiles, which are much darker and more saturated than
-// the pastel palette of the 3D office.
-export function pastel(hex: string, amount = 0.45) {
-  const c = new THREE.Color(hex)
-  const hsl = { h: 0, s: 0, l: 0 }
-  c.getHSL(hsl)
-  if (hsl.s < 0.12) {
-    // greys become a soft lavender
-    c.setHSL(0.72, 0.22, hsl.l + (1 - hsl.l) * amount)
-  } else {
-    c.setHSL(hsl.h, Math.min(Math.max(hsl.s * 1.1, 0.35), 0.65), hsl.l + (1 - hsl.l) * amount)
-  }
-  return `#${c.getHexString()}`
-}

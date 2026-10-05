@@ -4,8 +4,8 @@ import * as THREE from 'three'
 import Chibi from '../avatar/Chibi'
 import { useTagAnchor } from './TagLayer'
 import { useGame } from '../state/game'
-import { office, toWorld, toMap, chairSitPosition } from '../map/office'
-import { move, isFree } from '../map/collision'
+import { getOffice, toMap, chairSitPosition } from '../map/office'
+import { move, isFree } from '../map/walk'
 import { createPathQueue } from '../map/pathRequestQueue'
 import { findPathInWorker } from '../map/pathWorkerTransport'
 import { me, toAnim } from '../net/players'
@@ -14,7 +14,7 @@ import { intent } from '../game/intent'
 import { clock, playEmote, toggleHand } from '../game/actions'
 import { emoteForKey, HAND_KEY } from '../game/emotes'
 import {
-  chairs,
+  interactablesOf,
   findNearby,
   approachPoint,
   distanceTo,
@@ -77,7 +77,7 @@ export default function LocalPlayer() {
 
   // start at the spawn point of the map
   useEffect(() => {
-    const spawn = toWorld(office.spawn.x, office.spawn.y)
+    const { spawn } = getOffice()
     me.x = spawn.x
     me.z = spawn.z
     me.rot = 0
@@ -121,7 +121,7 @@ export default function LocalPlayer() {
     const game = useGame.getState()
 
     const sitOn = (chairId: string) => {
-      const chair = chairs.find((ch) => ch.id === chairId)
+      const chair = interactablesOf().chairs.find((ch) => ch.id === chairId)
       if (!chair || chairOccupant(chairId)) return
       me.sittingOn = chairId
       me.x = chair.x
@@ -134,7 +134,7 @@ export default function LocalPlayer() {
       pendingUse.current = null
     }
     const standUp = () => {
-      const chair = chairs.find((ch) => ch.id === me.sittingOn)
+      const chair = interactablesOf().chairs.find((ch) => ch.id === me.sittingOn)
       me.sittingOn = null
       motion.state = 'idle'
       motion.since = now
@@ -276,7 +276,9 @@ export default function LocalPlayer() {
     // ---- network ----
     if (sessionId) {
       const texture = avatar.texture
-      const chair = me.sittingOn ? chairs.find((ch) => ch.id === me.sittingOn) : undefined
+      const chair = me.sittingOn
+        ? interactablesOf().chairs.find((ch) => ch.id === me.sittingOn)
+        : undefined
       if (chair) {
         const pos = chairSitPosition(chair.chair)
         network.sendPlayer({

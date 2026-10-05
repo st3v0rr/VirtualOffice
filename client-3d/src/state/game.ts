@@ -3,7 +3,7 @@ import type { Avatar } from '../avatar/avatar'
 import type { Emote } from '../avatar/motion'
 import { EMOTE_FX } from '../game/emotes'
 import { loadAvatar, DEFAULT_AVATAR } from '../avatar/avatar'
-import { loadMediaSettings } from '@skyoffice/media'
+import { loadMediaSettings } from '@virtualoffice/media'
 
 // React state of the 3D client. Positions are NOT in here: they change every frame and
 // live in mutable objects (see net/players.ts) that the scene reads in useFrame.

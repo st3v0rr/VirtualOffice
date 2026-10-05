@@ -6,7 +6,7 @@ import { useTagAnchor } from './TagLayer'
 import { createMotion, DRINK_DURATION } from '../avatar/motion'
 import type { Avatar } from '../avatar/avatar'
 import { remotes } from '../net/players'
-import { chairs } from '../game/interactables'
+import { interactablesOf } from '../game/interactables'
 
 // Another player: glides towards the last position from the server and plays the
 // animation its anim/state says. Players of the 2D client show up as their preset chibi.
@@ -32,7 +32,7 @@ export default function RemotePlayer({ id, avatar }: { id: string; avatar: Avata
     // snap sitting players onto the seat of their chair (the 2D client shifts them a bit)
     if (remote.state === 'sit') {
       let best = 0.6
-      for (const chair of chairs) {
+      for (const chair of interactablesOf().chairs) {
         const d = Math.hypot(chair.x - tx, chair.z - tz)
         if (d < best) {
           best = d

@@ -1,8 +1,11 @@
 import { afterEach, describe, expect, it } from 'vitest'
-import { chairOccupant, chairs, findNearby } from '../src/game/interactables'
+import { findPlacement, rotatePlacement } from '../src/editor/ops'
+import { chairOccupant, findNearby, interactablesOf } from '../src/game/interactables'
+import { compileOffice } from '../src/map/compile'
 import { me, remotes, type RemoteState } from '../src/net/players'
+import { tinyMap } from './fixtures/tinyMap'
 
-const chair = chairs[0]
+const chair = interactablesOf().chairs[0]
 const remote = (patch: Partial<RemoteState>): RemoteState => ({
   targetX: 0,
   targetZ: 0,
@@ -61,5 +64,22 @@ describe('findNearby', () => {
 
   it('offers no other chair while sitting', () => {
     expect(findNearby(chair.x, chair.z, chair.rot, true)?.kind).not.toBe('chair')
+  })
+})
+
+describe('a turned vending machine', () => {
+  // turning swaps the footprint; VendingMachine draws its upright size turned by the
+  // rotation at the centre, so it fills the same rectangle it is used and blocked by
+  it('is used in its turned footprint', () => {
+    const map = tinyMap()
+    map.placements.push({ id: 'vend-1', asset: 'vendingMachine', x: 1, y: 2, w: 1.5, h: 0.75 })
+    const turned = rotatePlacement(map, 'vend-1')
+    const footprint = { x: 1, y: 1, w: 0.75, h: 1.5 }
+    expect(findPlacement(turned, 'vend-1')).toMatchObject({ ...footprint, rotation: 90 })
+    const office = compileOffice(turned)
+    expect(interactablesOf(office).vendingMachines).toEqual([
+      { kind: 'vending', id: 'vend-1', x: 1.375, z: 1.75, rect: footprint },
+    ])
+    expect(office.blockers).toContainEqual(footprint)
   })
 })

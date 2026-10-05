@@ -5,10 +5,9 @@ import {
   type MediaSettings,
   type MediaStatus,
   type MediaTile,
-} from '@skyoffice/media'
+} from '@virtualoffice/media'
 import { getMediaLocation } from '../../../types/Media'
-import { toMap } from '../map/office'
-import { zones } from '../map/zones'
+import { getOffice, toMap } from '../map/office'
 import { remotes } from '../net/players'
 import { network } from '../net/network'
 import { useGame } from '../state/game'
@@ -69,7 +68,7 @@ function updateLocation() {
     const other = toMap(remote.targetX, remote.targetZ)
     distances.set(id, Math.hypot(other.x - x, other.y - y))
   }
-  const location = getMediaLocation(zones, x, y)
+  const location = getMediaLocation(getOffice().zonesPx, x, y)
   manager.updateLocation(location, distances)
   const quietZone = location === null
   if (quietZone !== game.quietZone) game.set({ quietZone })

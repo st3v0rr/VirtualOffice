@@ -3,7 +3,7 @@ import { useFrame, useThree } from '@react-three/fiber'
 import { OrthographicCamera } from '@react-three/drei'
 import * as THREE from 'three'
 import { Floor, Walls } from './walls'
-import Furniture from './furniture'
+import Furniture, { Models } from './furniture'
 import Baked from './Baked'
 import { useSettings } from '../state/settings'
 import { Chairs, Computers, VendingMachines } from './items'
@@ -13,7 +13,7 @@ import RemotePlayer from '../player/RemotePlayer'
 import { useGame } from '../state/game'
 import { me } from '../net/players'
 import { intent } from '../game/intent'
-import { office } from '../map/office'
+import { getOffice } from '../map/office'
 import { isTouchDevice } from '../device'
 import { defaultZoom } from './cameraZoom'
 
@@ -27,6 +27,7 @@ function CameraRig({ follow }: { follow: boolean }) {
   const gl = useThree((s) => s.gl)
   const size = useThree((s) => s.size)
   const zoom = useRef(defaultZoom(isTouchDevice))
+  const office = getOffice()
   const target = useRef(new THREE.Vector3(office.width / 2, 0, office.height / 2))
 
   useEffect(() => {
@@ -46,7 +47,7 @@ function CameraRig({ follow }: { follow: boolean }) {
   useFrame((_, delta) => {
     const dt = Math.min(delta, 0.1)
     // before joining: slowly show the whole office
-    const overview = Math.min(size.width / 62, size.height / 40)
+    const overview = Math.min(size.width / (office.width + 8), size.height / (office.height + 2))
     const goal = follow
       ? new THREE.Vector3(me.x, 0.5, me.z)
       : new THREE.Vector3(office.width / 2 + 2, 0, office.height / 2)
@@ -87,6 +88,7 @@ export default function Scene() {
         <Walls />
         <Furniture />
       </Baked>
+      <Models />
       <Chairs />
       <Computers />
       <VendingMachines />

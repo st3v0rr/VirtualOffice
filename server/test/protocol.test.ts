@@ -26,7 +26,7 @@ describe('Message numbers', () => {
   })
 })
 
-describe('officeMap (read from assets/map/map.json at start)', () => {
+describe('officeMap (read from assets/map/office.json at start)', () => {
   it('has the computers, the spawn and the zones', () => {
     expect(officeMap.computerIds.length).toBeGreaterThan(0)
     expect(new Set(officeMap.computerIds).size).toBe(officeMap.computerIds.length)

@@ -1,134 +1,33 @@
-import { memo } from 'react'
-import { office, wallFaceZ, type Component } from '../map/office'
-import { pastel } from '../toon/materials'
+import { lazy, memo, Suspense, type ReactNode } from 'react'
+import type { BuiltinAssetId } from '../../../types/map/catalog'
+import { rotationToRadians } from '../../../types/map/format'
+import { wallFaceZ, type FurnitureData, type TileRect } from '../map/office'
 import { Blob, Box, Cyl } from './parts'
 import { wallHeightAt } from './walls'
 import { useSettings } from '../state/settings'
+import { useOffice } from './officeContext'
 
-// Decoration of the Tiled map -> toy furniture.
-//
-// The extractor groups the decoration tiles of each layer into components (bounding
-// box + average colour). Here each component becomes a prefab:
-// 1. an explicit entry in PREFABS (keyed by "x,y" of the component in tiles), or
-// 2. a guess: green things are plants, things on the wall are pictures, everything
-//    else that blocks becomes a rounded box in its sampled (pastelised) colour.
-// Adding a new room in Tiled therefore works without touching this file; to make
-// something look nicer, add its position here.
-
-export type Kind =
-  | 'hidden'
-  | 'block'
-  | 'table'
-  | 'desk'
-  | 'poolTable'
-  | 'bookshelf'
-  | 'lowShelf'
-  | 'shelf'
-  | 'cabinet'
-  | 'plant'
-  | 'waterCooler'
-  | 'printer'
-  | 'boxes'
-  | 'globe'
-  | 'wallDecor'
-  | 'tv'
-
-const PREFABS: Record<string, Kind> = {
-  // conference room
-  '9.5,4': 'tv',
-  '2,20': 'plant',
-  '17,20': 'plant',
-  // lounge: pool table, drinks cabinet, water dispenser and the plants at the wall
-  '21,7': 'poolTable',
-  '29,7': 'cabinet',
-  '32,6': 'waterCooler',
-  '32,4': 'hidden',
-  '20,12': 'plant',
-  '24,12': 'plant',
-  '28,12': 'plant',
-  '20,10': 'hidden',
-  '24,10': 'hidden',
-  '28,10': 'hidden',
-  // boss office
-  '43,3': 'desk',
-  '44,4': 'hidden',
-  '37,3': 'cabinet',
-  '37,2': 'hidden',
-  '46,3': 'plant',
-  '46,1': 'hidden',
-  '45,6': 'hidden',
-  // pictures on the north wall of the open office
-  '34,8': 'wallDecor',
-  '36,8': 'wallDecor',
-  '39,8': 'wallDecor',
-  // open office: the desks are drawn by the computers
-  '43,14': 'hidden',
-  '46,14': 'hidden',
-  '44,15': 'hidden',
-  '43,22': 'hidden',
-  '44,23': 'hidden',
-  '39,10': 'waterCooler',
-  '46,10': 'shelf',
-  '52,10': 'plant',
-  '52,9': 'hidden',
-  '39,27': 'printer',
-  '39,26': 'hidden',
-  '50,27': 'boxes',
-  // meeting room
-  '23,20': 'table',
-  '23,19': 'hidden',
-  '20,17': 'shelf',
-  '20,15': 'hidden',
-  // library
-  '3,26': 'bookshelf',
-  '3,32': 'lowShelf',
-  '6,32': 'lowShelf',
-  '9,32': 'lowShelf',
-  '12,32': 'lowShelf',
-  '16,28': 'globe',
-  '18,28': 'desk',
-  '22,28': 'desk',
-  '26,28': 'desk',
-  '18,32': 'desk',
-  '22,32': 'desk',
-  '26,32': 'desk',
-  '2,34': 'plant',
-  '16,34': 'plant',
-}
-
-function isGreen(hex: string) {
-  const r = parseInt(hex.slice(1, 3), 16)
-  const g = parseInt(hex.slice(3, 5), 16)
-  const b = parseInt(hex.slice(5, 7), 16)
-  return g > r + 8 && g > b
-}
-
-export function classify(c: Component): Kind {
-  // positions are rounded to quarter tiles, some objects sit a few pixels off the grid
-  const q = (v: number) => Math.round(v * 4) / 4
-  const explicit = PREFABS[`${q(c.x)},${q(c.y)}`]
-  if (explicit) return explicit
-  // the Wall layer draws the front faces of walls, the 3D walls do that already
-  if (c.layer === 'Wall') return 'hidden'
-  if (isGreen(c.color)) return 'plant'
-  if (c.onWall) return 'wallDecor'
-  if (!c.collides) return 'hidden'
-  return 'block'
-}
+// The placements of the map as toy furniture: every built-in asset of the catalog
+// (types/map/catalog.ts) is a prefab made of rounded boxes, blobs and cylinders. Chairs,
+// computers and vending machines are drawn by items.tsx, glTF models of the map by
+// ModelPlacement.tsx.
 
 const WOOD = '#f1cfa3'
 const WOOD_DARK = '#d9a877'
 const BOOK_COLORS = ['#ff9aa2', '#ffd48a', '#b5e8a3', '#8fd3e8', '#c9a7f5', '#f7b7d2', '#9fb2ff']
 
-type PrefabProps = { c: Component }
+// the size of a prefab in its own orientation (front towards +z), and its place on the
+// map for the pseudo-random details
+type PrefabProps = { w: number; h: number; x: number; y: number }
 
 function Table({
-  c,
+  w: width,
+  h: depth,
   color = WOOD,
   height = 0.62,
 }: PrefabProps & { color?: string; height?: number }) {
-  const w = c.w - 0.12
-  const d = c.h - 0.12
+  const w = width - 0.12
+  const d = depth - 0.12
   const legX = w / 2 - 0.12
   const legZ = d / 2 - 0.12
   return (
@@ -187,8 +86,8 @@ function Books({
   return <>{books}</>
 }
 
-function Bookshelf({ c }: PrefabProps) {
-  // the Tiled shelf is 4 shelves of 3 tiles side by side
+function Bookshelf(c: PrefabProps) {
+  // segments of about 3 tiles side by side
   const segments = Math.max(1, Math.round(c.w / 3))
   const segW = c.w / segments
   const height = 1.55
@@ -214,7 +113,26 @@ function Bookshelf({ c }: PrefabProps) {
   )
 }
 
-function Plant({ c }: PrefabProps) {
+function LowShelf(c: PrefabProps) {
+  return (
+    <group>
+      <Box size={[c.w - 0.15, 0.7, c.h - 0.5]} position={[0, 0.35, -0.1]} color={WOOD} />
+      <Books width={c.w - 0.3} y={0.7} z={-0.1} seed={Math.round(c.x)} depth={0.4} />
+    </group>
+  )
+}
+
+function Shelf(c: PrefabProps) {
+  return (
+    <group position={[0, 0, (c.h - 0.6) / 2 - 0.1]}>
+      <Box size={[c.w - 0.12, 1.25, 0.55]} position={[0, 0.625, 0]} color="#e6e1ee" />
+      <Books width={c.w - 0.4} y={0.2} z={0.08} seed={Math.round(c.x + c.y)} />
+      <Books width={c.w - 0.4} y={0.72} z={0.08} seed={Math.round(c.x * 3)} />
+    </group>
+  )
+}
+
+function Plant(c: PrefabProps) {
   const big = c.w >= 2 || c.h >= 3
   const s = big ? 1.35 : 1
   return (
@@ -228,7 +146,7 @@ function Plant({ c }: PrefabProps) {
   )
 }
 
-function PoolTable({ c }: PrefabProps) {
+function PoolTable(c: PrefabProps) {
   const w = c.w - 0.2
   const d = c.h - 0.4
   return (
@@ -260,7 +178,8 @@ function PoolTable({ c }: PrefabProps) {
   )
 }
 
-function Cabinet({ c, height }: PrefabProps & { height: number }) {
+function Cabinet(c: PrefabProps) {
+  const height = c.h >= 2 ? 1.25 : 0.6
   const w = c.w - 0.12
   const d = Math.min(c.h - 0.12, 0.8)
   return (
@@ -295,14 +214,10 @@ function WaterCooler() {
   )
 }
 
-function Printer() {
+function Printer(c: PrefabProps) {
   return (
     <group>
-      <Table
-        c={{ x: 0, y: 0, w: 1.6, h: 1.2, color: '', collides: true, onWall: false, layer: '' }}
-        color="#e6e1ee"
-        height={0.45}
-      />
+      <Table {...c} w={1.6} h={1.2} color="#e6e1ee" height={0.45} />
       <Box size={[0.8, 0.35, 0.6]} position={[0, 0.68, 0]} color="#f5f0e6" />
       <Box size={[0.5, 0.03, 0.4]} position={[0, 0.87, 0.05]} color="#ffffff" outline={false} />
     </group>
@@ -346,15 +261,39 @@ function Globe() {
   )
 }
 
-function WallDecor({ c, tv }: PrefabProps & { tv?: boolean }) {
+// the paper and the book on a desk; the desk itself is drawn from its blocking parts
+function DeskTop() {
+  return (
+    <group>
+      <Box
+        size={[0.5, 0.03, 0.35]}
+        position={[0.1, 0.69, 0]}
+        color="#ffffff"
+        radius={0.01}
+        outline={false}
+      />
+      <Box
+        size={[0.02, 0.035, 0.36]}
+        position={[0.1, 0.7, 0]}
+        color="#c9a7f5"
+        radius={0.005}
+        outline={false}
+      />
+    </group>
+  )
+}
+
+// pictures and screens hang on the south face of the wall below their footprint
+function WallDecor({ item, tv }: { item: FurnitureData; tv?: boolean }) {
+  const office = useOffice()
   const lowWalls = useSettings((s) => s.lowWalls)
-  const faceZ = wallFaceZ(c)
-  const cx = c.x + c.w / 2
-  const wall = wallHeightAt(Math.floor(cx), faceZ - 1, lowWalls)
+  const faceZ = wallFaceZ(office, item)
+  const cx = item.x + item.w / 2
+  const wall = wallHeightAt(office, Math.floor(cx), faceZ - 1, lowWalls)
   // cut-away walls are too low for pictures
   if (wall < 1) return null
-  const w = Math.min(c.w, 2.4) - 0.2
-  const h = tv ? w * 0.56 : Math.min(c.h * 0.4, 0.7)
+  const w = Math.min(item.w, 2.4) - 0.2
+  const h = tv ? w * 0.56 : Math.min(item.h * 0.4, 0.7)
   const y = Math.min(wall - h / 2 - 0.15, 1.05)
   return (
     <group position={[cx, y, faceZ + 0.04]}>
@@ -367,7 +306,7 @@ function WallDecor({ c, tv }: PrefabProps & { tv?: boolean }) {
       <Box
         size={[w - 0.12, h - 0.12, 0.02]}
         position={[0, 0, 0.035]}
-        color={tv ? '#9fc7f0' : pastel(c.color, 0.35)}
+        color={tv ? '#9fc7f0' : (item.color ?? item.asset.color ?? '#ffd6e0')}
         radius={0.005}
         outline={false}
       />
@@ -375,134 +314,110 @@ function WallDecor({ c, tv }: PrefabProps & { tv?: boolean }) {
   )
 }
 
-// The blocking tiles inside a component, merged into rectangles (relative to the
-// component centre). Pieces like the L-shaped desk in the boss office aren't boxes.
-function blockerRects(c: Component) {
-  const inside = (x: number, y: number) =>
-    office.blockers.some(
-      (b) => b.x <= x + 0.01 && b.y <= y + 0.01 && b.x + b.w >= x + 0.99 && b.y + b.h >= y + 0.99
-    )
-  const x0 = Math.floor(c.x)
-  const y0 = Math.floor(c.y)
-  const w = Math.ceil(c.x + c.w) - x0
-  const h = Math.ceil(c.y + c.h) - y0
-  const free = Array.from({ length: h }, (_, y) =>
-    Array.from({ length: w }, (_, x) => inside(x0 + x, y0 + y))
-  )
-  const rects: { x: number; y: number; w: number; h: number }[] = []
-  for (let y = 0; y < h; y++)
-    for (let x = 0; x < w; x++) {
-      if (!free[y][x]) continue
-      let rw = 1
-      while (x + rw < w && free[y][x + rw]) rw++
-      let rh = 1
-      while (y + rh < h && free[y + rh].slice(x, x + rw).every(Boolean)) rh++
-      for (let yy = y; yy < y + rh; yy++) for (let xx = x; xx < x + rw; xx++) free[yy][xx] = false
-      rects.push({
-        x: x0 + x + rw / 2 - (c.x + c.w / 2),
-        y: y0 + y + rh / 2 - (c.y + c.h / 2),
-        w: rw,
-        h: rh,
-      })
-    }
-  // not a blocking component: use the whole bounding box
-  return rects.length ? rects : [{ x: 0, y: 0, w: c.w, h: c.h }]
+type FloorAsset = Exclude<
+  BuiltinAssetId,
+  'chair' | 'computer' | 'vendingMachine' | 'picture' | 'tv' | 'desk' | 'block' | 'blocker'
+>
+
+// the prefab of every built-in floor asset; the type makes sure none is missing
+const PREFABS: Record<FloorAsset, (props: PrefabProps) => ReactNode> = {
+  table: (c) => <Table {...c} />,
+  poolTable: PoolTable,
+  bookshelf: Bookshelf,
+  lowShelf: LowShelf,
+  shelf: Shelf,
+  cabinet: Cabinet,
+  boxes: Boxes,
+  printer: Printer,
+  waterCooler: WaterCooler,
+  plant: Plant,
+  globe: Globe,
 }
 
-const Prefab = memo(function Prefab({ c, kind }: { c: Component; kind: Kind }) {
-  switch (kind) {
-    case 'hidden':
-      return null
-    case 'wallDecor':
-      return <WallDecor c={c} />
-    case 'tv':
-      return <WallDecor c={c} tv />
+// the blocking parts of a desk or block, relative to the centre of the footprint
+function pieces(item: FurnitureData): TileRect[] {
+  const cx = item.x + item.w / 2
+  const cz = item.y + item.h / 2
+  return (item.solid ?? [item]).map((r) => ({
+    x: r.x + r.w / 2 - cx,
+    y: r.y + r.h / 2 - cz,
+    w: r.w,
+    h: r.h,
+  }))
+}
+
+export const Prefab = memo(function Prefab({ item }: { item: FurnitureData }) {
+  const id = item.asset.id
+  if (item.asset.model) return null
+  if (id === 'picture') return <WallDecor item={item} />
+  if (id === 'tv') return <WallDecor item={item} tv />
+  // invisible, it only blocks
+  if (id === 'blocker') return null
+
+  const turned = item.rotation === 90 || item.rotation === 270
+  const local: PrefabProps = {
+    w: turned ? item.h : item.w,
+    h: turned ? item.w : item.h,
+    x: item.x,
+    y: item.y,
   }
-  const inner = (() => {
-    switch (kind) {
-      case 'table':
-        return <Table c={c} />
-      case 'desk':
-        return (
-          <group>
-            {blockerRects(c).map((r, i) => (
-              <group key={i} position={[r.x, 0, r.y]}>
-                <Table c={{ ...c, w: r.w, h: r.h }} color="#f5dcb8" />
-              </group>
-            ))}
-            <Box
-              size={[0.5, 0.03, 0.35]}
-              position={[0.1, 0.69, 0]}
-              color="#ffffff"
-              radius={0.01}
-              outline={false}
-            />
-            <Box
-              size={[0.02, 0.035, 0.36]}
-              position={[0.1, 0.7, 0]}
-              color="#c9a7f5"
-              radius={0.005}
-              outline={false}
-            />
-          </group>
-        )
-      case 'poolTable':
-        return <PoolTable c={c} />
-      case 'bookshelf':
-        return <Bookshelf c={c} />
-      case 'lowShelf':
-        return (
-          <group>
-            <Box size={[c.w - 0.15, 0.7, c.h - 0.5]} position={[0, 0.35, -0.1]} color={WOOD} />
-            <Books width={c.w - 0.3} y={0.7} z={-0.1} seed={Math.round(c.x)} depth={0.4} />
-          </group>
-        )
-      case 'shelf':
-        return (
-          <group position={[0, 0, (c.h - 0.6) / 2 - 0.1]}>
-            <Box size={[c.w - 0.12, 1.25, 0.55]} position={[0, 0.625, 0]} color="#e6e1ee" />
-            <Books width={c.w - 0.4} y={0.2} z={0.08} seed={Math.round(c.x + c.y)} />
-            <Books width={c.w - 0.4} y={0.72} z={0.08} seed={Math.round(c.x * 3)} />
-          </group>
-        )
-      case 'cabinet':
-        return <Cabinet c={c} height={c.h >= 2 ? 1.25 : 0.6} />
-      case 'plant':
-        return <Plant c={c} />
-      case 'waterCooler':
-        return <WaterCooler />
-      case 'printer':
-        return <Printer />
-      case 'boxes':
-        return <Boxes />
-      case 'globe':
-        return <Globe />
-      default: {
-        const height = c.w * c.h <= 1 ? 0.55 : 0.7
-        return (
-          <group>
-            {blockerRects(c).map((r, i) => (
-              <Box
-                key={i}
-                size={[r.w - 0.1, height, r.h - 0.1]}
-                position={[r.x, height / 2, r.y]}
-                color={pastel(c.color)}
-              />
-            ))}
-          </group>
-        )
-      }
-    }
-  })()
-  return <group position={[c.x + c.w / 2, 0, c.y + c.h / 2]}>{inner}</group>
+  let parts = null
+  let inner = null
+  if (id === 'desk') {
+    // L-shaped desks (a collision mask) are drawn from their blocking parts
+    parts = pieces(item).map((r, i) => (
+      <group key={i} position={[r.x, 0, r.y]}>
+        <Table w={r.w} h={r.h} x={item.x} y={item.y} color="#f5dcb8" />
+      </group>
+    ))
+    inner = <DeskTop />
+  } else if (id === 'block') {
+    const height = item.w * item.h <= 1 ? 0.55 : 0.7
+    parts = pieces(item).map((r, i) => (
+      <Box
+        key={i}
+        size={[r.w - 0.1, height, r.h - 0.1]}
+        position={[r.x, height / 2, r.y]}
+        color={item.color ?? item.asset.color ?? '#d9d2ef'}
+      />
+    ))
+  } else {
+    const Render = PREFABS[id as FloorAsset]
+    if (!Render) return null
+    inner = <Render {...local} />
+  }
+  return (
+    <group position={[item.x + item.w / 2, 0, item.y + item.h / 2]}>
+      {parts}
+      {inner && <group rotation={[0, rotationToRadians(item.rotation), 0]}>{inner}</group>}
+    </group>
+  )
 })
 
 export default function Furniture() {
+  const office = useOffice()
   return (
     <group>
-      {office.components.map((c, i) => (
-        <Prefab key={i} c={c} kind={classify(c)} />
+      {office.furniture.map((item) => (
+        <Prefab key={item.id} item={item} />
       ))}
     </group>
+  )
+}
+
+const ModelPlacement = lazy(() => import('./ModelPlacement'))
+
+// glTF models registered by the map; they load after the scenery is baked, so they are
+// drawn on their own (see Scene)
+export function Models() {
+  const office = useOffice()
+  const models = office.furniture.filter((item) => item.asset.model)
+  if (!models.length) return null
+  return (
+    <Suspense fallback={null}>
+      {models.map((item) => (
+        <ModelPlacement key={item.id} item={item} />
+      ))}
+    </Suspense>
   )
 }

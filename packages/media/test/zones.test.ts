@@ -1,11 +1,14 @@
 import { readFileSync } from 'node:fs'
 import { describe, expect, it } from 'vitest'
 import { getMediaLocation } from '../../../types/Media'
-import { findZone, parseOfficeMap, type Zone } from '../../../types/OfficeMap'
+import { assertValidMap } from '../../../types/map/validate'
+import { findZone, officeMapInfo, type Zone } from '../../../types/OfficeMap'
 
 // the media rooms of the real office map: which room I'm in decides whom I hear
-const map = parseOfficeMap(
-  JSON.parse(readFileSync(new URL('../../../assets/map/map.json', import.meta.url), 'utf8'))
+const map = officeMapInfo(
+  assertValidMap(
+    JSON.parse(readFileSync(new URL('../../../assets/map/office.json', import.meta.url), 'utf8'))
+  )
 )
 const zone = (type: string) => map.zones.find((z) => z.type === type)!
 const center = (z: Zone) => ({ x: z.x + z.width / 2, y: z.y + z.height / 2 })

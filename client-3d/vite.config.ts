@@ -16,7 +16,12 @@ export default defineConfig({
       output: {
         codeSplitting: {
           groups: [
-            { name: 'three', test: /node_modules[\\/](three|@react-three|postprocessing)/ },
+            // without the glTF loader: it stays in the lazy chunk of world/ModelPlacement.tsx,
+            // loaded only for a map with models
+            {
+              name: 'three',
+              test: /node_modules[\\/](three(?![\\/]examples[\\/]jsm[\\/]loaders)|@react-three|postprocessing)/,
+            },
             { name: 'livekit', test: /node_modules[\\/]livekit-client/ },
           ],
         },

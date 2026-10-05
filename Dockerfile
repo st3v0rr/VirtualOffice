@@ -1,9 +1,9 @@
 # syntax=docker/dockerfile:1
-# VirtualOffice 3D demo: the Colyseus server, which also serves the built 3D client, on one
+# VirtualOffice: the Colyseus server, which also serves the built 3D client, on one
 # port (2567, HTTP and WebSocket). LiveKit (video chat) runs outside, see docker-compose.yml.
 #
-#   docker build -t virtualoffice-demo .
-#   docker run -p 2567:2567 virtualoffice-demo      -> http://localhost:2567
+#   docker build -t virtualoffice .
+#   docker run -p 2567:2567 virtualoffice           -> http://localhost:2567
 
 ARG NODE_VERSION=22
 
@@ -41,8 +41,9 @@ RUN npm ci --omit=dev --omit=optional --omit=peer --workspace server --no-audit 
 
 COPY --from=build /app/server/lib server/lib
 COPY --from=build /app/client-3d/dist client-3d/dist
-# the server reads the computers, the spawn and the media zones from the map
-COPY assets/map/map.json assets/map/map.json
+# the office map: the server validates it at start, uses its computers, spawn and media
+# zones, and serves it to the clients at /map.json (another map: OFFICE_MAP_PATH)
+COPY assets/map/office.json assets/map/office.json
 
 USER node
 EXPOSE 2567

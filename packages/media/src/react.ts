@@ -10,7 +10,7 @@ import {
 } from './mediaDevices'
 
 // React hooks for the camera/microphone setup
-// (import from '@skyoffice/media/react', the rest of the package works without React).
+// (import from '@virtualoffice/media/react', the rest of the package works without React).
 
 const emptyDeviceLists: MediaDeviceLists = { videoInputs: [], audioInputs: [], audioOutputs: [] }
 

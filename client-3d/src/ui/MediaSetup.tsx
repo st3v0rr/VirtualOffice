@@ -4,8 +4,8 @@ import {
   saveMediaSettings,
   supportsAudioOutputSelection,
   type MediaSettings,
-} from '@skyoffice/media'
-import { useMediaSetup } from '@skyoffice/media/react'
+} from '@virtualoffice/media'
+import { useMediaSetup } from '@virtualoffice/media/react'
 import { useGame } from '../state/game'
 import { setMyMedia } from '../media/media'
 import { DeviceSelect, MicLevel, Preview, activeDeviceIds, describeMediaError } from './mediaParts'

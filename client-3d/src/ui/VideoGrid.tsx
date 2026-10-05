@@ -1,5 +1,5 @@
 import { useEffect, useRef } from 'react'
-import { setAudioOutput } from '@skyoffice/media'
+import { setAudioOutput } from '@virtualoffice/media'
 import { useGame } from '../state/game'
 import { startMedia, stopMedia, useMedia, type MediaTile } from '../media/media'
 

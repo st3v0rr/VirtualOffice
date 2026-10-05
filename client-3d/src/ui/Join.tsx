@@ -6,14 +6,14 @@ import {
   saveMediaSettings,
   supportsAudioOutputSelection,
   type MediaSettings,
-} from '@skyoffice/media'
-import { useMediaSetup } from '@skyoffice/media/react'
+} from '@virtualoffice/media'
+import { useMediaSetup } from '@virtualoffice/media/react'
 import { useGame } from '../state/game'
 import { network } from '../net/network'
 import Chibi from '../avatar/Chibi'
 import { createMotion, type Motion } from '../avatar/motion'
 import type { Avatar } from '../avatar/avatar'
-import { office } from '../map/office'
+import { getOffice } from '../map/office'
 import { toAnim } from '../net/players'
 import { clearMyMedia, setMyMedia } from '../media/media'
 import { DeviceSelect, MicLevel, Preview, activeDeviceIds, describeMediaError } from './mediaParts'
@@ -152,7 +152,7 @@ export default function Join() {
     const joined = await network.join(
       trimmed,
       game.avatar,
-      { x: office.spawn.x, y: office.spawn.y, anim: toAnim(game.avatar.texture, 'idle', 0) },
+      { ...getOffice().spawnPx, anim: toAnim(game.avatar.texture, 'idle', 0) },
       target
     )
     // remembered for the next visit: which room, never its password

@@ -2,14 +2,14 @@ import { useEffect, useState, type CSSProperties, type RefObject } from 'react'
 import { useFrame, useThree } from '@react-three/fiber'
 import * as THREE from 'three'
 import { useGame } from '../state/game'
-import { ROOM_LABELS } from '../world/rooms'
+import { getOffice } from '../map/office'
 import { me } from '../net/players'
 import { useVoiceState } from '../media/media'
 import { EMOTE_FX } from '../game/emotes'
 
-// Name tags, speech bubbles and room signs as DOM on top of the canvas (so the text is
-// crisp and cheap). They are plain elements of the app positioned in one loop, instead
-// of a drei <Html> (a React root and a frame callback) per player.
+// Name tags, speech bubbles and room signs (the labels of the map) as DOM on top of the
+// canvas (so the text is crisp and cheap). They are plain elements of the app positioned
+// in one loop, instead of a drei <Html> (a React root and a frame callback) per player.
 
 const TAG_HEIGHT = 1.6
 // names are fully visible up to NAME_NEAR tiles away and gone NAME_FADE tiles later
@@ -172,7 +172,7 @@ export function TagProjector() {
       }
       place(el, p.x, p.y + TAG_HEIGHT, p.z)
     }
-    ROOM_LABELS.forEach((label, i) => {
+    getOffice().labels.forEach((label, i) => {
       const el = labelElements[i]
       if (el) place(el, label.x, 0.05, label.z)
     })
@@ -196,9 +196,9 @@ export function TagOverlay() {
 
   return (
     <div className="tag-layer">
-      {ROOM_LABELS.map((label, i) => (
-        <div key={label.name} className="anchor" ref={(el) => void (labelElements[i] = el)}>
-          <div className="room-label">{label.name}</div>
+      {getOffice().labels.map((label, i) => (
+        <div key={label.id} className="anchor" ref={(el) => void (labelElements[i] = el)}>
+          <div className="room-label">{label.text}</div>
         </div>
       ))}
       {entries.map(([id, name]) => (

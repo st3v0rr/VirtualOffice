@@ -8,6 +8,7 @@ import { DRINKS, EMOTES, type Drink, type Emote } from '../avatar/motion'
 import { toWorld } from '../map/office'
 import { useGame, pushChat, setHandUp, showBubble, showEffect, type LobbyRoom } from '../state/game'
 import { me, remotes, parseAnim, DIRECTION_ANGLE } from './players'
+import { serverEndpoint } from './endpoint'
 
 // how often my position is sent while moving, same as the 2D client (15 per second)
 const PLAYER_UPDATE_INTERVAL = 66
@@ -18,23 +19,6 @@ export type RoomTarget =
   | { kind: 'public' }
   | { kind: 'custom'; roomId: string; password?: string }
   | { kind: 'create'; name: string; description: string; password?: string }
-
-// set at run time by /config.js when the server serves the built client (Docker image)
-declare global {
-  interface Window {
-    __VIRTUALOFFICE_CONFIG__?: { serverUrl?: string }
-  }
-}
-
-function serverEndpoint() {
-  const protocol = window.location.protocol.replace('http', 'ws')
-  const config = window.__VIRTUALOFFICE_CONFIG__
-  // served by the Colyseus server: its URL, or else the same host and port as the page
-  if (config) return config.serverUrl || `${protocol}//${window.location.host}`
-  if (import.meta.env.VITE_SERVER_URL) return import.meta.env.VITE_SERVER_URL as string
-  // dev server: the Colyseus server on the same host
-  return `${protocol}//${window.location.hostname}:2567`
-}
 
 // the look of a player: its own avatar (3D client) or its 2D character as chibi
 function avatarOf(player: IPlayer): Avatar {

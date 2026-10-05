@@ -1,5 +1,5 @@
 {
-  "name": "@skyoffice/media",
+  "name": "@virtualoffice/media",
   "version": "1.0.0",
   "private": true,
   "description": "Video, audio and screen sharing via LiveKit for the 3D client",

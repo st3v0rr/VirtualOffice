@@ -1,8 +1,8 @@
 {
-  "name": "@skyoffice/server",
+  "name": "@virtualoffice/server",
   "version": "1.0.0",
   "private": true,
-  "description": "Colyseus server for SkyOffice",
+  "description": "Colyseus server for the VirtualOffice application",
   "license": "MIT",
   "type": "module",
   "scripts": {

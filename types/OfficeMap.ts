@@ -1,8 +1,11 @@
-// reads the parts of the Tiled map that both client and server need
+// the parts of the map that both the server and the clients need, in map pixels as they
+// go over the wire (see map/format.ts)
+import { findAsset } from './map/catalog.ts'
+import { tileToWire, type VirtualOfficeMap, type ZoneType } from './map/format.ts'
 
-export const ZONE_TYPES = ['meeting', 'focus', 'quiet', 'auditorium', 'stage'] as const
-export type ZoneType = (typeof ZONE_TYPES)[number]
+export { ZONE_TYPES, type ZoneType } from './map/format.ts'
 
+// a media zone in map pixels
 export type Zone = {
   id: string
   name: string
@@ -14,71 +17,34 @@ export type Zone = {
 }
 
 export type OfficeMap = {
+  // the ids of the computers, used as keys of the room state and in media room names
   computerIds: string[]
+  // where players appear, as a position on the wire
   spawn: { x: number; y: number }
   zones: Zone[]
 }
 
-type TiledProperty = { name: string; value: unknown }
+const px = (tiles: number, tileSize: number) => Math.round(tiles * tileSize * 1000) / 1000
 
-export type TiledObject = {
-  id: number
-  name?: string
-  type?: string
-  class?: string
-  x: number
-  y: number
-  width?: number
-  height?: number
-  gid?: number
-  properties?: TiledProperty[]
+export function zonesInPixels(map: VirtualOfficeMap): Zone[] {
+  return map.zones.map((zone) => ({
+    id: zone.id,
+    name: zone.name,
+    type: zone.type,
+    x: px(zone.x, map.tileSize),
+    y: px(zone.y, map.tileSize),
+    width: px(zone.w, map.tileSize),
+    height: px(zone.h, map.tileSize),
+  }))
 }
 
-type TiledLayer = { name: string; type: string; objects?: TiledObject[] }
-
-export type TiledMap = { layers: TiledLayer[] }
-
-// fallback for maps without a Spawn layer
-const DEFAULT_SPAWN = { x: 705, y: 500 }
-
-export function getProperty<T>(object: { properties?: unknown }, name: string) {
-  // Tiled exports properties as a list, some loaders turn them into an object
-  const { properties } = object
-  if (Array.isArray(properties)) {
-    return (properties as TiledProperty[]).find((property) => property.name === name)?.value as
-      T | undefined
-  }
-  return (properties as Record<string, unknown> | undefined)?.[name] as T | undefined
-}
-
-export function getObjects(map: TiledMap, layerName: string) {
-  return map.layers.find((layer) => layer.name === layerName)?.objects ?? []
-}
-
-function toZone(object: TiledObject): Zone | null {
-  // the zone type can be set as Tiled class/type or as a custom property
-  const type = object.class || object.type || getProperty<string>(object, 'type')
-  if (!ZONE_TYPES.includes(type as ZoneType) || !object.width || !object.height) return null
+export function officeMapInfo(map: VirtualOfficeMap): OfficeMap {
   return {
-    id: String(object.id),
-    name: object.name || type!,
-    type: type as ZoneType,
-    x: object.x,
-    y: object.y,
-    width: object.width,
-    height: object.height,
-  }
-}
-
-export function parseOfficeMap(map: TiledMap): OfficeMap {
-  const spawn = getObjects(map, 'Spawn')[0]
-  return {
-    // items are identified by their Tiled object id, so the ids stay stable when the map changes
-    computerIds: getObjects(map, 'Computer').map((object) => String(object.id)),
-    spawn: spawn ? { x: spawn.x, y: spawn.y } : DEFAULT_SPAWN,
-    zones: getObjects(map, 'Zones')
-      .map(toZone)
-      .filter((zone) => zone !== null),
+    computerIds: map.placements
+      .filter((p) => findAsset(map, p.asset)?.role === 'computer')
+      .map((p) => p.id),
+    spawn: tileToWire(map.spawn.x, map.spawn.y, map.tileSize),
+    zones: zonesInPixels(map),
   }
 }
 

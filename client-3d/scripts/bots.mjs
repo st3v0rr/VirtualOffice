@@ -7,17 +7,24 @@ import path from 'node:path'
 import { Client } from '@colyseus/sdk'
 // plain TypeScript without enums, so Node runs it directly (type stripping, Node >= 22.18)
 import { randomAvatar } from '../src/avatar/avatar.ts'
+import { ROTATION_DIRECTION } from '../../types/map/format.ts'
 
 const count = Number(process.argv[2] ?? 40)
 const endpoint = process.argv[3] ?? 'ws://localhost:2567'
 const seconds = Number(process.argv[4] ?? 120)
 
-const office = JSON.parse(
-  fs.readFileSync(
-    path.join(import.meta.dirname, '..', 'src', 'map', 'office.generated.json'),
-    'utf8'
-  )
-)
+// the map of the server the bots join, or else the one of this checkout
+async function loadMap() {
+  try {
+    const res = await fetch(`${endpoint.replace(/^ws/, 'http')}/map.json`)
+    if (res.ok) return await res.json()
+  } catch {
+    // an older server without /map.json
+  }
+  const file = path.join(import.meta.dirname, '..', '..', 'assets', 'map', 'office.json')
+  return JSON.parse(fs.readFileSync(file, 'utf8'))
+}
+const office = await loadMap()
 const any = (list) => list[Math.floor(Math.random() * list.length)]
 
 // message numbers of types/Messages.ts
@@ -27,11 +34,19 @@ const ADD_CHAT_MESSAGE = 6
 const UPDATE_PLAYER_AVATAR = 14
 const PLAYER_EMOTE = 15
 
-// the chairs of the conference room (the "auditorium" zone), in rows towards the stage
+// the chairs of the conference room (the "auditorium" zone), in rows towards the stage, as
+// map pixels of the chair's sprite centre (16 px above the seat) like the 2D client had them
 const hall = office.zones.find((z) => z.type === 'auditorium')
 const inHall = (x, y) =>
   x >= hall.x * 32 && x < (hall.x + hall.w) * 32 && y >= hall.y * 32 && y < (hall.y + hall.h) * 32
-const seats = office.chairs.filter((c) => inHall(c.x, c.y))
+const seats = office.placements
+  .filter((p) => p.asset === 'chair')
+  .map((p) => ({
+    x: (p.x + p.w / 2) * office.tileSize,
+    y: (p.y + p.h / 2) * office.tileSize - 16,
+    dir: ROTATION_DIRECTION[p.rotation ?? 0],
+  }))
+  .filter((c) => inHall(c.x, c.y))
 const SIT_SHIFT = { up: [0, 3], down: [0, 3], left: [0, -8], right: [0, -8] }
 
 const client = new Client(endpoint)

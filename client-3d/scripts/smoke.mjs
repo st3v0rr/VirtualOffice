@@ -4,21 +4,26 @@
 //   npm run build && npm run smoke                  starts server/lib with STATIC_DIR itself
 //   SMOKE_URL=http://localhost:2567 npm run smoke   tests a running server / container
 //
-// 1. HTTP: index.html, /config.js, the bundles, /healthz
+// 1. HTTP: index.html, /config.js, the bundles, /healthz, the office map (/map.json)
 // 2. WebSocket (Node, no browser): join the office, set a name, move, see the state
 // 3. Browser (headless Chromium): enter a name, join, the own player and name tag show up,
 //    walking with the keyboard moves it, no page or console errors; a screenshot is saved
 //    to SMOKE_SCREENSHOT (default smoke-artifacts/smoke.png)
+// 4. Map editor (?editor): loads the server's map, places, turns, moves and deletes assets,
+//    paints tiles, draws a zone, undo/redo, 3D preview, export, import (broken and valid),
+//    the draft survives a reload; screenshot smoke-artifacts/editor.png
 //
 // Chromium: CHROME_PATH, else Playwright's own (npx playwright-core install chromium), else
 // the system Chromium. Without any, step 3 is skipped with a note, unless SMOKE_BROWSER=1
 // demands it (CI).
 /* global document, window, __game -- used inside page.evaluate(), which runs in the browser */
 import { spawn } from 'node:child_process'
-import { existsSync, mkdirSync } from 'node:fs'
+import { existsSync, mkdirSync, readFileSync } from 'node:fs'
 import path from 'node:path'
 import { Client } from '@colyseus/sdk'
 import { chromium } from 'playwright-core'
+// plain TypeScript without enums, so Node runs it directly (type stripping, Node >= 22.18)
+import { parseMap } from '../../types/map/validate.ts'
 
 const root = path.resolve(import.meta.dirname, '..', '..')
 const screenshot = path.resolve(
@@ -93,6 +98,12 @@ for (const script of scripts) {
   const res = await fetch(`${base}${script}`)
   check(res.ok && Number(res.headers.get('content-length') ?? 1) > 0, `bundle ${script} loads`)
 }
+// the map the server uses, which the client draws
+const mapResponse = await fetch(`${base}/map.json`)
+const served = parseMap(mapResponse.ok ? await mapResponse.text() : '')
+const officeMap = served.ok ? served.map : null
+check(!!officeMap, `/map.json is a valid office map (${officeMap?.name ?? mapResponse.status})`)
+const mapComputers = officeMap?.placements.filter((p) => p.asset === 'computer').length ?? 0
 
 // ---- 2. WebSocket ----
 
@@ -107,10 +118,186 @@ try {
   const me = room.state.players.get(room.sessionId)
   check(me?.name === 'Smoke-Bot', 'WebSocket: joined the office and set the name')
   check(me?.x === 1100 && me?.y === 520, 'WebSocket: the server took the new position')
-  check(room.state.computers.size > 0, 'WebSocket: the room has the computers of the map')
+  check(
+    room.state.computers.size > 0 && room.state.computers.size === mapComputers,
+    `WebSocket: the room has the computers of the map (${room.state.computers.size})`
+  )
   await room.leave()
 } catch (error) {
   check(false, `WebSocket: join ${wsUrl} (${error?.message ?? error})`)
+}
+
+// ---- 4. the map editor (called from the browser part) ----
+
+async function editorSmoke(browser) {
+  const context = await browser.newContext({
+    viewport: { width: 1280, height: 800 },
+    acceptDownloads: true,
+  })
+  const page = await context.newPage()
+  const errors = []
+  page.on('pageerror', (error) => errors.push(`page error: ${error.message}`))
+  page.on('console', (message) => {
+    if (message.type() === 'error') errors.push(`console error: ${message.text()}`)
+  })
+  const waitFor = (locator, timeout = 10000) =>
+    locator
+      .waitFor({ timeout })
+      .then(() => true)
+      .catch(() => false)
+  try {
+    await page.goto(`${base}/?editor`)
+    const view = page.getByTestId('editor-map')
+    await view.waitFor({ timeout: 15000 })
+    const placements = page.locator('[data-kind=placement]')
+    const zones = page.locator('[data-kind=zone]')
+    const source = page.locator('.map-name')
+    const total = officeMap.placements.length
+    check(
+      (await placements.count()) === total &&
+        (await source.innerText()).includes('Karte des Servers'),
+      `Editor: shows the map of the server (${await placements.count()} of ${total} placements)`
+    )
+    // a point of the map (in tiles) on the screen
+    const at = async (x, y) => {
+      const box = await view.boundingBox()
+      return [
+        box.x + (x / officeMap.width) * box.width,
+        box.y + (y / officeMap.height) * box.height,
+      ]
+    }
+    const drag = async (from, to) => {
+      await page.mouse.move(...(await at(...from)))
+      await page.mouse.down()
+      await page.mouse.move(...(await at(...to)), { steps: 6 })
+      await page.mouse.up()
+    }
+
+    // assets come from the catalog: a plant on the corridor floor
+    await page.click('[data-asset=plant]')
+    await page.mouse.click(...(await at(35.5, 20.5)))
+    const plant = page.locator('[data-kind=placement][data-id=plant-10]')
+    check(
+      (await plant.count()) === 1 && (await placements.count()) === total + 1,
+      'Editor: places a plant from the catalog'
+    )
+
+    // a table: placed, turned (R) and deleted (Entf)
+    await page.click('[data-asset=table]')
+    await page.mouse.click(...(await at(35.5, 23)))
+    const table = page.locator('[data-kind=placement][data-id=table-3]')
+    const placed = (await table.count()) === 1
+    await page.keyboard.press('r')
+    const turned = await table.getAttribute('data-rotation')
+    await page.keyboard.press('Delete')
+    check(
+      placed && turned === '270' && (await table.count()) === 0,
+      `Editor: places, turns (R: ${turned}°) and deletes (Entf) a table`
+    )
+
+    // move the plant two tiles up by dragging it
+    await page.keyboard.press('v')
+    await drag([35.5, 20.5], [35.5, 18.5])
+    const y = await page.getByLabel('Y', { exact: true }).inputValue()
+    check(y === '18', `Editor: drags the plant (now at y = ${y})`)
+
+    // paint a wall tile, draw a media zone, undo and redo
+    await page.click('[data-tile="#"]')
+    await page.mouse.click(...(await at(35.5, 25.5)))
+    await page.click('[data-tool=zone]')
+    await drag([34.3, 10.3], [36.7, 11.7])
+    const drawn = await zones.count()
+    const inspector = await page.locator('.map-editor-inspector h2').first().textContent()
+    await page.keyboard.press('Control+z')
+    const undone = await zones.count()
+    await page.keyboard.press('Control+Shift+z')
+    const redone = await zones.count()
+    const z = officeMap.zones.length
+    check(
+      drawn === z + 1 && inspector.includes('Medienzone') && undone === z && redone === z + 1,
+      `Editor: draws a media zone, undo and redo (${drawn}, ${undone}, ${redone} zones; ${inspector})`
+    )
+
+    // the draft in 3D, drawn by the components of the office
+    await page.click('button:has-text("3D-Vorschau")')
+    const preview = await waitFor(page.locator('[data-testid=editor-preview] canvas'), 15000)
+    await page.waitForTimeout(500)
+    await page.click('button:has-text("2D")')
+    check(preview, 'Editor: shows the draft in the 3D preview')
+
+    // export: a valid file with every change
+    const [download] = await Promise.all([
+      page.waitForEvent('download'),
+      page.click('button:has-text("Exportieren")'),
+    ])
+    const exported = readFileSync(await download.path(), 'utf8')
+    const parsed = parseMap(exported)
+    const map = parsed.ok ? parsed.map : null
+    const moved = map?.placements.find((p) => p.id === 'plant-10')
+    check(
+      !!map &&
+        download.suggestedFilename() === 'virtualoffice.json' &&
+        moved?.x === 35 &&
+        moved?.y === 18 &&
+        map.tiles[25][35] === '#' &&
+        map.zones.length === z + 1 &&
+        !map.placements.some((p) => p.id === 'table-3'),
+      `Editor: exports the edited map as a valid file (${download.suggestedFilename()})`
+    )
+
+    // import: a broken file is refused with its problems, a valid one is taken
+    const input = page.getByTestId('editor-import')
+    await input.setInputFiles({
+      name: 'broken.json',
+      mimeType: 'application/json',
+      buffer: Buffer.from('{"format":"virtualoffice-map","version":1,"name":"Kaputt"}'),
+    })
+    const alert = page.getByRole('alertdialog', { name: 'Import fehlgeschlagen' })
+    const refused =
+      (await waitFor(alert, 5000)) && (await alert.locator('.problems li').count()) > 0
+    await alert.getByRole('button', { name: 'Schließen' }).click()
+    check(
+      refused && (await placements.count()) === total + 1,
+      'Editor: refuses a broken file and lists its problems'
+    )
+    await input.setInputFiles({
+      name: 'smoke.json',
+      mimeType: 'application/json',
+      buffer: Buffer.from(exported.replace('"name": "VirtualOffice"', '"name": "Smoke-Büro"')),
+    })
+    check(
+      await waitFor(source.filter({ hasText: 'Smoke-Büro' }), 5000),
+      'Editor: imports a valid file'
+    )
+
+    // the draft is kept in the browser
+    await page.waitForTimeout(700)
+    await page.reload()
+    await view.waitFor({ timeout: 15000 })
+    const draft = await source.innerText()
+    check(
+      draft.includes('Smoke-Büro') &&
+        draft.includes('Lokaler Entwurf') &&
+        (await plant.count()) === 1,
+      `Editor: the draft survives a reload (${draft})`
+    )
+    mkdirSync(path.dirname(screenshot), { recursive: true })
+    await page.screenshot({ path: path.join(path.dirname(screenshot), 'editor.png') })
+
+    // back to the map of the server, the draft is gone
+    await page.click('button:has-text("Karte des Servers laden")')
+    await waitFor(source.filter({ hasText: 'Karte des Servers' }), 5000)
+    await page.reload()
+    await view.waitFor({ timeout: 15000 })
+    check(
+      (await placements.count()) === total &&
+        (await source.innerText()).includes('Karte des Servers'),
+      'Editor: loading the map of the server drops the draft'
+    )
+    check(errors.length === 0, `Editor: no page or console errors ${errors.join('; ')}`)
+  } finally {
+    await context.close()
+  }
 }
 
 // ---- 3. Browser ----
@@ -480,6 +667,9 @@ if (!executablePath) {
     } finally {
       await mobileContext.close()
     }
+
+    if (officeMap) await editorSmoke(browser)
+    else check(false, 'Editor: no map from the server to test with')
   } catch (error) {
     check(false, `Browser: ${error?.message ?? error}`)
   } finally {

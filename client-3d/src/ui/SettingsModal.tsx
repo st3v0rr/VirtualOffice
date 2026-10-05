@@ -144,6 +144,12 @@ export default function SettingsModal() {
               />
               FPS-Anzeige
             </label>
+            <div className="settings-field">
+              <a href={`${import.meta.env.BASE_URL}?editor`} target="_blank" rel="noopener">
+                🗺️ Karteneditor öffnen
+              </a>
+              <small className="muted">Die Büro-Karte im Browser bearbeiten (neuer Tab)</small>
+            </div>
           </section>
           <section aria-labelledby="controls-section">
             <h3 id="controls-section">Steuerung</h3>

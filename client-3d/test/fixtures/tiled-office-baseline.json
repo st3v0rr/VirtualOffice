@@ -1,0 +1,1090 @@
+{
+  "about": "Runtime data of the office before the migration to the native map format: computed by the 3D client from the Tiled map (assets/map/map.json via extract-map) and by the server from the same file. The quarter-tile collision grid is one hex string per row (4 cells per digit, 1 = blocked).",
+  "width": 54,
+  "height": 38,
+  "rows": [
+    "......................................................",
+    ".................................###############......",
+    ".................................###############......",
+    ".................................#fffffffffffff#......",
+    ".#################################fffffffffffff#......",
+    ".#################################fffffffffffff#......",
+    ".#fffffffffffffffff#fffffffffffff#fffffffffffff#......",
+    ".#fffffffffffffffff#fffffffffffff#fffffffffffff#......",
+    ".#fffffffffffffffff#fffffffffffff#fffffffffffff#######",
+    ".#fffffffffffffffff#fffffffffffff##f##################",
+    ".#fffffffffffffffff#fffffffffffff#ffff#ffffffffffffff#",
+    ".#fffffffffffffffff#######f#######ffff#ffffffffffffff#",
+    ".#ffffffffffffffffffffffffffffffffffff#ffffffffffffff#",
+    ".#fffffffffffffffffffffffffffffffffffffffffffffffffff#",
+    ".#fffffffffffffffffffffffffffffffffffffffffffffffffff#",
+    ".#fffffffffffffffff#ffffffffffffffffff#ffffffffffffff#",
+    ".#fffffffffffffffff#######f#######ffff#ffffffffffffff#",
+    ".#fffffffffffffffff#fffffffffffff#ffff#ffffffffffffff#",
+    ".#fffffffffffffffff#fffffffffffff#ffff#ffffffffffffff#",
+    ".#fffffffffffffffff#fffffffffffff#ffff#ffffffffffffff#",
+    ".#fffffffffffffffff#fffffffffffff#ffff#ffffffffffffff#",
+    ".#fffffffffffffffff#fffffffffffff#ffff#ffffffffffffff#",
+    ".#fffffffffffffffff#fffffffffffff#ffff#ffffffffffffff#",
+    ".#fffffffffffffffff#fffffffffffff#ffff#ffffffffffffff#",
+    ".#################################ffff#ffffffffffffff#",
+    ".##############################fffffff#ffffffffffffff#",
+    ".#ffffffffffffffffffffffffffffffffffff#ffffffffffffff#",
+    ".#fffffffffffffffffffffffffffffff#ffff#ffffffffffffff#",
+    ".#fffffffffffffffffffffffffffffff######ffffffffffffff#",
+    ".#fffffffffffffffffffffffffffffff#....################",
+    ".#fffffffffffffffffffffffffffffff#....................",
+    ".#fffffffffffffffffffffffffffffff#....................",
+    ".#fffffffffffffffffffffffffffffff#....................",
+    ".#fffffffffffffffffffffffffffffff#....................",
+    ".#fffffffffffffffffffffffffffffff#....................",
+    ".#fffffffffffffffffffffffffffffff#....................",
+    ".#################################....................",
+    "......................................................"
+  ],
+  "blocked": [
+    "ffffffffffffffffffffffffffffffffffffffffffffffffffffff",
+    "ffffffffffffffffffffffffffffffffffffffffffffffffffffff",
+    "ffffffffffffffffffffffffffffffffffffffffffffffffffffff",
+    "ffffffffffffffffffffffffffffffffffffffffffffffffffffff",
+    "ffffffffffffffffffffffffffffffffffffffffffffffffffffff",
+    "ffffffffffffffffffffffffffffffffffffffffffffffffffffff",
+    "ffffffffffffffffffffffffffffffffffffffffffffffffffffff",
+    "ffffffffffffffffffffffffffffffffffffffffffffffffffffff",
+    "ffffffffffffffffffffffffffffffffffffffffffffffffffffff",
+    "ffffffffffffffffffffffffffffffffffffffffffffffffffffff",
+    "ffffffffffffffffffffffffffffffffffffffffffffffffffffff",
+    "ffffffffffffffffffffffffffffffffffffffffffffffffffffff",
+    "ffffffffffffffffffffffffffffffffff000f00000ff0ffffffff",
+    "ffffffffffffffffffffffffffffffffff000f00000ff0ffffffff",
+    "ffffffffffffffffffffffffffffffffff000f00000ff0ffffffff",
+    "ffffffffffffffffffffffffffffffffff000f00000ff0ffffffff",
+    "fffffffffffffffffffffffffffffffffffe0000000f000fffffff",
+    "fffffffffffffffffffffffffffffffffffe0000000f000fffffff",
+    "fffffffffffffffffffffffffffffffffffe0000000f000fffffff",
+    "fffffffffffffffffffffffffffffffffffe0000000f000fffffff",
+    "fffffffffffffffffffffffffffffffffffe0000000f000fffffff",
+    "fffffffffffffffffffffffffffffffffffe0000000f000fffffff",
+    "fffffffffffffffffffffffffffffffffffe0000000f000fffffff",
+    "fffffffffffffffffffffffffffffffffffe0000000f000fffffff",
+    "ff00000000000000000f000001fc0000fffe0000000ff00fffffff",
+    "ff00000000000000000f000001fc0000ff000000000ff00fffffff",
+    "ff00000000000000000f000001fc0000ff000000000ff00fffffff",
+    "ff00000000000000000f000000000000ff000000000ff00fffffff",
+    "ff00000000000000000f0ffff0000ff00f0000000000000fffffff",
+    "ff00000000000000000f0ffff0000ff00f0000000000000fffffff",
+    "ff00000000000000000f0ffff0000ff00f0000000000000fffffff",
+    "ff00000000000000000f0ffff0000ff00f0000000000000fffffff",
+    "ff00000000000000000f0ffff0000ff00f0000000000000fffffff",
+    "ff00000000000000000f0ffff0000ff00f0000000000000fffffff",
+    "ff00000000000000000f0ffff0000ff00f0000000000000fffffff",
+    "ff00000000000000000f0ffff0000ff00f0000000000000fffffff",
+    "ff00000000000000000f0ffff0000ff00ff0ffffffffffffffffff",
+    "ff00000000000000000f0ffff0000ff00ff0ffffffffffffffffff",
+    "ff00000000000000000f0ffff0000ff00ff0ffffffffffffffffff",
+    "ff00000000000000000f0ffff0000ff00ff0ffffffffffffffffff",
+    "ff00000000000000000f0ffff00000000f0000ff000000ff0000ff",
+    "ff00000000000000000f0000000000000f0000ff000000ff0000ff",
+    "ff00000000000000000f0000000000000f0000ff000000ff0000ff",
+    "ff00000000000000000f0000000000000f0000ff000000ff0000ff",
+    "ff00000000000000000fffffff0fffffff0000f00000000000000f",
+    "ff00000000000000000fffffff0fffffff0000f00000000000000f",
+    "ff00000000000000000fffffff0fffffff0000f00000000000000f",
+    "ff00000000000000000fffffff0fffffff0000f00000000000000f",
+    "ff000000000000000000f000f000f000000000f00000000000000f",
+    "ff000000000000000000f000f000f000000000f00000000000000f",
+    "ff000000000000000000f000f000f000000000f00000000000000f",
+    "ff000000000000000000f000f000f000000000f00000000000000f",
+    "ff000000000000000000000000000000000000000000000000000f",
+    "ff000000000000000000000000000000000000000000000000000f",
+    "ff000000000000000000000000000000000000000000000000000f",
+    "ff000000000000000000000000000000000000000000000000000f",
+    "ff000000000000000000000000000000000000000000000000000f",
+    "ff000000000000000000000000000000000000000000000000000f",
+    "ff000000000000000000000000000000000000000000000000000f",
+    "ff000000000000000000000000000000000000000000000000000f",
+    "ff00000000000000000f000000000000000000f00000ffffffffff",
+    "ff00000000000000000f000000000000000000f00000ffffffffff",
+    "ff00000000000000000f000000000000000000f00000ffffffffff",
+    "ff00000000000000000f000000000000000000f00000ffffffffff",
+    "ff00000000000000000fffffff0fffffff0000f00000ffffffffff",
+    "ff00000000000000000fffffff0fffffff0000f00000ffffffffff",
+    "ff00000000000000000fffffff0fffffff0000f00000ffffffffff",
+    "ff00000000000000000fffffff0fffffff0000f00000ffffffffff",
+    "ff00000000000000000fff00000000000f0000f00000000000000f",
+    "ff00000000000000000fff00000000000f0000f00000000000000f",
+    "ff00000000000000000fff00000000000f0000f00000000000000f",
+    "ff00000000000000000fff00000000000f0000f00000000000000f",
+    "ff00000000000000000f0000000000000f0000f00000000000000f",
+    "ff00000000000000000f0000000000000f0000f00000000000000f",
+    "ff00000000000000000f0000000000000f0000f00000000000000f",
+    "ff00000000000000000f0000000000000f0000f00000000000000f",
+    "ff00000000000000000f0000000000000f0000f00000000000000f",
+    "ff00000000000000000f0000000000000f0000f00000000000000f",
+    "ff00000000000000000f0000000000000f0000f00000000000000f",
+    "ff00000000000000000f0000000000000f0000f00000000000000f",
+    "ffff0000000000000fff000fffffff000f0000f00000000000000f",
+    "ffff0000000000000fff000fffffff000f0000f00000000000000f",
+    "ffff0000000000000fff000fffffff000f0000f00000000000000f",
+    "ffff0000000000000fff000fffffff000f0000f00000000000000f",
+    "ffff0000000000000fff000fffffff000f0000f00000000000000f",
+    "ffff0000000000000fff000fffffff000f0000f00000000000000f",
+    "ffff0000000000000fff000fffffff000f0000f00000000000000f",
+    "ffff0000000000000fff000fffffff000f0000f00000000000000f",
+    "ffff0000000000000fff0000000000000f0000f00000000000000f",
+    "ffff0000000000000fff0000000000000f0000f00000000000000f",
+    "ffff0000000000000fff0000000000000f0000f00000000000000f",
+    "ffff0000000000000fff0000000000000f0000f00000000000000f",
+    "ff00000000000000000f0000000000000f0000f00000ffffffffff",
+    "ff00000000000000000f0000000000000f0000f00000ffffffffff",
+    "ff00000000000000000f0000000000000f0000f00000ffffffffff",
+    "ff00000000000000000f0000000000000f0000f00000ffffffffff",
+    "ffffffffffffffffffffffffffffffffff0000f00000ffffffffff",
+    "ffffffffffffffffffffffffffffffffff0000f00000ffffffffff",
+    "ffffffffffffffffffffffffffffffffff0000f00000ffffffffff",
+    "ffffffffffffffffffffffffffffffffff0000f00000ffffffffff",
+    "fffffffffffffffffffffffffffffff0000000f00000000000000f",
+    "fffffffffffffffffffffffffffffff0000000f00000000000000f",
+    "fffffffffffffffffffffffffffffff0000000f00000000000000f",
+    "fffffffffffffffffffffffffffffff0000000f00000000000000f",
+    "ff0ffffffffffff00000000000000000000000f00000000000000f",
+    "ff0ffffffffffff00000000000000000000000f00000000000000f",
+    "ff0ffffffffffff00000000000000000000000f00000000000000f",
+    "ff0ffffffffffff00000000000000000000000f00000000000000f",
+    "ff0ffffffffffff000000000000000000f0000fff00000000000ff",
+    "ff0ffffffffffff000000000000000000f0000fff00000000000ff",
+    "ff0ffffffffffff000000000000000000f0000fff00000000000ff",
+    "ff0ffffffffffff000000000000000000f0000fff00000000000ff",
+    "ff0ffffffffffff0f0ff00ff00ff00000ffffffff000000000ffff",
+    "ff0ffffffffffff0f0ff00ff00ff00000ffffffff000000000ffff",
+    "ff0ffffffffffff0f0ff00ff00ff00000ffffffff000000000ffff",
+    "ff0ffffffffffff0f0ff00ff00ff00000ffffffff000000000ffff",
+    "ff0ffffffffffff0f0ff00ff00ff00000fffffffffffffffffffff",
+    "ff0ffffffffffff0f0ff00ff00ff00000fffffffffffffffffffff",
+    "ff0ffffffffffff0f0ff00ff00ff00000fffffffffffffffffffff",
+    "ff0ffffffffffff0f0ff00ff00ff00000fffffffffffffffffffff",
+    "ff0000000000000000000000000000000fffffffffffffffffffff",
+    "ff0000000000000000000000000000000fffffffffffffffffffff",
+    "ff0000000000000000000000000000000fffffffffffffffffffff",
+    "ff0000000000000000000000000000000fffffffffffffffffffff",
+    "ff0000000000000000000000000000000fffffffffffffffffffff",
+    "ff0000000000000000000000000000000fffffffffffffffffffff",
+    "ff0000000000000000000000000000000fffffffffffffffffffff",
+    "ff0000000000000000000000000000000fffffffffffffffffffff",
+    "ff0ff0ff0ff0ff0000ff00ff00ff00000fffffffffffffffffffff",
+    "ff0ff0ff0ff0ff0000ff00ff00ff00000fffffffffffffffffffff",
+    "ff0ff0ff0ff0ff0000ff00ff00ff00000fffffffffffffffffffff",
+    "ff0ff0ff0ff0ff0000ff00ff00ff00000fffffffffffffffffffff",
+    "ff0ff0ff0ff0ff0000ff00ff00ff00000fffffffffffffffffffff",
+    "ff0ff0ff0ff0ff0000ff00ff00ff00000fffffffffffffffffffff",
+    "ff0ff0ff0ff0ff0000ff00ff00ff00000fffffffffffffffffffff",
+    "ff0ff0ff0ff0ff0000ff00ff00ff00000fffffffffffffffffffff",
+    "fff0000000000000f0000000000000000fffffffffffffffffffff",
+    "fff0000000000000f0000000000000000fffffffffffffffffffff",
+    "fff0000000000000f0000000000000000fffffffffffffffffffff",
+    "fff0000000000000f0000000000000000fffffffffffffffffffff",
+    "fff0000000000000f0000000000000000fffffffffffffffffffff",
+    "fff0000000000000f0000000000000000fffffffffffffffffffff",
+    "fff0000000000000f0000000000000000fffffffffffffffffffff",
+    "fff0000000000000f0000000000000000fffffffffffffffffffff",
+    "ffffffffffffffffffffffffffffffffffffffffffffffffffffff",
+    "ffffffffffffffffffffffffffffffffffffffffffffffffffffff",
+    "ffffffffffffffffffffffffffffffffffffffffffffffffffffff",
+    "ffffffffffffffffffffffffffffffffffffffffffffffffffffff",
+    "ffffffffffffffffffffffffffffffffffffffffffffffffffffff",
+    "ffffffffffffffffffffffffffffffffffffffffffffffffffffff",
+    "ffffffffffffffffffffffffffffffffffffffffffffffffffffff",
+    "ffffffffffffffffffffffffffffffffffffffffffffffffffffff"
+  ],
+  "spawnPx": {
+    "x": 1153,
+    "y": 500
+  },
+  "computerIds": ["875", "876", "877", "878", "879"],
+  "zonesPx": [
+    {
+      "id": "1270",
+      "name": "Meeting Room",
+      "type": "meeting",
+      "x": 628,
+      "y": 515,
+      "width": 430,
+      "height": 260
+    },
+    {
+      "id": "1329",
+      "name": "Conference Room",
+      "type": "auditorium",
+      "x": 64,
+      "y": 192,
+      "width": 544,
+      "height": 576
+    },
+    {
+      "id": "1330",
+      "name": "Conference Room Stage",
+      "type": "stage",
+      "x": 160,
+      "y": 192,
+      "width": 352,
+      "height": 96
+    },
+    {
+      "id": "1435",
+      "name": "Library",
+      "type": "quiet",
+      "x": 64,
+      "y": 832,
+      "width": 992,
+      "height": 320
+    }
+  ],
+  "chairs": [
+    {
+      "id": "334",
+      "x": 24.5,
+      "z": 19.5,
+      "dir": "down"
+    },
+    {
+      "id": "335",
+      "x": 30.5,
+      "z": 21.5,
+      "dir": "left"
+    },
+    {
+      "id": "340",
+      "x": 22.5,
+      "z": 21.5,
+      "dir": "right"
+    },
+    {
+      "id": "342",
+      "x": 26.5,
+      "z": 19.5,
+      "dir": "down"
+    },
+    {
+      "id": "346",
+      "x": 31.5,
+      "z": 12.5,
+      "dir": "down"
+    },
+    {
+      "id": "347",
+      "x": 23.5,
+      "z": 12.5,
+      "dir": "down"
+    },
+    {
+      "id": "348",
+      "x": 22.5,
+      "z": 12.5,
+      "dir": "down"
+    },
+    {
+      "id": "349",
+      "x": 32.5,
+      "z": 12.5,
+      "dir": "down"
+    },
+    {
+      "id": "350",
+      "x": 44.5,
+      "z": 5.5,
+      "dir": "left"
+    },
+    {
+      "id": "361",
+      "x": 21.5,
+      "z": 12.5,
+      "dir": "down"
+    },
+    {
+      "id": "363",
+      "x": 30.5,
+      "z": 12.5,
+      "dir": "down"
+    },
+    {
+      "id": "364",
+      "x": 29.5,
+      "z": 12.5,
+      "dir": "down"
+    },
+    {
+      "id": "365",
+      "x": 28.5,
+      "z": 19.5,
+      "dir": "down"
+    },
+    {
+      "id": "438",
+      "x": 24.5,
+      "z": 22.5,
+      "dir": "up"
+    },
+    {
+      "id": "439",
+      "x": 26.5,
+      "z": 22.5,
+      "dir": "up"
+    },
+    {
+      "id": "440",
+      "x": 28.5,
+      "z": 22.5,
+      "dir": "up"
+    },
+    {
+      "id": "618",
+      "x": 51.5,
+      "z": 17.5,
+      "dir": "up"
+    },
+    {
+      "id": "619",
+      "x": 48.5,
+      "z": 17.5,
+      "dir": "up"
+    },
+    {
+      "id": "620",
+      "x": 45.5,
+      "z": 17.5,
+      "dir": "up"
+    },
+    {
+      "id": "621",
+      "x": 51.5,
+      "z": 14.5,
+      "dir": "down"
+    },
+    {
+      "id": "622",
+      "x": 48.5,
+      "z": 14.5,
+      "dir": "down"
+    },
+    {
+      "id": "677",
+      "x": 51.5,
+      "z": 22.5,
+      "dir": "down"
+    },
+    {
+      "id": "678",
+      "x": 48.5,
+      "z": 22.5,
+      "dir": "down"
+    },
+    {
+      "id": "679",
+      "x": 45.5,
+      "z": 22.5,
+      "dir": "down"
+    },
+    {
+      "id": "680",
+      "x": 51.5,
+      "z": 25.5,
+      "dir": "up"
+    },
+    {
+      "id": "681",
+      "x": 45.5,
+      "z": 25.5,
+      "dir": "up"
+    },
+    {
+      "id": "1079",
+      "x": 34.5,
+      "z": 3.5,
+      "dir": "down"
+    },
+    {
+      "id": "1080",
+      "x": 35.5,
+      "z": 3.5,
+      "dir": "down"
+    },
+    {
+      "id": "1081",
+      "x": 36.5,
+      "z": 3.5,
+      "dir": "down"
+    },
+    {
+      "id": "1251",
+      "x": 28.5,
+      "z": 8.3125,
+      "dir": "right"
+    },
+    {
+      "id": "1252",
+      "x": 28.5,
+      "z": 9.75,
+      "dir": "right"
+    },
+    {
+      "id": "1253",
+      "x": 31.5,
+      "z": 8.3125,
+      "dir": "left"
+    },
+    {
+      "id": "1254",
+      "x": 31.5,
+      "z": 9.75,
+      "dir": "left"
+    },
+    {
+      "id": "1271",
+      "x": 4.5,
+      "z": 12.5,
+      "dir": "up"
+    },
+    {
+      "id": "1272",
+      "x": 5.5,
+      "z": 12.5,
+      "dir": "up"
+    },
+    {
+      "id": "1273",
+      "x": 6.5,
+      "z": 12.5,
+      "dir": "up"
+    },
+    {
+      "id": "1274",
+      "x": 7.5,
+      "z": 12.5,
+      "dir": "up"
+    },
+    {
+      "id": "1275",
+      "x": 8.5,
+      "z": 12.5,
+      "dir": "up"
+    },
+    {
+      "id": "1276",
+      "x": 12.5,
+      "z": 12.5,
+      "dir": "up"
+    },
+    {
+      "id": "1277",
+      "x": 13.5,
+      "z": 12.5,
+      "dir": "up"
+    },
+    {
+      "id": "1278",
+      "x": 14.5,
+      "z": 12.5,
+      "dir": "up"
+    },
+    {
+      "id": "1279",
+      "x": 15.5,
+      "z": 12.5,
+      "dir": "up"
+    },
+    {
+      "id": "1280",
+      "x": 16.5,
+      "z": 12.5,
+      "dir": "up"
+    },
+    {
+      "id": "1281",
+      "x": 4.5,
+      "z": 14.5,
+      "dir": "up"
+    },
+    {
+      "id": "1282",
+      "x": 5.5,
+      "z": 14.5,
+      "dir": "up"
+    },
+    {
+      "id": "1283",
+      "x": 6.5,
+      "z": 14.5,
+      "dir": "up"
+    },
+    {
+      "id": "1284",
+      "x": 7.5,
+      "z": 14.5,
+      "dir": "up"
+    },
+    {
+      "id": "1285",
+      "x": 8.5,
+      "z": 14.5,
+      "dir": "up"
+    },
+    {
+      "id": "1286",
+      "x": 12.5,
+      "z": 14.5,
+      "dir": "up"
+    },
+    {
+      "id": "1287",
+      "x": 13.5,
+      "z": 14.5,
+      "dir": "up"
+    },
+    {
+      "id": "1288",
+      "x": 14.5,
+      "z": 14.5,
+      "dir": "up"
+    },
+    {
+      "id": "1289",
+      "x": 15.5,
+      "z": 14.5,
+      "dir": "up"
+    },
+    {
+      "id": "1290",
+      "x": 16.5,
+      "z": 14.5,
+      "dir": "up"
+    },
+    {
+      "id": "1291",
+      "x": 4.5,
+      "z": 16.5,
+      "dir": "up"
+    },
+    {
+      "id": "1292",
+      "x": 5.5,
+      "z": 16.5,
+      "dir": "up"
+    },
+    {
+      "id": "1293",
+      "x": 6.5,
+      "z": 16.5,
+      "dir": "up"
+    },
+    {
+      "id": "1294",
+      "x": 7.5,
+      "z": 16.5,
+      "dir": "up"
+    },
+    {
+      "id": "1295",
+      "x": 8.5,
+      "z": 16.5,
+      "dir": "up"
+    },
+    {
+      "id": "1296",
+      "x": 12.5,
+      "z": 16.5,
+      "dir": "up"
+    },
+    {
+      "id": "1297",
+      "x": 13.5,
+      "z": 16.5,
+      "dir": "up"
+    },
+    {
+      "id": "1298",
+      "x": 14.5,
+      "z": 16.5,
+      "dir": "up"
+    },
+    {
+      "id": "1299",
+      "x": 15.5,
+      "z": 16.5,
+      "dir": "up"
+    },
+    {
+      "id": "1300",
+      "x": 16.5,
+      "z": 16.5,
+      "dir": "up"
+    },
+    {
+      "id": "1301",
+      "x": 4.5,
+      "z": 18.5,
+      "dir": "up"
+    },
+    {
+      "id": "1302",
+      "x": 5.5,
+      "z": 18.5,
+      "dir": "up"
+    },
+    {
+      "id": "1303",
+      "x": 6.5,
+      "z": 18.5,
+      "dir": "up"
+    },
+    {
+      "id": "1304",
+      "x": 7.5,
+      "z": 18.5,
+      "dir": "up"
+    },
+    {
+      "id": "1305",
+      "x": 8.5,
+      "z": 18.5,
+      "dir": "up"
+    },
+    {
+      "id": "1306",
+      "x": 12.5,
+      "z": 18.5,
+      "dir": "up"
+    },
+    {
+      "id": "1307",
+      "x": 13.5,
+      "z": 18.5,
+      "dir": "up"
+    },
+    {
+      "id": "1308",
+      "x": 14.5,
+      "z": 18.5,
+      "dir": "up"
+    },
+    {
+      "id": "1309",
+      "x": 15.5,
+      "z": 18.5,
+      "dir": "up"
+    },
+    {
+      "id": "1310",
+      "x": 16.5,
+      "z": 18.5,
+      "dir": "up"
+    },
+    {
+      "id": "1399",
+      "x": 19,
+      "z": 28.5,
+      "dir": "down"
+    },
+    {
+      "id": "1404",
+      "x": 23,
+      "z": 28.5,
+      "dir": "down"
+    },
+    {
+      "id": "1409",
+      "x": 27,
+      "z": 28.5,
+      "dir": "down"
+    },
+    {
+      "id": "1414",
+      "x": 19,
+      "z": 32.5,
+      "dir": "down"
+    },
+    {
+      "id": "1419",
+      "x": 23,
+      "z": 32.5,
+      "dir": "down"
+    },
+    {
+      "id": "1424",
+      "x": 27,
+      "z": 32.5,
+      "dir": "down"
+    }
+  ],
+  "computers": [
+    {
+      "id": "875",
+      "x": 50,
+      "y": 15,
+      "w": 3,
+      "h": 2
+    },
+    {
+      "id": "876",
+      "x": 47,
+      "y": 15,
+      "w": 3,
+      "h": 2
+    },
+    {
+      "id": "877",
+      "x": 44,
+      "y": 15,
+      "w": 3,
+      "h": 2
+    },
+    {
+      "id": "878",
+      "x": 44,
+      "y": 23,
+      "w": 3,
+      "h": 2
+    },
+    {
+      "id": "879",
+      "x": 50,
+      "y": 23,
+      "w": 3,
+      "h": 2
+    }
+  ],
+  "vendingMachines": [
+    {
+      "id": "1262",
+      "x": 25.8125,
+      "y": 4.28125,
+      "w": 1.5,
+      "h": 2.25
+    }
+  ],
+  "labels": [
+    {
+      "text": "Konferenzsaal",
+      "x": 9.5,
+      "z": 7.5
+    },
+    {
+      "text": "Lounge",
+      "x": 26,
+      "z": 7
+    },
+    {
+      "text": "Chefbüro",
+      "x": 40,
+      "z": 4
+    },
+    {
+      "text": "Meetingraum",
+      "x": 26,
+      "z": 17.6
+    },
+    {
+      "text": "Großraumbüro",
+      "x": 46,
+      "z": 11.5
+    },
+    {
+      "text": "Bibliothek (Ruhe)",
+      "x": 17,
+      "z": 25.8
+    },
+    {
+      "text": "Flur",
+      "x": 30,
+      "z": 13
+    }
+  ],
+  "furniture": [
+    {
+      "asset": "picture",
+      "x": 37,
+      "y": 1,
+      "w": 2,
+      "h": 1
+    },
+    {
+      "asset": "cabinet",
+      "x": 37,
+      "y": 3,
+      "w": 1,
+      "h": 1
+    },
+    {
+      "asset": "desk",
+      "x": 43,
+      "y": 3,
+      "w": 2,
+      "h": 4
+    },
+    {
+      "asset": "plant",
+      "x": 46,
+      "y": 3,
+      "w": 1,
+      "h": 1
+    },
+    {
+      "asset": "tv",
+      "x": 9.5,
+      "y": 4,
+      "w": 2,
+      "h": 2
+    },
+    {
+      "asset": "plant",
+      "x": 29,
+      "y": 4,
+      "w": 2,
+      "h": 2
+    },
+    {
+      "asset": "waterCooler",
+      "x": 32,
+      "y": 6,
+      "w": 1,
+      "h": 1
+    },
+    {
+      "asset": "cabinet",
+      "x": 29,
+      "y": 7,
+      "w": 2,
+      "h": 3
+    },
+    {
+      "asset": "poolTable",
+      "x": 21,
+      "y": 7.03125,
+      "w": 4,
+      "h": 3
+    },
+    {
+      "asset": "picture",
+      "x": 34,
+      "y": 8,
+      "w": 1,
+      "h": 1
+    },
+    {
+      "asset": "picture",
+      "x": 34,
+      "y": 8,
+      "w": 1,
+      "h": 2
+    },
+    {
+      "asset": "picture",
+      "x": 36,
+      "y": 8,
+      "w": 11,
+      "h": 1
+    },
+    {
+      "asset": "picture",
+      "x": 36,
+      "y": 8,
+      "w": 2,
+      "h": 2
+    },
+    {
+      "asset": "picture",
+      "x": 39,
+      "y": 8,
+      "w": 3,
+      "h": 2
+    },
+    {
+      "asset": "picture",
+      "x": 50,
+      "y": 8,
+      "w": 2,
+      "h": 2
+    },
+    {
+      "asset": "waterCooler",
+      "x": 39,
+      "y": 10,
+      "w": 1,
+      "h": 1
+    },
+    {
+      "asset": "shelf",
+      "x": 46,
+      "y": 10,
+      "w": 2,
+      "h": 1
+    },
+    {
+      "asset": "plant",
+      "x": 52,
+      "y": 10,
+      "w": 1,
+      "h": 1
+    },
+    {
+      "asset": "plant",
+      "x": 20,
+      "y": 12,
+      "w": 1,
+      "h": 1
+    },
+    {
+      "asset": "plant",
+      "x": 24,
+      "y": 12,
+      "w": 1,
+      "h": 1
+    },
+    {
+      "asset": "plant",
+      "x": 28,
+      "y": 12,
+      "w": 1,
+      "h": 1
+    },
+    {
+      "asset": "shelf",
+      "x": 20,
+      "y": 17,
+      "w": 2,
+      "h": 1
+    },
+    {
+      "asset": "plant",
+      "x": 2,
+      "y": 20,
+      "w": 2,
+      "h": 3
+    },
+    {
+      "asset": "plant",
+      "x": 17,
+      "y": 20,
+      "w": 2,
+      "h": 3
+    },
+    {
+      "asset": "table",
+      "x": 23,
+      "y": 20,
+      "w": 7,
+      "h": 2
+    },
+    {
+      "asset": "bookshelf",
+      "x": 3,
+      "y": 26,
+      "w": 12,
+      "h": 4
+    },
+    {
+      "asset": "printer",
+      "x": 39,
+      "y": 27,
+      "w": 2,
+      "h": 2
+    },
+    {
+      "asset": "boxes",
+      "x": 50,
+      "y": 27,
+      "w": 3,
+      "h": 2
+    },
+    {
+      "asset": "globe",
+      "x": 16,
+      "y": 28,
+      "w": 1,
+      "h": 2
+    },
+    {
+      "asset": "desk",
+      "x": 18,
+      "y": 28,
+      "w": 2,
+      "h": 2
+    },
+    {
+      "asset": "desk",
+      "x": 22,
+      "y": 28,
+      "w": 2,
+      "h": 2
+    },
+    {
+      "asset": "desk",
+      "x": 26,
+      "y": 28,
+      "w": 2,
+      "h": 2
+    },
+    {
+      "asset": "lowShelf",
+      "x": 3,
+      "y": 32,
+      "w": 2,
+      "h": 2
+    },
+    {
+      "asset": "lowShelf",
+      "x": 6,
+      "y": 32,
+      "w": 2,
+      "h": 2
+    },
+    {
+      "asset": "lowShelf",
+      "x": 9,
+      "y": 32,
+      "w": 2,
+      "h": 2
+    },
+    {
+      "asset": "lowShelf",
+      "x": 12,
+      "y": 32,
+      "w": 2,
+      "h": 2
+    },
+    {
+      "asset": "desk",
+      "x": 18,
+      "y": 32,
+      "w": 2,
+      "h": 2
+    },
+    {
+      "asset": "desk",
+      "x": 22,
+      "y": 32,
+      "w": 2,
+      "h": 2
+    },
+    {
+      "asset": "desk",
+      "x": 26,
+      "y": 32,
+      "w": 2,
+      "h": 2
+    },
+    {
+      "asset": "plant",
+      "x": 2,
+      "y": 34,
+      "w": 1,
+      "h": 2
+    },
+    {
+      "asset": "plant",
+      "x": 16,
+      "y": 34,
+      "w": 1,
+      "h": 2
+    }
+  ]
+}

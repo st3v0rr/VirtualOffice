@@ -1,32 +1,42 @@
 import { useEffect, useMemo } from 'react'
 import * as THREE from 'three'
 import type { ThreeEvent } from '@react-three/fiber'
-import { flat, pastel } from '../toon/materials'
+import { rotationToRadians, type Rotation } from '../../../types/map/format'
+import { flat } from '../toon/materials'
 import { useGame } from '../state/game'
-import { chairs, computers, vendingMachines, type Interactable } from '../game/interactables'
+import {
+  interactablesOf,
+  type ComputerItem,
+  type Interactable,
+  type VendingItem,
+} from '../game/interactables'
 import { intent } from '../game/intent'
 import { Box, Cyl, Instanced, cylinder, roundedBox, type Instance } from './parts'
+import { useOffice } from './officeContext'
 
-// The usable things of the office. Clicking one walks there and uses it.
+// The usable things of the office. Clicking one walks there and uses it (not in the
+// editor's preview, which passes interactive={false}).
+
+type ItemsProps = { interactive?: boolean }
 
 const setCursor = (pointer: boolean) => {
   document.body.style.cursor = pointer ? 'pointer' : ''
 }
 
-function use(item: Interactable) {
-  return (e: ThreeEvent<PointerEvent>) => {
-    if (e.button !== 0) return
-    e.stopPropagation()
-    intent.use = item
+function itemEvents(item: Interactable, interactive: boolean) {
+  if (!interactive) return {}
+  return {
+    onClick: (e: ThreeEvent<MouseEvent>) => {
+      if (e.button !== 0) return
+      e.stopPropagation()
+      intent.use = item
+    },
+    onPointerOver: (e: ThreeEvent<PointerEvent>) => (e.stopPropagation(), setCursor(true)),
+    onPointerOut: () => setCursor(false),
   }
 }
 
-const hover = {
-  onPointerOver: (e: ThreeEvent<PointerEvent>) => (e.stopPropagation(), setCursor(true)),
-  onPointerOut: () => setCursor(false),
-}
-
-// ---------- chairs: 79 of them, so every part is one instanced mesh ----------
+// ---------- chairs: dozens of them, so every part is one instanced mesh ----------
 
 const SEAT_Y = 0.28
 const seatGeometry = roundedBox(0.48, 0.1, 0.46, 0.04)
@@ -38,14 +48,16 @@ function rotate(x: number, z: number, angle: number): [number, number] {
   return [x * Math.cos(angle) + z * Math.sin(angle), -x * Math.sin(angle) + z * Math.cos(angle)]
 }
 
-export function Chairs() {
+export function Chairs({ interactive = true }: ItemsProps) {
+  const office = useOffice()
+  const { chairs } = interactablesOf(office)
   const parts = useMemo(() => {
     const seats: Instance[] = []
     const backs: Instance[] = []
     const poles: Instance[] = []
     const bases: Instance[] = []
     for (const c of chairs) {
-      const color = pastel(c.chair.color, 0.4)
+      const color = c.chair.color
       const [bx, bz] = rotate(0, -0.22, c.rot)
       seats.push({ position: [c.x, SEAT_Y, c.z], rotation: c.rot, color })
       backs.push({ position: [c.x + bx, SEAT_Y + 0.22, c.z + bz], rotation: c.rot, color })
@@ -53,15 +65,19 @@ export function Chairs() {
       bases.push({ position: [c.x, 0.025, c.z] })
     }
     return { seats, backs, poles, bases }
-  }, [])
+  }, [chairs])
 
-  const events = {
-    onClick: (i: number) => (intent.use = chairs[i]),
-    onPointerOver: () => setCursor(true),
-    onPointerOut: () => setCursor(false),
-  }
+  const events = interactive
+    ? {
+        onClick: (i: number) => (intent.use = chairs[i]),
+        onPointerOver: () => setCursor(true),
+        onPointerOut: () => setCursor(false),
+      }
+    : {}
+  if (!chairs.length) return null
   return (
-    <group>
+    // instanced meshes can't change their size: a new set when the number of chairs changes
+    <group key={chairs.length}>
       <Instanced geometry={seatGeometry} instances={parts.seats} {...events} />
       <Instanced geometry={backGeometry} instances={parts.backs} {...events} />
       <Instanced geometry={poleGeometry} instances={parts.poles} color="#b8b2c8" outline={false} />
@@ -159,7 +175,9 @@ function Monitor({ x, z, rot, busy, screen }: MonitorProps) {
   )
 }
 
-export function Computers() {
+export function Computers({ interactive = true }: ItemsProps) {
+  const office = useOffice()
+  const { chairs, computers } = interactablesOf(office)
   const itemUsers = useGame((s) => s.itemUsers)
   const screens = useGame((s) => s.screens)
   const layout = useMemo(
@@ -178,7 +196,7 @@ export function Computers() {
         if (!sides.size) sides.add('south')
         return { computer, sides: [...sides] }
       }),
-    []
+    [chairs, computers]
   )
 
   return (
@@ -190,6 +208,7 @@ export function Computers() {
           sides={sides}
           busy={(itemUsers[computer.id]?.length ?? 0) > 0}
           stream={screens[computer.id]}
+          interactive={interactive}
         />
       ))}
     </group>
@@ -197,19 +216,20 @@ export function Computers() {
 }
 
 type DeskProps = {
-  computer: (typeof computers)[number]
+  computer: ComputerItem
   sides: ('north' | 'south')[]
   busy: boolean
   stream: MediaStream | undefined
+  interactive: boolean
 }
 
-function Desk({ computer, sides, busy, stream }: DeskProps) {
+function Desk({ computer, sides, busy, stream, interactive }: DeskProps) {
   const screen = useScreenTexture(stream)
   const { rect } = computer
   const w = rect.w - 0.15
   const d = rect.h - 0.25
   return (
-    <group onClick={use(computer)} {...hover}>
+    <group {...itemEvents(computer, interactive)}>
       <group position={[computer.x, 0, computer.z]}>
         <Box size={[w, 0.08, d]} position={[0, 0.64, 0]} color="#f7e3c4" radius={0.03} />
         <Box
@@ -258,64 +278,83 @@ function Desk({ computer, sides, busy, stream }: DeskProps) {
   )
 }
 
-// ---------- the vending machine ----------
+// ---------- vending machines: stand in their footprint, the front facing their rotation ----------
 
 const CAN_COLORS = ['#ff9aa2', '#ffd48a', '#b5e8a3', '#8fd3e8', '#c9a7f5']
 const canGeometry = cylinder(0.045, 0.045, 0.12, 10)
 
-export function VendingMachines() {
+function VendingMachine({
+  machine,
+  rotation,
+  interactive,
+}: {
+  machine: VendingItem
+  rotation: Rotation
+  interactive: boolean
+}) {
+  const { rect } = machine
+  const turned = rotation === 90 || rotation === 270
+  const w = (turned ? rect.h : rect.w) - 0.05
+  const d = Math.max((turned ? rect.w : rect.h) - 0.05, 0.5)
+  return (
+    <group
+      position={[machine.x, 0, machine.z]}
+      rotation={[0, rotationToRadians(rotation), 0]}
+      {...itemEvents(machine, interactive)}
+    >
+      <Box size={[w, 1.75, d]} position={[0, 0.875, 0]} color="#ffb3c6" radius={0.08} />
+      <mesh
+        geometry={roundedBox(w * 0.62, 1.05, 0.03, 0.02)}
+        material={flat('#dff3ff')}
+        position={[-w * 0.12, 1.1, d / 2]}
+      />
+      {[0, 1, 2, 3].flatMap((row) =>
+        [0, 1, 2].map((col) => (
+          <mesh
+            key={`${row}-${col}`}
+            geometry={canGeometry}
+            material={flat(CAN_COLORS[(row + col) % CAN_COLORS.length])}
+            position={[-w * 0.12 + (col - 1) * 0.2, 0.75 + row * 0.24, d / 2 + 0.03]}
+          />
+        ))
+      )}
+      <Box
+        size={[0.2, 0.3, 0.05]}
+        position={[w * 0.33, 1.2, d / 2]}
+        color="#fff6ea"
+        outline={false}
+      />
+      <Box
+        size={[w * 0.6, 0.14, 0.05]}
+        position={[-w * 0.12, 0.3, d / 2]}
+        color="#5d6b8a"
+        outline={false}
+      />
+      <Cyl
+        top={0.04}
+        height={0.02}
+        position={[w * 0.33, 1.25, d / 2 + 0.03]}
+        rotation={[Math.PI / 2, 0, 0]}
+        color="#ffd48a"
+        outline={false}
+      />
+    </group>
+  )
+}
+
+export function VendingMachines({ interactive = true }: ItemsProps) {
+  const office = useOffice()
+  const { vendingMachines } = interactablesOf(office)
   return (
     <group>
-      {vendingMachines.map((machine) => {
-        const { rect } = machine
-        const w = rect.w - 0.05
-        const d = Math.max(rect.h - 0.05, 0.5)
-        return (
-          <group
-            key={machine.id}
-            position={[machine.x, 0, machine.z]}
-            onClick={use(machine)}
-            {...hover}
-          >
-            <Box size={[w, 1.75, d]} position={[0, 0.875, 0]} color="#ffb3c6" radius={0.08} />
-            <mesh
-              geometry={roundedBox(w * 0.62, 1.05, 0.03, 0.02)}
-              material={flat('#dff3ff')}
-              position={[-w * 0.12, 1.1, d / 2]}
-            />
-            {[0, 1, 2, 3].flatMap((row) =>
-              [0, 1, 2].map((col) => (
-                <mesh
-                  key={`${row}-${col}`}
-                  geometry={canGeometry}
-                  material={flat(CAN_COLORS[(row + col) % CAN_COLORS.length])}
-                  position={[-w * 0.12 + (col - 1) * 0.2, 0.75 + row * 0.24, d / 2 + 0.03]}
-                />
-              ))
-            )}
-            <Box
-              size={[0.2, 0.3, 0.05]}
-              position={[w * 0.33, 1.2, d / 2]}
-              color="#fff6ea"
-              outline={false}
-            />
-            <Box
-              size={[w * 0.6, 0.14, 0.05]}
-              position={[-w * 0.12, 0.3, d / 2]}
-              color="#5d6b8a"
-              outline={false}
-            />
-            <Cyl
-              top={0.04}
-              height={0.02}
-              position={[w * 0.33, 1.25, d / 2 + 0.03]}
-              rotation={[Math.PI / 2, 0, 0]}
-              color="#ffd48a"
-              outline={false}
-            />
-          </group>
-        )
-      })}
+      {vendingMachines.map((machine, i) => (
+        <VendingMachine
+          key={machine.id}
+          machine={machine}
+          rotation={office.vendingMachines[i].rotation}
+          interactive={interactive}
+        />
+      ))}
     </group>
   )
 }

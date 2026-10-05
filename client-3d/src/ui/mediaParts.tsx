@@ -1,5 +1,5 @@
 import { useEffect, useRef } from 'react'
-import { useMicLevel } from '@skyoffice/media/react'
+import { useMicLevel } from '@virtualoffice/media/react'
 
 // Pieces of the camera/microphone setup shared by the join screen and the setup dialog.
 

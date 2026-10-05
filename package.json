@@ -1,13 +1,12 @@
 {
-  "name": "skyoffice",
+  "name": "virtualoffice",
   "version": "1.0.0",
   "private": true,
-  "description": "An immersive virtual office",
+  "description": "An independent, real-time 3D virtual office",
   "license": "MIT",
-  "author": "kevinshen56714",
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/kevinshen56714/SkyOffice.git"
+    "url": "git+https://github.com/st3v0rr/VirtualOffice.git"
   },
   "type": "module",
   "workspaces": [
@@ -29,7 +28,7 @@
     "build:client3d": "npm run build -w client-3d",
     "start": "npm start -w server",
     "start:demo": "STATIC_DIR=\"$PWD/client-3d/dist\" npm start",
-    "extract-map": "npm run extract-map -w client-3d",
+    "validate-map": "node client-3d/scripts/validate-map.mjs",
     "bots": "node client-3d/scripts/bots.mjs",
     "typecheck": "npm run typecheck --workspaces --if-present",
     "test": "vitest run --coverage",

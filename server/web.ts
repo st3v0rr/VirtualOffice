@@ -1,6 +1,8 @@
 import path from 'node:path'
 import { existsSync } from 'node:fs'
 import express, { type Application } from 'express'
+import type { VirtualOfficeMap } from '../types/map/format.ts'
+import { formatMap } from '../types/map/serialize.ts'
 
 // The built 3D client, served by the Colyseus server itself when STATIC_DIR is set
 // (the Docker image does that), so one process and one port serve page and WebSocket.
@@ -22,6 +24,16 @@ export function clientConfig(env: NodeJS.ProcessEnv): ClientConfig {
 // one image works behind any host name or proxy
 export function configScript(config: ClientConfig) {
   return `window.__VIRTUALOFFICE_CONFIG__ = ${JSON.stringify(config)}\n`
+}
+
+// GET /map.json: the office map this server uses (validated at start), so every client
+// draws the same office the server checks positions and media zones against. Read-only:
+// a new map is deployed as a file (see README), never uploaded.
+export function serveMap(app: Application, map: VirtualOfficeMap) {
+  const text = formatMap(map)
+  app.get('/map.json', (_req, res) => {
+    res.type('application/json').set('Cache-Control', 'no-cache').send(text)
+  })
 }
 
 export function serveClient(app: Application, staticDir: string, env: NodeJS.ProcessEnv) {

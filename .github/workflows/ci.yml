@@ -2,7 +2,7 @@ name: CI
 
 on:
   push:
-    branches: [main, poc/threejs-r3f]
+    branches: [main]
   pull_request:
   workflow_dispatch:
 
@@ -69,13 +69,13 @@ jobs:
         with:
           context: .
           load: true
-          tags: virtualoffice-demo:ci
+          tags: virtualoffice:ci
           cache-from: type=gha
           cache-to: type=gha,mode=max
 
       - name: Smoke test against the running container
         run: |
-          docker run -d --name demo -p 2567:2567 virtualoffice-demo:ci
+          docker run -d --name virtualoffice -p 2567:2567 virtualoffice:ci
           for _ in $(seq 1 30); do
             curl -fsS http://localhost:2567/healthz && break
             sleep 1
@@ -83,6 +83,8 @@ jobs:
           curl -fsS http://localhost:2567/healthz | grep -q '"ok":true'
           curl -fsS http://localhost:2567/ | grep -q '<div id="root">'
           curl -fsS http://localhost:2567/config.js | grep -q '__VIRTUALOFFICE_CONFIG__'
+          # the office map the image ships with, validated by the server at start
+          curl -fsS http://localhost:2567/map.json | grep -q '"format": "virtualoffice-map"'
           # the monitor is off in production
           test "$(curl -s -o /dev/null -w '%{http_code}' http://localhost:2567/colyseus/)" = 404
           # every bundle referenced by index.html loads
@@ -91,11 +93,11 @@ jobs:
           done
           # Docker Desktop/Engine exposes the Dockerfile HEALTHCHECK through inspect.
           # Fail clearly if the image ever loses its health check.
-          test "$(docker inspect -f '{{if .Config.Healthcheck}}configured{{end}}' demo)" = configured
+          test "$(docker inspect -f '{{if .Config.Healthcheck}}configured{{end}}' virtualoffice)" = configured
           # GitHub-hosted Docker supports the health status field. Retry long enough for
           # the image's 10s start period and first 30s health-check interval.
           for _ in $(seq 1 40); do
-            status=$(docker inspect -f '{{if .State.Health}}{{.State.Health.Status}}{{else}}missing{{end}}' demo)
+            status=$(docker inspect -f '{{if .State.Health}}{{.State.Health.Status}}{{else}}missing{{end}}' virtualoffice)
             [ "$status" = healthy ] && break
             [ "$status" != missing ] || { echo 'container health status is missing'; exit 1; }
             sleep 2
@@ -105,13 +107,13 @@ jobs:
 
       - name: Container logs
         if: always()
-        run: docker logs demo || true
+        run: docker logs virtualoffice || true
 
-      # push only from the demo branch and main, and only if the Docker Hub secrets exist;
+      # push only from main, and only if the Docker Hub secrets exist;
       # without them the push is skipped with a notice instead of failing the run
       - name: Check Docker Hub credentials
         id: hub
-        if: github.event_name == 'push' && (github.ref == 'refs/heads/poc/threejs-r3f' || github.ref == 'refs/heads/main')
+        if: github.event_name == 'push' && github.ref == 'refs/heads/main'
         env:
           DOCKERHUB_USERNAME: ${{ secrets.DOCKER_HUB_USERNAME }}
           DOCKERHUB_TOKEN: ${{ secrets.DOCKER_HUB_TOKEN }}
