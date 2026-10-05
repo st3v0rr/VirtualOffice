@@ -42,6 +42,11 @@ const isTyping = () => {
     el instanceof HTMLSelectElement
   )
 }
+// the character editor or the settings dialog covers the office: no shortcuts, no walking
+const inModal = () => {
+  const { editorOpen, settingsOpen } = useGame.getState()
+  return editorOpen || settingsOpen
+}
 
 const PROMPTS: Record<Interactable['kind'], string> = {
   chair: 'E: Hinsetzen',
@@ -80,7 +85,7 @@ export default function LocalPlayer() {
 
   useEffect(() => {
     const down = (e: KeyboardEvent) => {
-      if (isTyping() || useGame.getState().editorOpen) return
+      if (isTyping() || inModal()) return
       keys.current.add(e.code)
       if (e.repeat) return
       if (e.code === 'KeyE') actions.current.push('sit')
@@ -205,7 +210,7 @@ export default function LocalPlayer() {
     // ---- movement ----
     const k = keys.current
     const input = new THREE.Vector2()
-    const typing = isTyping() || game.editorOpen
+    const typing = isTyping() || inModal()
     if (!typing) {
       if (KEYS_UP.some((key) => k.has(key))) input.add(SCREEN_UP)
       if (KEYS_DOWN.some((key) => k.has(key))) input.sub(SCREEN_UP)

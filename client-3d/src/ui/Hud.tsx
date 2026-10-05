@@ -1,79 +1,18 @@
-import { useState } from 'react'
+import { useEffect } from 'react'
 import { useGame } from '../state/game'
-import { useSettings, type PostFx } from '../state/settings'
 import { playEmote } from '../game/actions'
-import { network } from '../net/network'
 import MediaControls, { Status } from './MediaControls'
 import VideoGrid, { SelfPreview } from './VideoGrid'
-
-function Settings({ onClose }: { onClose: () => void }) {
-  const s = useSettings()
-  const name = useGame((g) => g.name)
-  const [newName, setNewName] = useState(name)
-  return (
-    <div className="panel settings">
-      <h3>Einstellungen</h3>
-      <label>
-        <input
-          type="checkbox"
-          checked={s.outlines}
-          onChange={(e) => s.set({ outlines: e.target.checked })}
-        />{' '}
-        Konturen (Inverted Hull)
-      </label>
-      <label>
-        <input
-          type="checkbox"
-          checked={s.lowWalls}
-          onChange={(e) => s.set({ lowWalls: e.target.checked })}
-        />{' '}
-        Vordere Wände absenken
-      </label>
-      <label>
-        <input
-          type="checkbox"
-          checked={s.stats}
-          onChange={(e) => s.set({ stats: e.target.checked })}
-        />{' '}
-        FPS-Anzeige
-      </label>
-      <label>
-        Look:{' '}
-        <select value={s.postFx} onChange={(e) => s.set({ postFx: e.target.value as PostFx })}>
-          <option value="off">Klar (Standard)</option>
-          <option value="pixel">Pixel-Look (Post-FX)</option>
-          <option value="outline">Kanten-Post-FX</option>
-        </select>
-      </label>
-      <label>
-        Name:{' '}
-        <input
-          value={newName}
-          maxLength={24}
-          onChange={(e) => setNewName(e.target.value)}
-          onKeyDown={(e) => {
-            e.stopPropagation()
-            if (e.key === 'Enter' && newName.trim()) {
-              useGame.getState().set({ name: newName.trim() })
-              localStorage.setItem('skyoffice3d.name', newName.trim())
-              network.sendName(newName.trim())
-            }
-          }}
-        />
-      </label>
-      <button className="secondary" onClick={onClose}>
-        Schließen
-      </button>
-    </div>
-  )
-}
+import SettingsModal from './SettingsModal'
 
 export default function Hud() {
   const prompt = useGame((s) => s.prompt)
   const roomName = useGame((s) => s.roomName)
   const playerCount = useGame((s) => Object.keys(s.players).length + 1)
-  const [settings, setSettings] = useState(false)
-  const [help, setHelp] = useState(true)
+  const settingsOpen = useGame((s) => s.settingsOpen)
+
+  // leaving the office while the dialog is open must not keep the keyboard blocked
+  useEffect(() => () => useGame.getState().set({ settingsOpen: false }), [])
 
   return (
     <>
@@ -87,25 +26,20 @@ export default function Hud() {
         >
           👕 Charakter
         </button>
-        <button className="pill button" onClick={() => setSettings((v) => !v)}>
+        <button
+          className="pill button"
+          title="Einstellungen & Steuerung"
+          aria-label="Einstellungen & Steuerung"
+          aria-haspopup="dialog"
+          aria-expanded={settingsOpen}
+          onClick={() => useGame.getState().set({ settingsOpen: true })}
+        >
           ⚙️
-        </button>
-        <button className="pill button" onClick={() => setHelp((v) => !v)}>
-          ❓
         </button>
         <Status />
       </div>
-      {settings && <Settings onClose={() => setSettings(false)} />}
+      {settingsOpen && <SettingsModal />}
       <div className="hud-right">
-        {help && (
-          <div className="panel help">
-            <b>Steuerung</b>
-            <div>WASD / Pfeile: laufen · Klick: hinlaufen</div>
-            <div>E: hinsetzen / aufstehen · R: benutzen</div>
-            <div>Leertaste: hüpfen · 1: winken · 2: jubeln</div>
-            <div>Mausrad: zoomen · Enter: Chat</div>
-          </div>
-        )}
         <VideoGrid />
       </div>
       {prompt && <div className="prompt">{prompt}</div>}

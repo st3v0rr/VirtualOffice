@@ -38,6 +38,8 @@ type GameState = {
   chat: ChatLine[]
   bubbles: Record<string, Bubble>
   editorOpen: boolean
+  // the HUD's settings & controls dialog
+  settingsOpen: boolean
   chatFocused: boolean
   dialog: Dialog
   // hint for the item in front of me, e.g. "E: Hinsetzen"
@@ -73,6 +75,7 @@ export const useGame = create<GameState>()((set) => ({
   chat: [],
   bubbles: {},
   editorOpen: false,
+  settingsOpen: false,
   chatFocused: false,
   dialog: null,
   prompt: null,

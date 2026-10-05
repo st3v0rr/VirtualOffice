@@ -13,7 +13,7 @@
 // Chromium: CHROME_PATH, else Playwright's own (npx playwright-core install chromium), else
 // the system Chromium. Without any, step 3 is skipped with a note, unless SMOKE_BROWSER=1
 // demands it (CI).
-/* global document, __game -- used inside page.evaluate(), which runs in the browser */
+/* global document, window, __game -- used inside page.evaluate(), which runs in the browser */
 import { spawn } from 'node:child_process'
 import { existsSync, mkdirSync } from 'node:fs'
 import path from 'node:path'
@@ -232,6 +232,93 @@ if (!executablePath) {
       `Browser: walking with the keyboard moves the player (${moved.toFixed(2)} tiles)`
     )
 
+    // settings and controls: one HUD button opens one centered dialog
+    const settingsButton = page.getByRole('button', { name: 'Einstellungen & Steuerung' })
+    const dialog = page.getByRole('dialog', { name: /Einstellungen & Steuerung/ })
+    check(
+      (await settingsButton.count()) === 1 &&
+        (await settingsButton.getAttribute('title')) === 'Einstellungen & Steuerung',
+      'Browser: the HUD has one labelled settings & controls button'
+    )
+    check(
+      (await page.locator('.hud-top button', { hasText: '❓' }).count()) === 0 &&
+        (await page.locator('.panel.help, .panel.settings').count()) === 0,
+      'Browser: no separate help panel, settings popover or ❓ button'
+    )
+    await settingsButton.click()
+    check(await dialog.isVisible(), 'Browser: the settings & controls dialog opens')
+    const dialogText = await dialog.innerText()
+    const expected = [
+      'Name',
+      'Look',
+      'Konturen',
+      'Vordere Wände absenken',
+      'FPS-Anzeige',
+      'W',
+      '←',
+      'Klick',
+      'Hinsetzen / Aufstehen',
+      'Benutzen',
+      'Leertaste',
+      'Winken',
+      'Jubeln',
+      'Mausrad',
+      'Enter',
+      'Chat',
+    ]
+    const missing = expected.filter((text) => !dialogText.includes(text))
+    check(missing.length === 0, `Browser: the dialog has all settings and controls ${missing}`)
+    check(
+      (await dialog.locator('input[type=checkbox]').count()) === 3 &&
+        (await dialog.locator('select').count()) === 1,
+      'Browser: the dialog has the three switches and the look select'
+    )
+    const box = await dialog.boundingBox()
+    check(
+      !!box &&
+        Math.abs(box.x + box.width / 2 - 640) < 2 &&
+        Math.abs(box.y + box.height / 2 - 400) < 2,
+      `Browser: the dialog is centered (${JSON.stringify(box)})`
+    )
+    const stats = page.getByRole('checkbox', { name: 'FPS-Anzeige' })
+    const statsBefore = await stats.isChecked()
+    await stats.click()
+    check(
+      (await page.locator('#stats').count()) === (statsBefore ? 0 : 1),
+      'Browser: a setting applies live (FPS display)'
+    )
+    await stats.click()
+    const inModal = await position()
+    await page.keyboard.down('KeyS')
+    await page.waitForTimeout(500)
+    await page.keyboard.up('KeyS')
+    await page.keyboard.press('Digit1')
+    const afterModalKeys = await position()
+    check(
+      Math.hypot(afterModalKeys.x - inModal.x, afterModalKeys.z - inModal.z) < 0.01,
+      'Browser: movement keys do nothing while the dialog is open'
+    )
+    await dialog.locator('h2').click()
+    check(await dialog.isVisible(), 'Browser: a click inside the dialog keeps it open')
+    const nameInput = dialog.getByRole('textbox', { name: 'Name' })
+    await nameInput.fill('Rauchtest2')
+    await nameInput.press('Enter')
+    await page.waitForTimeout(300)
+    check(
+      (await page.evaluate(() => localStorage.getItem('skyoffice3d.name'))) === 'Rauchtest2' &&
+        (await page.locator('.tag .name', { hasText: 'Rauchtest2' }).count()) > 0,
+      'Browser: Enter in the name field saves and sends the new name'
+    )
+    check(await dialog.isVisible(), 'Browser: saving the name keeps the dialog open')
+    await page.keyboard.press('Escape')
+    check(!(await dialog.isVisible()), 'Browser: Escape closes the dialog')
+    await settingsButton.click()
+    await dialog.getByRole('button', { name: 'Schließen (Esc)' }).click()
+    check(!(await dialog.isVisible()), 'Browser: the close button closes the dialog')
+    await settingsButton.click()
+    await page.mouse.click(8, 8)
+    check(!(await dialog.isVisible()), 'Browser: a click on the backdrop closes the dialog')
+
     mkdirSync(path.dirname(screenshot), { recursive: true })
     await page.screenshot({ path: screenshot })
     console.log(`     screenshot: ${path.relative(process.cwd(), screenshot)}`)
@@ -281,6 +368,38 @@ if (!executablePath) {
       check(
         mobileDistance > 0.1,
         `Browser (mobile, touch): tapping the floor moves the player (${mobileDistance.toFixed(2)} tiles after ${mobileTapCount} tap(s))`
+      )
+      await mobilePage.getByRole('button', { name: 'Einstellungen & Steuerung' }).tap()
+      const mobileDialog = mobilePage.getByRole('dialog', { name: /Einstellungen & Steuerung/ })
+      check(await mobileDialog.isVisible(), 'Browser (mobile, touch): the settings dialog opens')
+      const fit = await mobilePage.evaluate(() => {
+        const dialog = document.querySelector('[role=dialog]').getBoundingClientRect()
+        const body = document.querySelector('.settings-body')
+        return {
+          left: dialog.left,
+          right: dialog.right,
+          top: dialog.top,
+          bottom: dialog.bottom,
+          width: window.innerWidth,
+          height: window.innerHeight,
+          pageOverflow: document.documentElement.scrollWidth > window.innerWidth,
+          bodyOverflow: body.scrollWidth > body.clientWidth,
+        }
+      })
+      check(
+        fit.left >= 0 &&
+          fit.top >= 0 &&
+          fit.right <= fit.width &&
+          fit.bottom <= fit.height &&
+          !fit.pageOverflow &&
+          !fit.bodyOverflow,
+        `Browser (mobile, touch): the dialog fits the 375×667 screen (${JSON.stringify(fit)})`
+      )
+      await mobileDialog.getByRole('button', { name: 'Schließen (Esc)' }).scrollIntoViewIfNeeded()
+      await mobileDialog.getByRole('button', { name: 'Schließen (Esc)' }).tap()
+      check(
+        !(await mobileDialog.isVisible()),
+        'Browser (mobile, touch): the close button closes the dialog'
       )
     } finally {
       await mobileContext.close()
