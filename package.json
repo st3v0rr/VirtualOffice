@@ -12,28 +12,35 @@
   "type": "module",
   "workspaces": [
     "types",
+    "packages/media",
     "server",
-    "client"
+    "client-3d"
   ],
   "engines": {
-    "node": ">=22.12"
+    "node": ">=22.18"
   },
   "scripts": {
-    "dev": "concurrently -n server,client,livekit -c blue,magenta,green \"npm run dev -w server\" \"npm run dev -w client\" \"npm run dev:livekit\"",
+    "dev": "concurrently -n server,client -c blue,magenta \"npm run dev -w server\" \"npm run dev -w client-3d\"",
     "dev:server": "npm run dev -w server",
-    "dev:client": "npm run dev -w client",
+    "dev:client3d": "npm run dev -w client-3d",
     "dev:livekit": "livekit-server --dev",
-    "build": "npm run build -w server && npm run build -w client",
+    "build": "npm run build -w server && npm run build -w client-3d",
     "build:server": "npm run build -w server",
-    "build:client": "npm run build -w client",
+    "build:client3d": "npm run build -w client-3d",
     "start": "npm start -w server",
+    "start:demo": "STATIC_DIR=\"$PWD/client-3d/dist\" npm start",
+    "extract-map": "npm run extract-map -w client-3d",
+    "bots": "node client-3d/scripts/bots.mjs",
     "typecheck": "npm run typecheck --workspaces --if-present",
+    "test": "vitest run --coverage",
+    "smoke": "node client-3d/scripts/smoke.mjs",
     "lint": "eslint .",
     "format": "prettier --write .",
     "format:check": "prettier --check ."
   },
   "devDependencies": {
     "@eslint/js": "^10.0.1",
+    "@vitest/coverage-v8": "^5.0.3",
     "concurrently": "^10.0.5",
     "eslint": "^10.11.0",
     "eslint-config-prettier": "^10.1.8",
@@ -41,6 +48,7 @@
     "globals": "^17.12.0",
     "prettier": "^3.9.9",
     "typescript": "~6.0",
-    "typescript-eslint": "^8.70.1"
+    "typescript-eslint": "^8.70.1",
+    "vitest": "^5.0.3"
   }
 }

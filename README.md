@@ -1,124 +1,171 @@
-# SkyOffice ![License](https://img.shields.io/badge/license-MIT-blue) ![PRs Welcome](https://img.shields.io/badge/PRs-welcome-green.svg)
+# VirtualOffice 3D ![License](https://img.shields.io/badge/license-MIT-blue)
 
-<img alt="Logo" align="right" src="https://user-images.githubusercontent.com/11501902/139942585-a6b044ce-3695-460a-91bd-dd9f1d4611c8.png" width="20%" />
-
-An immersive virtual office - Winner of [2021 Monte Jade Innovation Competition](https://www.montejadese.org/innovation-competition)
-
-- Come try it out - [Official Website](https://skyoffice.netlify.app)
-- Why we built this - [Concept Video](https://www.youtube.com/watch?v=BpDqGTPh8pc)
-- 🙌 Get latest updates? Follow our [Twitter](https://twitter.com/SkyOfficeApp).
-- 💕 Love this project? Consider [buy me a coffee](https://www.buymeacoffee.com/skyoffice).
-
-SkyOffice works on all PC browsers (mobile browsers are currently not supported)
+A browser-based, real-time 3D virtual office built as an independent application. Explore an isometric toy-diorama office with toon shading, pastel colours and customizable procedural chibi characters. Walk around, sit at a desk, use a computer or vending machine, chat, react with emotes, and talk to nearby people with video, audio and screen sharing. Meeting rooms, focus booths, a stage and a quiet library each have their own media rules.
 
 ## Built with
 
-- [Phaser3](https://github.com/photonstorm/phaser) - Game engine
-- [Colyseus](https://github.com/colyseus/colyseus) - WebSocket-based server framework
-- [React/Redux](https://github.com/facebook/react) - Front-end framework
-- [LiveKit](https://livekit.io) - WebRTC media server for video, audio and screen sharing
-- [TypeScript](https://github.com/microsoft/TypeScript) and [ES6](https://github.com/eslint/eslint) - for both client and server sides
+- [React Three Fiber](https://r3f.docs.pmnd.rs) and [three.js](https://threejs.org) - 3D client (`client-3d/`)
+- [Colyseus](https://github.com/colyseus/colyseus) - WebSocket server for rooms and state sync (`server/`)
+- [LiveKit](https://livekit.io) - WebRTC media server for video, audio and screen sharing (`packages/media/`)
+- [Tiled](https://www.mapeditor.org) - the office map (`assets/map/`)
 
-## Features
+## Repository
 
-- [Proximity Chat](#proximity-chat-distance-based-interactive-system)
-- [Flexible Screen Sharing](#flexible--immediate-screen-sharing)
-- [Multifunctional Rooms](#multifunctional-rooms)
-- [Text Message Chat](#text-message-chat-with-real-time-dialog-bubbles)
-- [Custom/Private Rooms](#customprivate-rooms)
-- [Whiteboards](#whiteboards) with sticky notes and arrows, synced live (built with [React Flow](https://reactflow.dev))
+| Path              | What                                                                                    |
+| ----------------- | --------------------------------------------------------------------------------------- |
+| `client-3d/`      | the 3D client (Vite, React 19, R3F 9, zustand)                                          |
+| `server/`         | the Colyseus server (rooms, chat, avatars, LiveKit tokens)                              |
+| `packages/media/` | video/audio/screen sharing via LiveKit (`MediaManager`, `ScreenShareSession`, hooks)    |
+| `types/`          | types shared by client and server (messages, state, map zones, media rooms)             |
+| `assets/map/`     | the Tiled map (`map.json`) and its tilesets; source for the 3D map and the server zones |
+| `docs/`           | screenshots                                                                             |
 
-### Proximity Chat (distance-based interactive system)
+## Getting started
 
-![image](https://user-images.githubusercontent.com/11501902/139960852-cf0e0883-8fbe-459d-bb11-3707d0ae1360.png)
+You'll need [Node.js](https://nodejs.org/en/) 22.18 or newer. The [LiveKit server](https://docs.livekit.io/home/self-hosting/local/) is optional (only for video chat and screen sharing).
 
-### Multifunctional Rooms
+```bash
+npm install
+npm run dev            # server (ws://localhost:2567) + 3D client (http://localhost:3100)
+```
 
-![image](https://user-images.githubusercontent.com/11501902/139961091-1801bd4d-fbd6-4400-8503-85ece744e979.png)
+or separately with `npm run dev:server` and `npm run dev:client3d`. Open http://localhost:3100, enter a name, optionally design your character, and join.
 
-### Flexible & Immediate Screen Sharing
+LiveKit is optional: without it the office works, the HUD shows "Video-Chat nicht verfügbar" and screen sharing says it is not available. Start `npm run dev:livekit` (needs `livekit-server` installed) to talk to the people close to you.
 
-![image](https://user-images.githubusercontent.com/11501902/139961155-44a85cd9-ac25-4563-9d82-6537ed7435f6.png)
-
-### Text Message Chat (with real time dialog bubbles)
-
-![image](https://user-images.githubusercontent.com/11501902/145925423-3b5b9026-d3b9-429d-920b-98b0bcd6300a.png)
-
-### Whiteboards
-
-Press `R` in front of a whiteboard to open it. Add sticky notes with the toolbar or by double-clicking the board, double-click a note to write, drag from the dots on its edges to connect notes with arrows, and use `Del` to delete the selection. Everyone at the same whiteboard sees the changes live. Boards are kept in the server's memory, so they're reset when the server restarts or a custom room is closed.
-
-### Custom/Private Rooms
-
-![image](https://user-images.githubusercontent.com/11501902/147784118-15ef50bf-0f67-4704-89d7-81b2fa7f8ceb.png)
+If the server runs on another port, pass its URL: `VITE_SERVER_URL=ws://localhost:2667 npm run dev:client3d` (and `PORT=2667 npm run dev:server`).
 
 ## Controls
 
-- `W, A, S, D, or arrow keys` to move (video chat will start if you are close to someone else)
-- `E` to sit down
-- `R` to use computer (for screen sharing)
-- `Enter` to open chat
-- `ESC` to close chat
-
-## Prerequisites
-
-You'll need [Node.js](https://nodejs.org/en/) 22.12 or newer (npm is included) and the [LiveKit server](https://docs.livekit.io/home/self-hosting/local/) for video chat, e.g. `brew install livekit` on macOS.
-
-## Getting Started
-
-Clone this repository and install all dependencies (the repo is an npm workspace with `server`, `client` and `types`):
-
-```bash
-git clone https://github.com/kevinshen56714/SkyOffice.git
-cd SkyOffice
-npm install
-```
-
-Start server (`ws://localhost:2567`), client (`http://localhost:3000`) and a local LiveKit server (`ws://localhost:7880`) together:
-
-```bash
-npm run dev
-```
-
-or separately with `npm run dev:server`, `npm run dev:client` and `npm run dev:livekit`.
+| Key / mouse            |                                                            |
+| ---------------------- | ---------------------------------------------------------- |
+| click on the floor     | walk there (path finding around objects)                   |
+| click a chair / item   | walk there and sit down / use it                           |
+| `W A S D` / arrow keys | walk (screen directions)                                   |
+| `E`                    | sit down / stand up                                        |
+| `R`                    | use computer, vending machine                              |
+| `1`                    | wave                                                       |
+| `2`                    | cheer with confetti                                        |
+| `3`                    | clap                                                       |
+| `4`                    | hearts                                                     |
+| `5`                    | raise / lower your hand; it stays raised until toggled off |
+| mouse wheel            | zoom                                                       |
+| `Enter`                | chat                                                       |
 
 ## Scripts
 
-| Command             | Description                                            |
-| ------------------- | ------------------------------------------------------ |
-| `npm run dev`       | Start server, client and LiveKit in watch/dev mode     |
-| `npm run build`     | Build server (`server/lib`) and client (`client/dist`) |
-| `npm start`         | Run the built server                                   |
-| `npm run typecheck` | Type-check all workspaces                              |
-| `npm run lint`      | Lint with ESLint                                       |
-| `npm run format`    | Format with Prettier                                   |
+| Command               | Description                                                             |
+| --------------------- | ----------------------------------------------------------------------- |
+| `npm run dev`         | server and 3D client in watch/dev mode                                  |
+| `npm run dev:livekit` | a local LiveKit server (`livekit-server --dev`)                         |
+| `npm run build`       | build the server (`server/lib`) and the 3D client (`client-3d/dist`)    |
+| `npm start`           | run the built server                                                    |
+| `npm run typecheck`   | type-check all workspaces                                               |
+| `npm run lint`        | lint with ESLint                                                        |
+| `npm run format`      | format with Prettier                                                    |
+| `npm run extract-map` | regenerate `client-3d/src/map/office.generated.json` from the Tiled map |
+| `npm run bots -- 40`  | fill the conference room with 40 bots (`ws://localhost:2567`)           |
 
-For production builds of the client, set `VITE_SERVER_URL` to the WebSocket URL of your server (e.g. `wss://my-server.example.com`).
+More tools in `client-3d/scripts/`:
+
+| Command                                                     | Description                                                       |
+| ----------------------------------------------------------- | ----------------------------------------------------------------- |
+| `node client-3d/scripts/measure.mjs http://localhost:3100/` | measure FPS and draw calls in headless Chromium (`CHROME_PATH=…`) |
+| `node client-3d/scripts/media-smoke.mjs`                    | video chat UI smoke test with fake camera/microphone              |
+| http://localhost:3100/?gallery                              | all chibi presets side by side                                    |
+
+## Tests
+
+- `npm test` runs the Vitest unit tests of `packages/media`, `server` and `client-3d` and prints a v8 coverage report (no threshold). They cover the logic: the proximity hysteresis and the media zones (quiet library, meeting room, stage), device settings and avatar persistence, the server's input validation and commands, the LiveKit token, the map extraction (flood fill, and that `office.generated.json` is up to date), collision, path finding and smoothing, chair occupancy and the avatar format.
+- `npm run smoke` (after `npm run build`) starts the built server with the built client on one port, checks HTTP and a WebSocket join, then joins in headless Chromium, walks and takes a screenshot (`smoke-artifacts/smoke.png`). Chromium comes from `CHROME_PATH`, Playwright (`npx playwright-core install chromium`) or the system; without one only the HTTP and WebSocket checks run. `SMOKE_URL=http://host:2567 npm run smoke` tests a running server or container instead.
+
+## Running it on a server (Docker)
+
+The Docker image contains the Colyseus server, which also serves the built 3D client: **one container, one port (2567) for the page and the WebSocket**. LiveKit (video chat) is optional and runs outside of it.
+
+```bash
+docker build -t virtualoffice-demo .
+docker run -d --name virtualoffice -p 2567:2567 --restart unless-stopped virtualoffice-demo
+# -> http://<host>:2567
+```
+
+or with Compose (builds the image, or set `DEMO_IMAGE` to a pulled one; copy `.env.example` to `.env` for the settings):
+
+```bash
+docker compose up -d                     # the demo
+docker compose --profile livekit up -d   # plus LiveKit in dev mode, for trying out video chat
+```
+
+Podman works too (`podman compose` uses podman-compose as its provider). Two differences:
+pull the LiveKit image with its full name first, because Podman enforces registry
+short-name resolution and cannot prompt inside compose, and add the livekit overlay so the
+demo gets the dev keys:
+
+```bash
+podman pull docker.io/livekit/livekit-server:latest
+DEMO_IMAGE=st3v0rr/virtualoffice:latest podman compose --profile livekit \
+  -f docker-compose.yml -f docker-compose.livekit.yml up -d
+# -> http://localhost:2567  (stop again with: podman compose down)
+```
+
+Without `DEMO_IMAGE` compose builds the image from this checkout; with it, the published
+image from Docker Hub runs.
+
+| Variable             | Default           | Description                                                                                                                                                                                   |
+| -------------------- | ----------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `PORT`               | `2567`            | port inside the container                                                                                                                                                                     |
+| `PUBLIC_SERVER_URL`  | (empty)           | WebSocket URL of the server as the browser sees it, e.g. `wss://office.example.com`. Empty: the host and port of the page, which is right when the proxy forwards WebSockets on the same host |
+| `LIVEKIT_URL`        | (empty)           | LiveKit URL as the browser sees it (`wss://…` if the page is HTTPS). Empty: video chat off, the office works without it                                                                       |
+| `LIVEKIT_API_KEY`    | (empty)           | LiveKit API key                                                                                                                                                                               |
+| `LIVEKIT_API_SECRET` | (empty)           | LiveKit API secret                                                                                                                                                                            |
+| `COLYSEUS_MONITOR`   | off in production | `true` enables the Colyseus monitor on `/colyseus` (no login, it shows all rooms and players, so keep it private)                                                                             |
+| `STATIC_DIR`         | `client-3d/dist`  | the built client the server serves; unset = WebSocket server only                                                                                                                             |
+| `OFFICE_MAP_PATH`    | `assets/map/…`    | another Tiled map for the server (the client has the map built in)                                                                                                                            |
+
+`GET /healthz` answers `{"ok":true}` (used by the image's `HEALTHCHECK`); `/config.js` hands `PUBLIC_SERVER_URL` to the client at run time, so the same image works under any host name.
+
+**HTTPS is needed for camera and microphone.** Browsers only allow them in a secure context (HTTPS, or `http://localhost`). On a server, put a reverse proxy with TLS in front, which also has to forward WebSockets, e.g. [Caddy](https://caddyserver.com) (gets the certificate by itself):
+
+```
+office.example.com {
+    reverse_proxy localhost:2567
+}
+```
+
+Then open `https://office.example.com`; the client connects to `wss://office.example.com` without further settings. LiveKit needs its own TLS name (e.g. `livekit.example.com` → port 7880) and its media ports open (7881/tcp, 7882/udp in dev mode, see the [LiveKit deployment docs](https://docs.livekit.io/home/self-hosting/deployment/)); the `livekit` profile runs it with the public dev keys and is only meant for trying it out.
+
+### CI and Docker Hub
+
+`.github/workflows/ci.yml` runs on pushes and pull requests: `npm ci`, typecheck, lint, format check, build, `npm test`, the smoke test in Chromium (screenshot as artifact), then builds the Docker image and tests the running container with curl (health, page, config, bundles, monitor off, health status).
+
+On pushes to `poc/threejs-r3f` and `main` it pushes the image to Docker Hub as `latest` and the short commit sha. This needs the repository secrets `DOCKER_HUB_USERNAME` and `DOCKER_HUB_TOKEN`; without them the push is skipped with a notice. The image name comes from the repository variable (or secret) `DOCKERHUB_IMAGE`, defaulting to `st3v0rr/virtualoffice`.
+
+## The map
+
+`assets/map/map.json` is a [Tiled](https://www.mapeditor.org) map; its tilesets are in `assets/map/tilesets/`. It is the single source for the layout: `npm run extract-map` turns it into the 3D data (walkable tiles, collision rectangles, furniture blocks with averaged colours, chairs, computers, zones), and the server reads the computers, the spawn point and the media zones from it at start. Whiteboard objects in the map are ignored.
 
 ## Video chat
 
-Video, audio and screen sharing run through [LiveKit](https://livekit.io). The office is split into media rooms by the `Zones` layer of the map: in the open space you hear the people close to you, in meeting rooms and focus booths everyone in the room (and nobody outside), in the auditorium only the people on the stage speak, and quiet zones have no video at all. The server hands out a LiveKit token only for the room at the player's position.
+Video, audio and screen sharing run through [LiveKit](https://livekit.io). The office is split into media rooms by the `Zones` layer of the map: in the open space you hear the people close to you, in meeting rooms and focus booths everyone in the room (and nobody outside), in the auditorium only the people on the stage speak, and quiet zones (the library) have no video at all. The server hands out a LiveKit token only for the room at the player's position.
 
-For production, run a [LiveKit server](https://docs.livekit.io/home/self-hosting/deployment/) or use [LiveKit Cloud](https://livekit.io/cloud) and set these environment variables for the SkyOffice server:
+For production, run a [LiveKit server](https://docs.livekit.io/home/self-hosting/deployment/) or use [LiveKit Cloud](https://livekit.io/cloud) and set these environment variables for the server:
 
-| Variable             | Description                                           |
-| -------------------- | ----------------------------------------------------- |
-| `LIVEKIT_URL`        | WebSocket URL of LiveKit, e.g. `wss://lk.example.com` |
-| `LIVEKIT_API_KEY`    | LiveKit API key                                       |
-| `LIVEKIT_API_SECRET` | LiveKit API secret                                    |
+| Variable             | Description                                                                      |
+| -------------------- | -------------------------------------------------------------------------------- |
+| `LIVEKIT_URL`        | WebSocket URL of LiveKit **as the browser sees it**, e.g. `wss://lk.example.com` |
+| `LIVEKIT_API_KEY`    | LiveKit API key                                                                  |
+| `LIVEKIT_API_SECRET` | LiveKit API secret                                                               |
 
-Without them in development, the server uses the defaults of `livekit-server --dev`.
+Without them in development, the server uses the defaults of `livekit-server --dev`. With `NODE_ENV=production` and missing variables, video chat is off.
 
-The day/night background follows sunrise and sunset. It uses the center of Germany by default; set `VITE_OFFICE_LATITUDE` and `VITE_OFFICE_LONGITUDE` to use the location of your office instead.
+## Whiteboards
 
-## Credits 🎉
+There are no built-in whiteboards. Whiteboards are planned as an external service (e.g. Miro) instead.
 
-Big thanks to this great repo - [ourcade/phaser3-typescript-parcel-template](https://github.com/ourcade/phaser3-typescript-parcel-template)
+## Credits
 
-Big thanks to pixel artist - [LimeZu](https://limezu.itch.io/)
+The map uses the pixel art of [LimeZu](https://limezu.itch.io/) (the 3D client only uses its layout and averaged colours).
 
 ## License
 
 This project is licensed under MIT.
-
-If you're using SkyOffice to power your virtual office or using our code in other projects, please consider [buy me a coffee](https://www.buymeacoffee.com/skyoffice). Thank you :)

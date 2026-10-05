@@ -17,13 +17,26 @@ export default defineConfig(
     },
   },
   {
-    files: ['server/**/*.ts', 'types/**/*.ts'],
+    files: [
+      'server/**/*.ts',
+      'types/**/*.ts',
+      'client-3d/scripts/**/*.mjs',
+      'client-3d/*.ts',
+      '*.ts',
+      '**/test/**/*.ts',
+    ],
     languageOptions: { globals: globals.node },
   },
   {
-    files: ['client/**/*.{ts,tsx}'],
+    files: ['client-3d/src/**/*.{ts,tsx}', 'packages/*/src/**/*.ts'],
     languageOptions: { globals: globals.browser },
     extends: [reactHooks.configs.flat.recommended],
+  },
+  {
+    // react-three-fiber animates by mutating three.js objects (and plain objects read in
+    // useFrame) outside of React's render, which is exactly what this rule forbids
+    files: ['client-3d/src/**/*.{ts,tsx}'],
+    rules: { 'react-hooks/immutability': 'off' },
   },
   prettier
 )

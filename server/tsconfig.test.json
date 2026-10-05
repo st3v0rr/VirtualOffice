@@ -1,0 +1,7 @@
+{
+  // the build (tsconfig.json) leaves out the tests; this checks them too
+  "extends": "./tsconfig.json",
+  "compilerOptions": { "noEmit": true, "allowImportingTsExtensions": true },
+  "include": ["."],
+  "exclude": ["lib"]
+}

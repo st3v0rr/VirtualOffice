@@ -1,0 +1,36 @@
+# VirtualOffice 3D demo
+#
+#   docker compose up -d                       the demo on http://<host>:2567 (no video chat)
+#   docker compose --profile livekit up -d     plus a LiveKit server in dev mode (see below)
+#
+# Configuration via environment variables or a .env file next to this file
+# (see .env.example). Camera and microphone need HTTPS (or localhost), see README.
+services:
+  demo:
+    # DEMO_IMAGE: e.g. the image from Docker Hub; without it, compose builds it from here
+    image: ${DEMO_IMAGE:-virtualoffice-demo:local}
+    build: .
+    ports:
+      - '${DEMO_PORT:-2567}:2567'
+    environment:
+      # WebSocket URL of the server as the browser sees it; empty = same host and port as the page
+      PUBLIC_SERVER_URL: ${PUBLIC_SERVER_URL:-}
+      # LiveKit for video chat; empty = video chat off
+      LIVEKIT_URL: ${LIVEKIT_URL:-}
+      LIVEKIT_API_KEY: ${LIVEKIT_API_KEY:-}
+      LIVEKIT_API_SECRET: ${LIVEKIT_API_SECRET:-}
+    restart: unless-stopped
+
+  # LiveKit in dev mode (API key "devkey", secret "secret", both public): only for trying it
+  # out. For real use run LiveKit with your own keys and TLS, or use LiveKit Cloud.
+  # Then set for the demo: LIVEKIT_URL=ws://<host>:7880 LIVEKIT_API_KEY=devkey LIVEKIT_API_SECRET=secret
+  livekit:
+    profiles: [livekit]
+    image: livekit/livekit-server:${LIVEKIT_VERSION:-latest}
+    # LIVEKIT_NODE_IP: the public IP of the host, so browsers can reach the media ports
+    command: --dev --bind 0.0.0.0 --node-ip ${LIVEKIT_NODE_IP:-127.0.0.1}
+    ports:
+      - '7880:7880' # signalling (WebSocket), LIVEKIT_URL
+      - '7881:7881' # media over TCP
+      - '7882:7882/udp' # media over UDP
+    restart: unless-stopped

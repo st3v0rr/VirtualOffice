@@ -2,9 +2,9 @@ import { existsSync, readFileSync } from 'node:fs'
 import path from 'node:path'
 import { parseOfficeMap } from '../types/OfficeMap.ts'
 
-const MAP_FILE = path.join('client', 'public', 'assets', 'map', 'map.json')
+const MAP_FILE = path.join('assets', 'map', 'map.json')
 
-// the map lives in the client's public assets; search upwards so this works from
+// the Tiled map lives in assets/map at the repo root; search upwards so this works from
 // the sources (tsx) as well as from the compiled output in server/lib
 function findMapFile() {
   if (process.env.OFFICE_MAP_PATH) return process.env.OFFICE_MAP_PATH

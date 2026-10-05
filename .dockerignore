@@ -1,0 +1,15 @@
+# everything the build stage doesn't need; it installs and builds on its own
+**/node_modules
+**/dist
+server/lib
+coverage
+smoke-artifacts
+docs
+.git
+.github
+.env
+.env.*
+*.log
+*.tsbuildinfo
+Dockerfile
+docker-compose.yml

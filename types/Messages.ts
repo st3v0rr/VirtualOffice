@@ -1,16 +1,16 @@
+// The numbers are part of the wire protocol (and hard-coded in client-3d/scripts/bots.mjs),
+// so every message has a fixed number. Removed messages leave a gap, never reuse a number:
+// 4, 5 and 8-12 were the whiteboard messages (whiteboards are removed).
 export enum Message {
-  UPDATE_PLAYER,
-  UPDATE_PLAYER_NAME,
-  CONNECT_TO_COMPUTER,
-  DISCONNECT_FROM_COMPUTER,
-  CONNECT_TO_WHITEBOARD,
-  DISCONNECT_FROM_WHITEBOARD,
-  ADD_CHAT_MESSAGE,
-  SEND_ROOM_DATA,
-  WHITEBOARD_ADD_NOTE,
-  WHITEBOARD_UPDATE_NOTE,
-  WHITEBOARD_DELETE_NOTE,
-  WHITEBOARD_ADD_ARROW,
-  WHITEBOARD_DELETE_ARROW,
-  REQUEST_MEDIA_TOKEN,
+  UPDATE_PLAYER = 0,
+  UPDATE_PLAYER_NAME = 1,
+  CONNECT_TO_COMPUTER = 2,
+  DISCONNECT_FROM_COMPUTER = 3,
+  ADD_CHAT_MESSAGE = 6,
+  SEND_ROOM_DATA = 7,
+  REQUEST_MEDIA_TOKEN = 13,
+  UPDATE_PLAYER_AVATAR = 14,
+  PLAYER_EMOTE = 15,
+  // raise / lower the hand: { raised: boolean }, kept in the player state
+  PLAYER_HAND = 16,
 }
