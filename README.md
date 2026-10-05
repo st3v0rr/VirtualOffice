@@ -171,10 +171,6 @@ Without them in development, the server uses the defaults of `livekit-server --d
 
 There are no built-in whiteboards. Whiteboards are planned as an external service (e.g. Miro) instead.
 
-## Credits
-
-The office layout (walls, rooms and positions of furniture, chairs and computers) was migrated from a previously used Tiled-authored map. Its source used pixel art by [LimeZu](https://limezu.itch.io/); only the layout was converted. The original tileset artwork is not shipped, and the current office uses newly selected colours and procedural 3D assets.
-
 ## License
 
 This project is licensed under MIT.

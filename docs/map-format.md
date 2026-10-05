@@ -200,6 +200,6 @@ Without a reachable server (only the client's dev server runs) the client shows 
 
 ## Where the office layout comes from
 
-The office layout was migrated from a previously used Tiled-authored map. Its source used the pixel art of [LimeZu](https://limezu.itch.io/); only the layout was converted. This repository ships no original pixel art or tilesets, and the office colours were chosen anew.
+The office layout was migrated from a previously used Tiled-authored map into VirtualOffice's native format. This repository ships no source tilesets or pixel art; the current office uses procedural 3D assets and newly selected colours.
 
 The conversion kept the behaviour of the former office exactly (checked by `client-3d/test/officeMigration.test.ts`: the same walkable floor, the same collision on the quarter-tile grid, chairs, computers, zones and spawn) and fixed a few things on the way: the vending machine now stands against its wall instead of floating in front of it, two tables that blocked the way without being drawn are now visible, a picture of the lounge that was drawn as a plant inside the wall is a picture again, and two "pictures" made from wall edges are gone.
