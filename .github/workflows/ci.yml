@@ -109,11 +109,11 @@ jobs:
         if: always()
         run: docker logs virtualoffice || true
 
-      # push only from main, and only if the Docker Hub secrets exist;
+      # publish only from main pushes or manual runs on main, and only if the Docker Hub secrets exist;
       # without them the push is skipped with a notice instead of failing the run
       - name: Check Docker Hub credentials
         id: hub
-        if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+        if: github.ref == 'refs/heads/main' && (github.event_name == 'push' || github.event_name == 'workflow_dispatch')
         env:
           DOCKERHUB_USERNAME: ${{ secrets.DOCKER_HUB_USERNAME }}
           DOCKERHUB_TOKEN: ${{ secrets.DOCKER_HUB_TOKEN }}
