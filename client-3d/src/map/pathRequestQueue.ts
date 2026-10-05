@@ -9,7 +9,7 @@ export type PathTransport = (x: number, z: number, tx: number, tz: number) => Pr
 export function createPathQueue(transport: PathTransport) {
   let token = 0
 
-  // supersedes any route in flight, e.g. when keyboard/joystick input takes over
+  // supersedes any route in flight, e.g. when keyboard input takes over
   function cancel() {
     token++
   }

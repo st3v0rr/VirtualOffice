@@ -168,7 +168,7 @@ export default function Chibi({ avatar, motion, seed = 0 }: ChibiProps) {
       if (e > EMOTE_DURATION[mo.emote]) {
         mo.emote = null
       } else if (mo.emote === 'wave') {
-        armRaiseR = -2.55 + Math.sin(e * 14) * 0.35
+        armRaiseR = -1.85 + Math.sin(e * 14) * 0.3
         armSwingR = 0
         headTilt = 0.15
       } else if (mo.emote === 'cheer') {

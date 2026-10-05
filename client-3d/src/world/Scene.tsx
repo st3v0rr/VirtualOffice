@@ -14,18 +14,19 @@ import { useGame } from '../state/game'
 import { me } from '../net/players'
 import { intent } from '../game/intent'
 import { office } from '../map/office'
+import { isTouchDevice } from '../device'
+import { defaultZoom } from './cameraZoom'
 
 // isometric: looking down from the south-east at ~35 degrees
 const CAMERA_OFFSET = new THREE.Vector3(20, 19, 20)
 const ZOOM_MIN = 22
 const ZOOM_MAX = 140
-const ZOOM_DEFAULT = 88
 
 function CameraRig({ follow }: { follow: boolean }) {
   const camera = useThree((s) => s.camera) as THREE.OrthographicCamera
   const gl = useThree((s) => s.gl)
   const size = useThree((s) => s.size)
-  const zoom = useRef(ZOOM_DEFAULT)
+  const zoom = useRef(defaultZoom(isTouchDevice))
   const target = useRef(new THREE.Vector3(office.width / 2, 0, office.height / 2))
 
   useEffect(() => {

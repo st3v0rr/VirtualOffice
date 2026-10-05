@@ -866,10 +866,6 @@ button.link:hover {
   .video-grid {
     width: min(324px, calc(100vw - 24px));
   }
-  .joystick {
-    right: 16px;
-    bottom: 200px;
-  }
   .chat {
     width: min(220px, calc(100vw - 190px));
   }
@@ -1086,31 +1082,6 @@ button.link:hover {
 }
 .drinks .emoji {
   font-size: 32px;
-}
-
-/* ---------- touch joystick ---------- */
-
-.joystick {
-  position: absolute;
-  right: 24px;
-  bottom: 90px;
-  width: 120px;
-  height: 120px;
-  border-radius: 50%;
-  background: rgba(255, 255, 255, 0.45);
-  border: 3px solid rgba(255, 255, 255, 0.8);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  touch-action: none;
-}
-.joystick .knob {
-  width: 52px;
-  height: 52px;
-  border-radius: 50%;
-  background: var(--lilac);
-  border: 3px solid white;
-  box-shadow: 0 3px 10px rgba(74, 63, 85, 0.3);
 }
 
 /* ---------- room selection ---------- */

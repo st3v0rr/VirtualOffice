@@ -236,6 +236,37 @@ if (!executablePath) {
     await page.screenshot({ path: screenshot })
     console.log(`     screenshot: ${path.relative(process.cwd(), screenshot)}`)
     check(errors.length === 0, `Browser: no page or console errors ${errors.join('; ')}`)
+
+    // a touch (coarse-pointer) context used to get an on-screen joystick; it was removed
+    // in favour of tap-to-walk, so it must stay gone on mobile too
+    const mobileContext = await browser.newContext({
+      viewport: { width: 375, height: 667 },
+      hasTouch: true,
+      isMobile: true,
+    })
+    try {
+      const mobilePage = await mobileContext.newPage()
+      await mobilePage.goto(`${base}/?debug`)
+      await mobilePage.fill('.join input', 'Rauchtest-Mobil')
+      for (const label of ['Weiter', 'Weiter', 'Beitreten'])
+        await mobilePage.click(`.join button.primary:has-text("${label}")`)
+      await mobilePage.waitForSelector('.hud-top', { timeout: 15000 })
+      check(
+        (await mobilePage.locator('.joystick').count()) === 0,
+        'Browser (mobile, touch): no on-screen joystick is rendered'
+      )
+      const mobileStart = await mobilePage.evaluate(() => ({ x: __game.me.x, z: __game.me.z }))
+      await mobilePage.touchscreen.tap(320, 360)
+      await mobilePage.waitForTimeout(1000)
+      const mobileEnd = await mobilePage.evaluate(() => ({ x: __game.me.x, z: __game.me.z }))
+      const mobileDistance = Math.hypot(mobileEnd.x - mobileStart.x, mobileEnd.z - mobileStart.z)
+      check(
+        mobileDistance > 0.5,
+        `Browser (mobile, touch): tapping the floor moves the player (${mobileDistance.toFixed(2)} tiles)`
+      )
+    } finally {
+      await mobileContext.close()
+    }
   } catch (error) {
     check(false, `Browser: ${error?.message ?? error}`)
   } finally {
