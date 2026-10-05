@@ -285,10 +285,10 @@ function AvatarMiniPreview({ avatar }: { avatar: Avatar }) {
       role="img"
       aria-label="Charakter-Vorschau: Dein Avatar im Büro"
     >
-      <Canvas flat dpr={[1, 2]} camera={{ position: [0, 0.9, 4.4], fov: 30 }}>
+      <Canvas flat dpr={[1, 2]} camera={{ position: [0, 0.55, 3.3], fov: 27 }}>
         <hemisphereLight args={['#fff4fb', '#cbb8e0', 1.4]} />
         <directionalLight position={[3, 5, 4]} intensity={1.6} color="#fff3e2" />
-        <group position={[0, -0.55, 0]}>
+        <group position={[0, -0.62, 0]}>
           <Chibi avatar={avatar} motion={motion} />
         </group>
         <AvatarPreviewWave motion={motion} />

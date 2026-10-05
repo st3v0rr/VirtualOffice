@@ -150,10 +150,11 @@ if (!executablePath) {
       name: 'Charakter-Vorschau: Dein Avatar im Büro',
     })
     check(await avatarPreview.isVisible(), 'Browser: profile shows the current avatar preview')
+    await page.waitForTimeout(400) // let the join panel's entrance animation finish
     const previewBounds = await avatarPreview.boundingBox()
     check(
-      !!previewBounds && previewBounds.width >= 110 && previewBounds.height >= 130,
-      `Browser: avatar preview is enlarged (${previewBounds?.width ?? 0}×${previewBounds?.height ?? 0})`
+      !!previewBounds && previewBounds.height >= 199,
+      `Browser: avatar preview is 200px tall (${previewBounds?.height ?? 0}px)`
     )
     const profileButtons = page.locator('.avatar-card button')
     check(
@@ -164,6 +165,39 @@ if (!executablePath) {
       (await page.locator('.avatar-preset').count()) === 0,
       'Browser: profile has no preset cards'
     )
+    await page.setViewportSize({ width: 320, height: 800 })
+    await page.waitForTimeout(100)
+    const mobileLayout = await page.evaluate(() => {
+      const rect = (selector) => {
+        const element = document.querySelector(selector)
+        if (!element) return null
+        const { left, right, top, bottom, width, height } = element.getBoundingClientRect()
+        return { left, right, top, bottom, width, height }
+      }
+      return {
+        preview: rect('.avatar-preview-mini'),
+        button: rect('.avatar-card button'),
+        card: rect('.avatar-card'),
+      }
+    })
+    check(
+      !!mobileLayout.preview && mobileLayout.preview.height >= 199,
+      `Browser: preview remains 200px tall on narrow screens (${mobileLayout.preview?.height ?? 0}px)`
+    )
+    const mobileFits =
+      !!mobileLayout.preview &&
+      !!mobileLayout.button &&
+      !!mobileLayout.card &&
+      mobileLayout.preview.left >= mobileLayout.card.left &&
+      mobileLayout.preview.right <= mobileLayout.card.right &&
+      mobileLayout.button.left >= mobileLayout.card.left &&
+      mobileLayout.button.right <= mobileLayout.card.right
+    check(
+      mobileFits,
+      `Browser: avatar and Ändern button fit the 320px card (${JSON.stringify(mobileLayout)})`
+    )
+    await page.setViewportSize({ width: 1280, height: 800 })
+    await page.reload()
     // Keep the profile mounted through its first occasional wave before continuing.
     await page.waitForTimeout(3400)
     await page.fill('.join input', 'Rauchtest')

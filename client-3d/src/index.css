@@ -255,8 +255,8 @@ input:focus {
   border: 2px solid var(--line);
 }
 .avatar-preview-mini {
-  width: 116px;
-  height: 140px;
+  width: min(166px, 42vw);
+  height: 200px;
   flex: none;
   overflow: hidden;
   border-radius: 14px;
