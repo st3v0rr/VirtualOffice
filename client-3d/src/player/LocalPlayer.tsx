@@ -5,7 +5,9 @@ import Chibi from '../avatar/Chibi'
 import { useTagAnchor } from './TagLayer'
 import { useGame } from '../state/game'
 import { office, toWorld, toMap, chairSitPosition } from '../map/office'
-import { move, findPath, isFree } from '../map/collision'
+import { move, isFree } from '../map/collision'
+import { createPathQueue } from '../map/pathRequestQueue'
+import { findPathInWorker } from '../map/pathWorkerTransport'
 import { me, toAnim } from '../net/players'
 import { network } from '../net/network'
 import { intent, joystick } from '../game/intent'
@@ -61,6 +63,7 @@ export default function LocalPlayer() {
   const keys = useRef(new Set<string>())
   const path = useRef<{ x: number; z: number }[] | null>(null)
   const pendingUse = useRef<Interactable | null>(null)
+  const pathQueue = useRef(createPathQueue(findPathInWorker)).current
   const targetRot = useRef(0)
   const lastPrompt = useRef<string | null>(null)
   // actions from key presses, run in the frame loop
@@ -123,7 +126,9 @@ export default function LocalPlayer() {
       targetRot.current = chair.rot
       motion.state = 'sit'
       motion.since = now
+      pathQueue.cancel()
       path.current = null
+      pendingUse.current = null
     }
     const standUp = () => {
       const chair = chairs.find((ch) => ch.id === me.sittingOn)
@@ -171,8 +176,10 @@ export default function LocalPlayer() {
           activate(item)
         } else {
           const target = approachPoint(item, me.x, me.z)
-          path.current = findPath(me.x, me.z, target.x, target.z)
-          pendingUse.current = path.current ? item : null
+          pathQueue.request(me.x, me.z, target.x, target.z, (result) => {
+            path.current = result
+            pendingUse.current = result ? item : null
+          })
         }
       }
     }
@@ -180,8 +187,10 @@ export default function LocalPlayer() {
       const { x, z } = intent.walkTo
       intent.walkTo = null
       if (me.sittingOn) standUp()
-      path.current = findPath(me.x, me.z, x, z)
-      pendingUse.current = null
+      pathQueue.request(me.x, me.z, x, z, (result) => {
+        path.current = result
+        pendingUse.current = null
+      })
     }
     for (const action of actions.current.splice(0)) {
       const nearby = findNearby(me.x, me.z, me.rot, !!me.sittingOn)
@@ -210,6 +219,7 @@ export default function LocalPlayer() {
     let vx = 0
     let vz = 0
     if (input.lengthSq() > 0) {
+      pathQueue.cancel()
       path.current = null
       pendingUse.current = null
       if (me.sittingOn) standUp()

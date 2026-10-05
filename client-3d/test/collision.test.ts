@@ -84,6 +84,22 @@ describe('findPath (click to walk)', () => {
     }
   })
 
+  it('finds collision-free, no-corner-cutting routes to far reachable targets', () => {
+    const farTargets = [
+      { x: 1, z: 36 },
+      { x: 27, z: 36 },
+    ]
+    for (const target of farTargets) {
+      const path = findPath(spawn.x, spawn.z, target.x, target.z)
+      expect(path, `target (${target.x}, ${target.z})`).not.toBeNull()
+      let from = spawn
+      for (const point of path!) {
+        expect(segmentFree(from, point)).toBe(true)
+        from = point
+      }
+    }
+  })
+
   it('ends at the closest walkable point when the target is inside a wall', () => {
     const path = findPath(spawn.x, spawn.z, 33.5, 16.5)!
     const end = path.at(-1)!

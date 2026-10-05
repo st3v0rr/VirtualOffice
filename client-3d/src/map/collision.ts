@@ -176,12 +176,15 @@ export function findPath(
   const gy = Math.floor(goal / gw)
   const cost = new Float32Array(gw * gh).fill(Infinity)
   const from = new Int32Array(gw * gh).fill(-1)
+  const closed = new Uint8Array(gw * gh)
   const open = new MinHeap()
   cost[start] = 0
   open.push(start, 0)
   let found = false
   while (open.size) {
     const current = open.pop()
+    if (closed[current]) continue
+    closed[current] = 1
     if (current === goal) {
       found = true
       break
