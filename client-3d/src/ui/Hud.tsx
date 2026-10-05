@@ -3,8 +3,8 @@ import { useGame } from '../state/game'
 import { useSettings, type PostFx } from '../state/settings'
 import { playEmote } from '../game/actions'
 import { network } from '../net/network'
-import MediaControls from './MediaControls'
-import VideoGrid from './VideoGrid'
+import MediaControls, { Status } from './MediaControls'
+import VideoGrid, { SelfPreview } from './VideoGrid'
 
 function Settings({ onClose }: { onClose: () => void }) {
   const s = useSettings()
@@ -93,7 +93,7 @@ export default function Hud() {
         <button className="pill button" onClick={() => setHelp((v) => !v)}>
           ❓
         </button>
-        <MediaControls />
+        <Status />
       </div>
       {settings && <Settings onClose={() => setSettings(false)} />}
       <div className="hud-right">
@@ -109,16 +109,22 @@ export default function Hud() {
         <VideoGrid />
       </div>
       {prompt && <div className="prompt">{prompt}</div>}
-      <div className="emotes">
-        <button onClick={() => playEmote('wave')} title="Winken (1)">
-          👋
-        </button>
-        <button onClick={() => playEmote('cheer')} title="Jubeln (2)">
-          🎉
-        </button>
-        <button onClick={() => playEmote('hop')} title="Hüpfen (Leertaste)">
-          ⤴️
-        </button>
+      <div className="hud-self">
+        <div className="self-controls">
+          <MediaControls />
+        </div>
+        <SelfPreview />
+        <div className="emotes">
+          <button onClick={() => playEmote('wave')} title="Winken (1)">
+            👋
+          </button>
+          <button onClick={() => playEmote('cheer')} title="Jubeln (2)">
+            🎉
+          </button>
+          <button onClick={() => playEmote('hop')} title="Hüpfen (Leertaste)">
+            ⤴️
+          </button>
+        </div>
       </div>
     </>
   )

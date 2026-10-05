@@ -57,9 +57,32 @@ function VideoTile({ tile }: { tile: MediaTile }) {
   )
 }
 
+// the local self-preview, mirrored, for the bottom-right stack
+export function SelfPreview() {
+  const { tiles } = useMedia()
+  const camera = useGame((s) => s.camera)
+  const local = tiles.find((t) => t.isLocal)
+  return (
+    <div className="self-preview">
+      {local?.videoStream && !local.videoMuted ? (
+        <Video stream={local.videoStream} mirrored />
+      ) : (
+        <div className="placeholder">
+          <div className="avatar" style={{ background: '#d7f2c8' }}>
+            🙂
+          </div>
+          {camera === false && <span className="camera-off">Kamera aus</span>}
+        </div>
+      )}
+      <span className="label self-label">Du</span>
+    </div>
+  )
+}
+
 export default function VideoGrid() {
   const sessionId = useGame((s) => s.sessionId)
   const { tiles, status, canPublish } = useMedia()
+  const remoteTiles = tiles.filter((t) => !t.isLocal)
 
   useEffect(() => {
     if (!sessionId) return
@@ -74,7 +97,7 @@ export default function VideoGrid() {
       {status === 'connected' && !canPublish && (
         <div className="notice">Du bist im Publikum. Geh auf die Bühne, um zu sprechen.</div>
       )}
-      {tiles.map((tile) => (
+      {remoteTiles.map((tile) => (
         <VideoTile key={tile.id} tile={tile} />
       ))}
     </div>

@@ -4,7 +4,7 @@ import { setCameraEnabled, setMicrophoneEnabled, useMedia } from '../media/media
 // Video chat in the HUD: where I am (connected, audience, quiet zone, unavailable) and
 // the microphone/camera toggles, like MediaControls of the 2D client.
 
-function Status() {
+export function Status() {
   const { status, canPublish } = useMedia()
   const quietZone = useGame((s) => s.quietZone)
 
@@ -49,7 +49,6 @@ export default function MediaControls() {
 
   return (
     <>
-      <Status />
       {videoConnected ? (
         <>
           <button
