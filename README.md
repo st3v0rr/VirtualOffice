@@ -1,8 +1,6 @@
 # VirtualOffice 3D ![License](https://img.shields.io/badge/license-MIT-blue)
 
-A virtual office in the browser as an isometric toy diorama: toon shading, pastel colours and procedural chibi characters you design yourself. Walk around, sit down, chat, wave, grab a drink, and talk to the people close to you with video and audio.
-
-It started as a fork of [SkyOffice](https://github.com/kevinshen56714/SkyOffice) (Phaser 2D). The 2D client and the whiteboards are gone; what is left is a lean 3D demo. See [POC2_NOTIZ.md](POC2_NOTIZ.md) (German) for the findings, measurements and the status of every feature.
+A browser-based, real-time 3D virtual office built as an independent application. Explore an isometric toy-diorama office with toon shading, pastel colours and customizable procedural chibi characters. Walk around, sit at a desk, use a computer or vending machine, chat, react with emotes, and talk to nearby people with video, audio and screen sharing. Meeting rooms, focus booths, a stage and a quiet library each have their own media rules.
 
 ## Built with
 
@@ -39,16 +37,20 @@ If the server runs on another port, pass its URL: `VITE_SERVER_URL=ws://localhos
 
 ## Controls
 
-| Key / mouse            |                                          |
-| ---------------------- | ---------------------------------------- |
-| `W A S D` / arrow keys | walk (screen directions)                 |
-| click on the floor     | walk there (path finding around objects) |
-| click a chair / item   | walk there and sit down / use it         |
-| `E`                    | sit down / stand up                      |
-| `R`                    | use computer, vending machine            |
-| `Space` / `1` / `2`    | hop / wave / cheer                       |
-| mouse wheel            | zoom                                     |
-| `Enter`                | chat                                     |
+| Key / mouse            |                                                            |
+| ---------------------- | ---------------------------------------------------------- |
+| click on the floor     | walk there (path finding around objects)                   |
+| click a chair / item   | walk there and sit down / use it                           |
+| `W A S D` / arrow keys | walk (screen directions)                                   |
+| `E`                    | sit down / stand up                                        |
+| `R`                    | use computer, vending machine                              |
+| `1`                    | wave                                                       |
+| `2`                    | cheer with confetti                                        |
+| `3`                    | clap                                                       |
+| `4`                    | hearts                                                     |
+| `5`                    | raise / lower your hand; it stays raised until toggled off |
+| mouse wheel            | zoom                                                       |
+| `Enter`                | chat                                                       |
 
 ## Scripts
 
@@ -140,7 +142,7 @@ On pushes to `poc/threejs-r3f` and `main` it pushes the image to Docker Hub as `
 
 ## The map
 
-`assets/map/map.json` is a [Tiled](https://www.mapeditor.org) map; its tilesets are in `assets/map/tilesets/`. It is the single source for the layout: `npm run extract-map` turns it into the 3D data (walkable tiles, collision rectangles, furniture blocks with averaged colours, chairs, computers, zones), and the server reads the computers, the spawn point and the media zones from it at start. The whiteboard objects in the map are left over from the 2D client and ignored.
+`assets/map/map.json` is a [Tiled](https://www.mapeditor.org) map; its tilesets are in `assets/map/tilesets/`. It is the single source for the layout: `npm run extract-map` turns it into the 3D data (walkable tiles, collision rectangles, furniture blocks with averaged colours, chairs, computers, zones), and the server reads the computers, the spawn point and the media zones from it at start. Whiteboard objects in the map are ignored.
 
 ## Video chat
 
@@ -158,11 +160,11 @@ Without them in development, the server uses the defaults of `livekit-server --d
 
 ## Whiteboards
 
-The built-in sticky note whiteboards were removed. Whiteboards are planned as an external service (e.g. Miro) instead.
+There are no built-in whiteboards. Whiteboards are planned as an external service (e.g. Miro) instead.
 
 ## Credits
 
-Based on [SkyOffice](https://github.com/kevinshen56714/SkyOffice) by kevinshen56714. The map uses the pixel art of [LimeZu](https://limezu.itch.io/) (the 3D client only uses its layout and averaged colours).
+The map uses the pixel art of [LimeZu](https://limezu.itch.io/) (the 3D client only uses its layout and averaged colours).
 
 ## License
 
