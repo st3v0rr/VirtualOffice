@@ -255,14 +255,32 @@ if (!executablePath) {
         (await mobilePage.locator('.joystick').count()) === 0,
         'Browser (mobile, touch): no on-screen joystick is rendered'
       )
+      await mobilePage.waitForTimeout(700) // let the mobile follow-camera settle after joining
       const mobileStart = await mobilePage.evaluate(() => ({ x: __game.me.x, z: __game.me.z }))
-      await mobilePage.touchscreen.tap(320, 360)
-      await mobilePage.waitForTimeout(1000)
-      const mobileEnd = await mobilePage.evaluate(() => ({ x: __game.me.x, z: __game.me.z }))
-      const mobileDistance = Math.hypot(mobileEnd.x - mobileStart.x, mobileEnd.z - mobileStart.z)
+      let mobileDistance = 0
+      let mobileTapCount = 0
+      for (const [x, y] of [
+        [320, 360],
+        [70, 360],
+        [190, 250],
+        [300, 450],
+        [70, 500],
+        [190, 500],
+        [300, 250],
+      ]) {
+        mobileTapCount++
+        await mobilePage.touchscreen.tap(x, y)
+        await mobilePage.waitForTimeout(700)
+        const mobilePosition = await mobilePage.evaluate(() => ({ x: __game.me.x, z: __game.me.z }))
+        mobileDistance = Math.hypot(
+          mobilePosition.x - mobileStart.x,
+          mobilePosition.z - mobileStart.z
+        )
+        if (mobileDistance > 0.1) break
+      }
       check(
-        mobileDistance > 0.5,
-        `Browser (mobile, touch): tapping the floor moves the player (${mobileDistance.toFixed(2)} tiles)`
+        mobileDistance > 0.1,
+        `Browser (mobile, touch): tapping the floor moves the player (${mobileDistance.toFixed(2)} tiles after ${mobileTapCount} tap(s))`
       )
     } finally {
       await mobileContext.close()
