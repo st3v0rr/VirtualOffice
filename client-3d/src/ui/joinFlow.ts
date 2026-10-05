@@ -192,6 +192,12 @@ export function toggleMedia(
   preview: { requested: boolean; hasStream: boolean }
 ) {
   const key = MEDIA_KEY[kind]
+  // already on but not yet granted (e.g. a remembered choice restored before the
+  // browser permission was asked for): ask again without touching the preference,
+  // so a single click doesn't turn it off
+  if (choice[key] && !preview.hasStream && !preview.requested) {
+    return { changes: {}, request: true, stop: false }
+  }
   const changes: Partial<MediaChoice> = { [key]: !choice[key] }
   const next = { ...choice, ...changes }
   const on = next.audioEnabled || next.videoEnabled

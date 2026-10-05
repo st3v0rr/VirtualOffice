@@ -198,6 +198,37 @@ describe('camera and microphone', () => {
     expect(toggleMedia(off, 'video', { requested: true, hasStream: false }).request).toBe(true)
   })
 
+  it('a remembered choice that looks on but was never granted just asks, without turning off', () => {
+    const micOnly = { audioEnabled: true, videoEnabled: false }
+    expect(toggleMedia(micOnly, 'audio', idle)).toEqual({
+      changes: {},
+      request: true,
+      stop: false,
+    })
+    // still true once a stream exists: now it really toggles off
+    expect(toggleMedia(micOnly, 'audio', { requested: true, hasStream: true })).toEqual({
+      changes: { audioEnabled: false },
+      request: false,
+      stop: true,
+    })
+    // the other, genuinely off switch still turns on and asks
+    expect(toggleMedia(micOnly, 'video', idle)).toEqual({
+      changes: { videoEnabled: true },
+      request: true,
+      stop: false,
+    })
+  })
+
+  it('with a pending request, clicking toggles off and does not re-request', () => {
+    const micOnly = { audioEnabled: true, videoEnabled: false }
+    const pendingRequest = { requested: true, hasStream: false }
+    expect(toggleMedia(micOnly, 'audio', pendingRequest)).toEqual({
+      changes: { audioEnabled: false },
+      request: false,
+      stop: true,
+    })
+  })
+
   it('joins with the preview only if something is switched on and there is a stream', () => {
     const mic = { audioEnabled: true, videoEnabled: false }
     expect(mediaOnJoin(mic, true)).toBe('use')
