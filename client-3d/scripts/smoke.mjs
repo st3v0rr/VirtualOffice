@@ -146,6 +146,26 @@ if (!executablePath) {
 
     // ?debug exposes window.__game with the player position
     await page.goto(`${base}/?debug`)
+    const avatarPreview = page.getByRole('img', {
+      name: 'Charakter-Vorschau: Dein Avatar im Büro',
+    })
+    check(await avatarPreview.isVisible(), 'Browser: profile shows the current avatar preview')
+    const previewBounds = await avatarPreview.boundingBox()
+    check(
+      !!previewBounds && previewBounds.width >= 110 && previewBounds.height >= 130,
+      `Browser: avatar preview is enlarged (${previewBounds?.width ?? 0}×${previewBounds?.height ?? 0})`
+    )
+    const profileButtons = page.locator('.avatar-card button')
+    check(
+      (await profileButtons.count()) === 1 && (await profileButtons.innerText()) === 'Ändern',
+      'Browser: profile card has only the Ändern button'
+    )
+    check(
+      (await page.locator('.avatar-preset').count()) === 0,
+      'Browser: profile has no preset cards'
+    )
+    // Keep the profile mounted through its first occasional wave before continuing.
+    await page.waitForTimeout(3400)
     await page.fill('.join input', 'Rauchtest')
     // the join screen: name, room (public office), camera/microphone (off), then Beitreten
     for (const label of ['Weiter', 'Weiter', 'Beitreten'])

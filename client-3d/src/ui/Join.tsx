@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState, type FormEvent, type RefObject } from 'react'
-import { Canvas } from '@react-three/fiber'
+import { Canvas, useFrame } from '@react-three/fiber'
 import {
   loadMediaSettings,
   playTestSound,
@@ -11,7 +11,7 @@ import { useMediaSetup } from '@skyoffice/media/react'
 import { useGame } from '../state/game'
 import { network } from '../net/network'
 import Chibi from '../avatar/Chibi'
-import { createMotion } from '../avatar/motion'
+import { createMotion, type Motion } from '../avatar/motion'
 import type { Avatar } from '../avatar/avatar'
 import { office } from '../map/office'
 import { toAnim } from '../net/players'
@@ -258,7 +258,25 @@ function StepHeading({ headingRef, children }: { headingRef: HeadingRef; childre
   )
 }
 
-// a static idle pose is enough for the small live preview; no per-frame state changes needed
+// The join-card preview shares the gameplay Chibi wave animation, but only waves occasionally.
+function AvatarPreviewWave({ motion }: { motion: Motion }) {
+  const nextWaveAt = useRef(3)
+  const prefersReducedMotion = useRef(
+    typeof window !== 'undefined' && window.matchMedia('(prefers-reduced-motion: reduce)').matches
+  )
+
+  useFrame(({ clock }) => {
+    const now = clock.elapsedTime
+    if (prefersReducedMotion.current || now < nextWaveAt.current) return
+
+    motion.emote = 'wave'
+    motion.emoteSince = now
+    nextWaveAt.current = now + 10.5
+  })
+
+  return null
+}
+
 function AvatarMiniPreview({ avatar }: { avatar: Avatar }) {
   const [motion] = useState(createMotion)
   return (
@@ -273,6 +291,7 @@ function AvatarMiniPreview({ avatar }: { avatar: Avatar }) {
         <group position={[0, -0.55, 0]}>
           <Chibi avatar={avatar} motion={motion} />
         </group>
+        <AvatarPreviewWave motion={motion} />
       </Canvas>
     </div>
   )
